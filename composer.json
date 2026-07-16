@@ -1,0 +1,26 @@
+{
+    "name": "anime-db/plugin-contracts",
+    "description": "Plugin contracts (interfaces and DTOs) for AnimeDB v2 plugins",
+    "type": "library",
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/anime-db/anime-db-plugin-contracts",
+    "authors": [
+        {
+            "name": "Peter Gribanov",
+            "homepage": "https://github.com/peter-gribanov"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "AnimeDb\\PluginContracts\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
