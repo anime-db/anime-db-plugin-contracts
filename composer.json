@@ -14,11 +14,17 @@
         "php": "^8.1"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.10"
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^10.5"
     },
     "autoload": {
         "psr-4": {
             "AnimeDb\\PluginContracts\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AnimeDb\\PluginContracts\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "stable",
