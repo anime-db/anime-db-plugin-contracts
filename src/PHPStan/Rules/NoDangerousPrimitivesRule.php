@@ -31,6 +31,8 @@ use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\Type\CallableType;
+use PHPStan\Type\Type;
 
 /**
  * Forbids plugins from directly calling dangerous low-level primitives
@@ -84,7 +86,7 @@ final class NoDangerousPrimitivesRule implements Rule
     public function processNode(Node $node, Scope $scope): array
     {
         if ($node instanceof Node\Expr\FuncCall) {
-            return $this->processFuncCall($node);
+            return $this->processFuncCall($node, $scope);
         }
 
         if ($node instanceof Node\Expr\Eval_) {
@@ -117,14 +119,22 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * @return list<\PHPStan\Rules\RuleError>
      */
-    private function processFuncCall(Node\Expr\FuncCall $node): array
+    private function processFuncCall(Node\Expr\FuncCall $node, Scope $scope): array
     {
         if (!$node->name instanceof Node\Name) {
-            return [
-                RuleErrorBuilder::message(
-                    'Dynamic function calls through a variable are forbidden, use the abstraction provided by the host application instead.',
-                )->identifier(self::ERROR_IDENTIFIER)->build(),
-            ];
+            // A callee statically typed as `callable` (e.g. SearchByPluginInterface::find()'s
+            // $onHeartbeat) or as a Closure/invokable object is a legitimate, contract-sanctioned
+            // callback invocation, not a dynamic dispatch to an attacker-controlled function name
+            // built at runtime (e.g. `$fn = 'exec'; $fn();`, where the type is a plain string).
+            if (!$this->isSafeCallableReference($scope->getType($node->name))) {
+                return [
+                    RuleErrorBuilder::message(
+                        'Dynamic function calls through a variable are forbidden, use the abstraction provided by the host application instead.',
+                    )->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+
+            return [];
         }
 
         $functionName = strtolower($node->name->toString());
@@ -150,5 +160,20 @@ final class NoDangerousPrimitivesRule implements Rule
         }
 
         return [];
+    }
+
+    /**
+     * A string is technically callable too (PHP resolves it to a function by name at
+     * call time), so `isCallable()` alone can't tell a dynamic-name dispatch apart from
+     * a genuine callback. Only the `callable` pseudo-type and Closure/invokable objects
+     * are treated as safe; strings (including constant ones) are always forbidden.
+     */
+    private function isSafeCallableReference(Type $type): bool
+    {
+        if ($type instanceof CallableType) {
+            return true;
+        }
+
+        return $type->isObject()->yes() && $type->isCallable()->yes();
     }
 }
