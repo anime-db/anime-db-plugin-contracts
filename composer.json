@@ -15,7 +15,8 @@
     },
     "require-dev": {
         "phpstan/phpstan": "^1.10",
-        "phpunit/phpunit": "^10.5"
+        "phpunit/phpunit": "^10.5",
+        "friendsofphp/php-cs-fixer": "^3.95"
     },
     "suggest": {
         "phpstan/extension-installer": "Automatically registers extension.neon, so the rules from this package are picked up with no manual configuration."
@@ -36,6 +37,10 @@
                 "extension.neon"
             ]
         }
+    },
+    "scripts": {
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
