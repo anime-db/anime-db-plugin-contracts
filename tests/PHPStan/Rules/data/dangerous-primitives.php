@@ -28,6 +28,32 @@ class SafeUsage
     {
         return file_get_contents(__DIR__.'/dangerous-primitives.php');
     }
+
+    public function openLocalFile(): void
+    {
+        $handle = fopen(__DIR__.'/dangerous-primitives.php', 'r');
+        fclose($handle);
+    }
+
+    public function copyLocalFile(): void
+    {
+        copy(__DIR__.'/dangerous-primitives.php', __DIR__.'/copy.php');
+    }
+
+    public function readLocalFileLines(): array
+    {
+        return file(__DIR__.'/dangerous-primitives.php');
+    }
+
+    public function outputLocalFile(): void
+    {
+        readfile(__DIR__.'/dangerous-primitives.php');
+    }
+
+    public function includeLocalFile(): void
+    {
+        require __DIR__.'/dangerous-primitives.php';
+    }
 }
 
 class DangerousUsage
@@ -57,6 +83,26 @@ class DangerousUsage
         proc_open('ls', [], $pipes);
     }
 
+    public function processFsockopen(): void
+    {
+        fsockopen('example.com', 80);
+    }
+
+    public function processPfsockopen(): void
+    {
+        pfsockopen('example.com', 80);
+    }
+
+    public function processStreamSocketClient(): void
+    {
+        stream_socket_client('tcp://example.com:80');
+    }
+
+    public function processStreamSocketServer(): void
+    {
+        stream_socket_server('tcp://0.0.0.0:8080');
+    }
+
     public function processCurl(): void
     {
         $ch = curl_init('https://example.com');
@@ -66,6 +112,31 @@ class DangerousUsage
     public function processFileGetContents(): void
     {
         file_get_contents('https://example.com');
+    }
+
+    public function processFopen(): void
+    {
+        fopen('https://example.com', 'r');
+    }
+
+    public function processCopy(): void
+    {
+        copy('https://example.com/file.txt', __DIR__.'/file.txt');
+    }
+
+    public function processFile(): void
+    {
+        file('https://example.com');
+    }
+
+    public function processReadfile(): void
+    {
+        readfile('https://example.com');
+    }
+
+    public function processRequire(): void
+    {
+        require 'https://example.com/malicious.php';
     }
 
     public function processDynamicFunctionCall(): void

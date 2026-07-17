@@ -36,8 +36,9 @@ use PHPStan\Type\Type;
 
 /**
  * Forbids plugins from directly calling dangerous low-level primitives
- * (process execution, raw curl, eval, dynamic calls through variables) that
- * bypass the abstractions provided by the host application.
+ * (process execution, raw network sockets, curl, eval, URL-scoped file/include
+ * operations, dynamic calls through variables) that bypass the abstractions
+ * provided by the host application.
  *
  * This is not a defense against a deliberately obfuscated bypass: it raises
  * the bar for the typical case and acts as an automated gate before a
@@ -63,6 +64,10 @@ final class NoDangerousPrimitivesRule implements Rule
         'proc_open',
         'proc_close',
         'pcntl_exec',
+        'fsockopen',
+        'pfsockopen',
+        'stream_socket_client',
+        'stream_socket_server',
     ];
 
     /**
@@ -75,10 +80,36 @@ final class NoDangerousPrimitivesRule implements Rule
     ];
 
     /**
+     * Functions whose first argument is a filename that PHP's stream wrapper layer
+     * also lets be a URL (`https://`, `ftp://`, …), silently turning a local file
+     * operation into a network request. Forbidden only when that argument is
+     * statically known to carry a URL scheme; a local path is a legitimate read.
+     *
+     * @var string[]
+     */
+    private const URL_SCOPED_FUNCTIONS = [
+        'file_get_contents',
+        'fopen',
+        'copy',
+        'file',
+        'readfile',
+    ];
+
+    /**
      * Matches the scheme of a PHP stream wrapper (e.g. `http://`, `https://`, `ftp://`),
-     * used to tell a remote `file_get_contents()` call apart from a local file read.
+     * used to tell a remote read/include apart from a local file access.
      */
     private const URL_SCHEME_PATTERN = '/^[a-z][a-z0-9+.\-]*:\/\//i';
+
+    /**
+     * @var array<int, string>
+     */
+    private const INCLUDE_TYPE_KEYWORDS = [
+        Node\Expr\Include_::TYPE_INCLUDE => 'include',
+        Node\Expr\Include_::TYPE_INCLUDE_ONCE => 'include_once',
+        Node\Expr\Include_::TYPE_REQUIRE => 'require',
+        Node\Expr\Include_::TYPE_REQUIRE_ONCE => 'require_once',
+    ];
 
     public function getNodeType(): string
     {
@@ -118,6 +149,15 @@ final class NoDangerousPrimitivesRule implements Rule
             ];
         }
 
+        if ($node instanceof Node\Expr\Include_ && $this->isUrlExpression($node->expr, $scope)) {
+            return [
+                RuleErrorBuilder::message(sprintf(
+                    'Using %s with a URL is forbidden, use the abstraction provided by the host application instead.',
+                    self::INCLUDE_TYPE_KEYWORDS[$node->type],
+                ))->identifier(self::ERROR_IDENTIFIER)->build(),
+            ];
+        }
+
         return [];
     }
 
@@ -153,12 +193,16 @@ final class NoDangerousPrimitivesRule implements Rule
             ];
         }
 
-        if ('file_get_contents' === $functionName && $this->isCalledWithUrl($node, $scope)) {
-            return [
-                RuleErrorBuilder::message(
-                    'Calling file_get_contents() with a URL is forbidden, use the abstraction provided by the host application instead.',
-                )->identifier(self::ERROR_IDENTIFIER)->build(),
-            ];
+        if (in_array($functionName, self::URL_SCOPED_FUNCTIONS, true)) {
+            $args = $node->getArgs();
+            if ([] !== $args && $this->isUrlExpression($args[0]->value, $scope)) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Calling %s() with a URL is forbidden, use the abstraction provided by the host application instead.',
+                        $functionName,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
         }
 
         foreach (self::FORBIDDEN_FUNCTION_PREFIXES as $prefix) {
@@ -197,17 +241,12 @@ final class NoDangerousPrimitivesRule implements Rule
 
     /**
      * Only a statically known URL scheme (e.g. `https://`) counts as a URL; a plain
-     * local path, or an argument whose value can't be determined statically, is left
+     * local path, or an expression whose value can't be determined statically, is left
      * alone since the rule only targets remote reads, not local file access.
      */
-    private function isCalledWithUrl(Node\Expr\FuncCall $node, Scope $scope): bool
+    private function isUrlExpression(Node\Expr $expr, Scope $scope): bool
     {
-        $args = $node->getArgs();
-        if ([] === $args) {
-            return false;
-        }
-
-        $type = $scope->getType($args[0]->value);
+        $type = $scope->getType($expr);
 
         foreach ($type->getConstantStrings() as $constantString) {
             if (1 === preg_match(self::URL_SCHEME_PATTERN, $constantString->getValue())) {
