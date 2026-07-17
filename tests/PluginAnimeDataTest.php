@@ -32,7 +32,6 @@ use AnimeDb\PluginContracts\Demographic;
 use AnimeDb\PluginContracts\GenreCode;
 use AnimeDb\PluginContracts\PluginAnimeData;
 use AnimeDb\PluginContracts\ThemeCode;
-use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
 class PluginAnimeDataTest extends TestCase
@@ -60,8 +59,8 @@ class PluginAnimeDataTest extends TestCase
 
     public function testPropertiesReturnConstructorValues(): void
     {
-        $datePremiere = new DateTimeImmutable('1998-04-03');
-        $dateEnd = new DateTimeImmutable('1999-04-24');
+        $datePremiere = new \DateTimeImmutable('1998-04-03');
+        $dateEnd = new \DateTimeImmutable('1999-04-24');
 
         $data = new PluginAnimeData(
             title: 'Cowboy Bebop',

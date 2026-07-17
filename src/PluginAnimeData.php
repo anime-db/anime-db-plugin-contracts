@@ -27,8 +27,6 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts;
 
-use DateTimeImmutable;
-
 /**
  * Flat DTO carrying anime data filled in by a plugin from an external source.
  *
@@ -60,8 +58,8 @@ class PluginAnimeData
         public readonly ?Demographic $demographic = null,
         public readonly ?array $studios = null,
         public readonly ?AnimeType $type = null,
-        public readonly ?DateTimeImmutable $datePremiere = null,
-        public readonly ?DateTimeImmutable $dateEnd = null,
+        public readonly ?\DateTimeImmutable $datePremiere = null,
+        public readonly ?\DateTimeImmutable $dateEnd = null,
         public readonly ?int $durationMinutes = null,
         public readonly ?int $episodesCount = null,
         public readonly ?array $countries = null,
