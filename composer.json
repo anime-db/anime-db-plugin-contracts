@@ -1,7 +1,7 @@
 {
     "name": "anime-db/plugin-contracts",
     "description": "Plugin contracts (interfaces and DTOs) for AnimeDB v2 plugins",
-    "type": "library",
+    "type": "phpstan-extension",
     "license": "GPL-3.0-or-later",
     "homepage": "https://github.com/anime-db/anime-db-plugin-contracts",
     "authors": [
@@ -11,11 +11,14 @@
         }
     ],
     "require": {
-        "php": "^8.1"
+        "php": "^8.1",
+        "phpstan/phpstan": "^1.10"
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^10.5"
+    },
+    "suggest": {
+        "phpstan/extension-installer": "Automatically registers extension.neon, so the rules from this package are picked up with no manual configuration."
     },
     "autoload": {
         "psr-4": {
@@ -25,6 +28,13 @@
     "autoload-dev": {
         "psr-4": {
             "AnimeDb\\PluginContracts\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "phpstan": {
+            "includes": [
+                "extension.neon"
+            ]
         }
     },
     "minimum-stability": "stable",
