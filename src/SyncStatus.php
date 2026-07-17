@@ -28,27 +28,18 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * A single user list entry synced between the host application and an external source.
+ * Watch status of a title in a user's list, as used by {@see SyncItem}.
  *
- * Plain DTO used by {@see SyncInterface}, not a host application entity. Minimal field
- * set for a pilot integration; expect it to grow once the first real sync plugin
- * (e.g. Shikimori) is implemented.
+ * Closed vocabulary shared by the host application and every sync plugin. A plugin
+ * normalizes its source's own status dictionary (e.g. "watching"/"completed") into
+ * this enum once, in its adapter; the host then maps it to its own internal status
+ * representation.
  */
-final class SyncItem
+enum SyncStatus: string
 {
-    public function __construct(
-        /**
-         * External id of the title on the source, as recognized by the plugin.
-         */
-        public readonly string $externalId,
-        /**
-         * Watch status of the title, normalized by the plugin from the source's own vocabulary.
-         */
-        public readonly SyncStatus $status,
-        /**
-         * Title of the anime, as known to the source.
-         */
-        public readonly string $title,
-    ) {
-    }
+    case Plan = 'plan';
+    case Watching = 'watching';
+    case Completed = 'completed';
+    case Dropped = 'dropped';
+    case OnHold = 'on_hold';
 }
