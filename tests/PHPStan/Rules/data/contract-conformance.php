@@ -33,6 +33,23 @@ class ConformingFillerPlugin implements FillerInterface
     }
 }
 
+class RenamedParameterPlugin implements SyncInterface
+{
+    public function resolveExternalId(array $urls): ?string
+    {
+        return null;
+    }
+
+    public function push(SyncItem $syncItem): void
+    {
+    }
+
+    public function pull(): iterable
+    {
+        return [];
+    }
+}
+
 class WrongParameterTypePlugin implements SyncInterface
 {
     public function resolveExternalId(array $urls): ?string
@@ -40,7 +57,7 @@ class WrongParameterTypePlugin implements SyncInterface
         return null;
     }
 
-    public function push(string $item): void
+    public function push(object $item): void
     {
     }
 

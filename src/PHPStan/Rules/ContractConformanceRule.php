@@ -186,12 +186,15 @@ final class ContractConformanceRule implements Rule
 
     private function describeSignature(string $methodName, \PHPStan\Reflection\ParametersAcceptor $variant): string
     {
+        // Parameter names are intentionally excluded: PHP does not require them to
+        // match an interface for a valid implementation, so a renamed parameter must
+        // not be reported as a contract violation.
         $params = [];
         foreach ($variant->getParameters() as $parameter) {
             $type = $parameter->getType()->describe(VerbosityLevel::typeOnly());
             $prefix = $parameter->isVariadic() ? '...' : '';
             $suffix = $parameter->isOptional() ? ' = default' : '';
-            $params[] = sprintf('%s%s $%s%s', $prefix, $type, $parameter->getName(), $suffix);
+            $params[] = sprintf('%s%s%s', $prefix, $type, $suffix);
         }
 
         return sprintf(
