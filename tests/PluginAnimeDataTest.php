@@ -27,7 +27,11 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
+use AnimeDb\PluginContracts\AnimeType;
+use AnimeDb\PluginContracts\Demographic;
+use AnimeDb\PluginContracts\GenreCode;
 use AnimeDb\PluginContracts\PluginAnimeData;
+use AnimeDb\PluginContracts\ThemeCode;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -63,11 +67,11 @@ class PluginAnimeDataTest extends TestCase
             title: 'Cowboy Bebop',
             alternativeNames: ['Kaubōi Bibappu'],
             descriptions: ['A bounty hunting crew chases criminals across space.'],
-            genres: ['action', 'sci-fi'],
-            themes: ['space', 'adult-cast'],
-            demographic: 'seinen',
+            genres: [GenreCode::Action, GenreCode::SciFi],
+            themes: [ThemeCode::Space, ThemeCode::AdultCast],
+            demographic: Demographic::Seinen,
             studios: ['Sunrise'],
-            type: 'tv',
+            type: AnimeType::Tv,
             datePremiere: $datePremiere,
             dateEnd: $dateEnd,
             durationMinutes: 24,
@@ -80,11 +84,11 @@ class PluginAnimeDataTest extends TestCase
         self::assertSame('Cowboy Bebop', $data->title);
         self::assertSame(['Kaubōi Bibappu'], $data->alternativeNames);
         self::assertSame(['A bounty hunting crew chases criminals across space.'], $data->descriptions);
-        self::assertSame(['action', 'sci-fi'], $data->genres);
-        self::assertSame(['space', 'adult-cast'], $data->themes);
-        self::assertSame('seinen', $data->demographic);
+        self::assertSame([GenreCode::Action, GenreCode::SciFi], $data->genres);
+        self::assertSame([ThemeCode::Space, ThemeCode::AdultCast], $data->themes);
+        self::assertSame(Demographic::Seinen, $data->demographic);
         self::assertSame(['Sunrise'], $data->studios);
-        self::assertSame('tv', $data->type);
+        self::assertSame(AnimeType::Tv, $data->type);
         self::assertSame($datePremiere, $data->datePremiere);
         self::assertSame($dateEnd, $data->dateEnd);
         self::assertSame(24, $data->durationMinutes);

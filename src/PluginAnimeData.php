@@ -35,19 +35,21 @@ use DateTimeImmutable;
  * Deliberately not tied to any host application's ORM entity or database
  * schema: `title` is the only required field, everything else is nullable
  * and may be left unset by a plugin that does not support it. Genre, theme,
- * demographic and type codes are plain strings rather than enums, so the
- * contract does not depend on the host application's internal enums.
+ * demographic and type are closed dictionaries, so they are contract-owned
+ * enums ({@see GenreCode}, {@see ThemeCode}, {@see Demographic},
+ * {@see AnimeType}) rather than plain strings — decoupling from the host
+ * application's internal enums does not require giving up type safety.
  */
 class PluginAnimeData
 {
     /**
-     * @param string[]|null $alternativeNames
-     * @param string[]|null $descriptions
-     * @param string[]|null $genres
-     * @param string[]|null $themes
-     * @param string[]|null $studios
-     * @param string[]|null $countries
-     * @param string[]|null $images
+     * @param string[]|null    $alternativeNames
+     * @param string[]|null    $descriptions
+     * @param GenreCode[]|null $genres
+     * @param ThemeCode[]|null $themes
+     * @param string[]|null    $studios
+     * @param string[]|null    $countries
+     * @param string[]|null    $images
      */
     public function __construct(
         public readonly string $title,
@@ -55,9 +57,9 @@ class PluginAnimeData
         public readonly ?array $descriptions = null,
         public readonly ?array $genres = null,
         public readonly ?array $themes = null,
-        public readonly ?string $demographic = null,
+        public readonly ?Demographic $demographic = null,
         public readonly ?array $studios = null,
-        public readonly ?string $type = null,
+        public readonly ?AnimeType $type = null,
         public readonly ?DateTimeImmutable $datePremiere = null,
         public readonly ?DateTimeImmutable $dateEnd = null,
         public readonly ?int $durationMinutes = null,
