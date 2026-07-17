@@ -279,6 +279,73 @@ API), доступен `resolveExternalId()`, унаследованный от 
 - **`GenreCode`** — ось жанров MAL (18 значений, например `Action`, `Comedy`, `Fantasy`, `SliceOfLife`) — список может расширяться минорными версиями.
 - **`ThemeCode`** — ось тем MAL (51 значение, например `Isekai`, `Mecha`, `School`, `TimeTravel`) — список может расширяться минорными версиями.
 
+## Манифест плагина (`manifest.json`)
+
+Пакет также содержит общий парсер и валидатор файла `manifest.json`,
+который каждый плагин несёт в корне своего ZIP-архива. Компонент нужен,
+чтобы не дублировать логику разбора и проверки манифеста в двух местах:
+CI реестра маркета (перед приёмом плагина в статический реестр) и
+клиентский инсталлятор хост-приложения (перед установкой кастомного ZIP
+из недоверенного источника).
+
+```json
+{
+    "id": "vendor-shikimori",
+    "name": "Shikimori",
+    "version": "1.0.0",
+    "description": "Описание плагина",
+    "author": "Vendor Name",
+    "type": "integration",
+    "features": {"filler": true, "related_widget": true, "sync": true},
+    "require": {
+        "core": ">=2.0.0",
+        "php": ">=8.2",
+        "plugin-contracts": "^2.0"
+    },
+    "update_url": "https://example.com/plugins/registry.json"
+}
+```
+
+```php
+use AnimeDb\PluginContracts\Manifest\ManifestParser;
+use AnimeDb\PluginContracts\Manifest\ManifestValidator;
+
+$parser = new ManifestParser();
+$validator = new ManifestValidator();
+
+// decode() отделён от parse(): он бросает InvalidManifestJsonException только
+// при синтаксически невалидном JSON или JSON не-объекте на верхнем уровне.
+$data = $parser->decode($rawManifestJson);
+
+$errors = $validator->validate($data);
+if ($errors !== []) {
+    foreach ($errors as $error) {
+        // $error->field — dot-path, например "require.core" или "features.filler"
+        // $error->message — человекочитаемая причина
+        printf("%s: %s\n", $error->field, $error->message);
+    }
+
+    return;
+}
+
+// parse() безопасен только после того, как validate() не вернул ошибок —
+// сам он повторную валидацию содержимого не делает.
+$manifest = $parser->parse($rawManifestJson);
+```
+
+Обязательные поля манифеста — `id`, `name`, `version`, `type`. `type` —
+закрытый словарь (`PluginType::Integration` или `PluginType::Translation`):
+обычный код-плагин объявляет `features` (плоский набор булевых флагов),
+чисто декларативный ресурс переводов — `locales` (список кодов локалей)
+вместо `features`.
+
+`require.core` и `require.php` — только нижняя граница версии (`>=X.Y.Z`,
+без верхней границы: верхнюю границу совместимости определяет отдельный
+эмпирический механизм реестра, не сам манифест). `require.plugin-contracts`
+— опциональный, более точный сигнал совместимости, чем версия ядра целиком,
+и допускает любой валидный семвер-констрейнт (например, `^2.0`). Синтаксис
+всех трёх констрейнтов проверяется через `composer/semver`.
+
 ## PHPStan-правила
 
 Пакет поставляет набор правил PHPStan, которыми переиспользуют и CI реестра
