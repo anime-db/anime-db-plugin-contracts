@@ -37,24 +37,24 @@ class PluginAnimeDataTest extends TestCase
     {
         $data = new PluginAnimeData('Cowboy Bebop');
 
-        self::assertSame('Cowboy Bebop', $data->getTitle());
-        self::assertNull($data->getAlternativeNames());
-        self::assertNull($data->getDescriptions());
-        self::assertNull($data->getGenres());
-        self::assertNull($data->getThemes());
-        self::assertNull($data->getDemographic());
-        self::assertNull($data->getStudios());
-        self::assertNull($data->getType());
-        self::assertNull($data->getDatePremiere());
-        self::assertNull($data->getDateEnd());
-        self::assertNull($data->getDurationMinutes());
-        self::assertNull($data->getEpisodesCount());
-        self::assertNull($data->getCountries());
-        self::assertNull($data->getCover());
-        self::assertNull($data->getImages());
+        self::assertSame('Cowboy Bebop', $data->title);
+        self::assertNull($data->alternativeNames);
+        self::assertNull($data->descriptions);
+        self::assertNull($data->genres);
+        self::assertNull($data->themes);
+        self::assertNull($data->demographic);
+        self::assertNull($data->studios);
+        self::assertNull($data->type);
+        self::assertNull($data->datePremiere);
+        self::assertNull($data->dateEnd);
+        self::assertNull($data->durationMinutes);
+        self::assertNull($data->episodesCount);
+        self::assertNull($data->countries);
+        self::assertNull($data->cover);
+        self::assertNull($data->images);
     }
 
-    public function testGettersReturnConstructorValues(): void
+    public function testPropertiesReturnConstructorValues(): void
     {
         $datePremiere = new DateTimeImmutable('1998-04-03');
         $dateEnd = new DateTimeImmutable('1999-04-24');
@@ -77,20 +77,20 @@ class PluginAnimeDataTest extends TestCase
             images: ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
         );
 
-        self::assertSame('Cowboy Bebop', $data->getTitle());
-        self::assertSame(['Kaubōi Bibappu'], $data->getAlternativeNames());
-        self::assertSame(['A bounty hunting crew chases criminals across space.'], $data->getDescriptions());
-        self::assertSame(['action', 'sci-fi'], $data->getGenres());
-        self::assertSame(['space', 'adult-cast'], $data->getThemes());
-        self::assertSame('seinen', $data->getDemographic());
-        self::assertSame(['Sunrise'], $data->getStudios());
-        self::assertSame('tv', $data->getType());
-        self::assertSame($datePremiere, $data->getDatePremiere());
-        self::assertSame($dateEnd, $data->getDateEnd());
-        self::assertSame(24, $data->getDurationMinutes());
-        self::assertSame(26, $data->getEpisodesCount());
-        self::assertSame(['JP'], $data->getCountries());
-        self::assertSame('https://example.com/cover.jpg', $data->getCover());
-        self::assertSame(['https://example.com/1.jpg', 'https://example.com/2.jpg'], $data->getImages());
+        self::assertSame('Cowboy Bebop', $data->title);
+        self::assertSame(['Kaubōi Bibappu'], $data->alternativeNames);
+        self::assertSame(['A bounty hunting crew chases criminals across space.'], $data->descriptions);
+        self::assertSame(['action', 'sci-fi'], $data->genres);
+        self::assertSame(['space', 'adult-cast'], $data->themes);
+        self::assertSame('seinen', $data->demographic);
+        self::assertSame(['Sunrise'], $data->studios);
+        self::assertSame('tv', $data->type);
+        self::assertSame($datePremiere, $data->datePremiere);
+        self::assertSame($dateEnd, $data->dateEnd);
+        self::assertSame(24, $data->durationMinutes);
+        self::assertSame(26, $data->episodesCount);
+        self::assertSame(['JP'], $data->countries);
+        self::assertSame('https://example.com/cover.jpg', $data->cover);
+        self::assertSame(['https://example.com/1.jpg', 'https://example.com/2.jpg'], $data->images);
     }
 }

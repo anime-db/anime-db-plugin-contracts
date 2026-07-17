@@ -61,7 +61,7 @@ class FillerInterfaceTest extends TestCase
         $data = $plugin->findById('1');
 
         self::assertNotNull($data);
-        self::assertSame('Cowboy Bebop', $data->getTitle());
+        self::assertSame('Cowboy Bebop', $data->title);
         self::assertNull($plugin->findById('unknown'));
         self::assertSame(['title', 'genres'], $plugin->getFillableFields());
     }

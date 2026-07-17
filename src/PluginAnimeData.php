@@ -50,117 +50,21 @@ class PluginAnimeData
      * @param string[]|null $images
      */
     public function __construct(
-        private readonly string $title,
-        private readonly ?array $alternativeNames = null,
-        private readonly ?array $descriptions = null,
-        private readonly ?array $genres = null,
-        private readonly ?array $themes = null,
-        private readonly ?string $demographic = null,
-        private readonly ?array $studios = null,
-        private readonly ?string $type = null,
-        private readonly ?DateTimeImmutable $datePremiere = null,
-        private readonly ?DateTimeImmutable $dateEnd = null,
-        private readonly ?int $durationMinutes = null,
-        private readonly ?int $episodesCount = null,
-        private readonly ?array $countries = null,
-        private readonly ?string $cover = null,
-        private readonly ?array $images = null,
+        public readonly string $title,
+        public readonly ?array $alternativeNames = null,
+        public readonly ?array $descriptions = null,
+        public readonly ?array $genres = null,
+        public readonly ?array $themes = null,
+        public readonly ?string $demographic = null,
+        public readonly ?array $studios = null,
+        public readonly ?string $type = null,
+        public readonly ?DateTimeImmutable $datePremiere = null,
+        public readonly ?DateTimeImmutable $dateEnd = null,
+        public readonly ?int $durationMinutes = null,
+        public readonly ?int $episodesCount = null,
+        public readonly ?array $countries = null,
+        public readonly ?string $cover = null,
+        public readonly ?array $images = null,
     ) {
-    }
-
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getAlternativeNames(): ?array
-    {
-        return $this->alternativeNames;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getDescriptions(): ?array
-    {
-        return $this->descriptions;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getGenres(): ?array
-    {
-        return $this->genres;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getThemes(): ?array
-    {
-        return $this->themes;
-    }
-
-    public function getDemographic(): ?string
-    {
-        return $this->demographic;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getStudios(): ?array
-    {
-        return $this->studios;
-    }
-
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
-
-    public function getDatePremiere(): ?DateTimeImmutable
-    {
-        return $this->datePremiere;
-    }
-
-    public function getDateEnd(): ?DateTimeImmutable
-    {
-        return $this->dateEnd;
-    }
-
-    public function getDurationMinutes(): ?int
-    {
-        return $this->durationMinutes;
-    }
-
-    public function getEpisodesCount(): ?int
-    {
-        return $this->episodesCount;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getCountries(): ?array
-    {
-        return $this->countries;
-    }
-
-    public function getCover(): ?string
-    {
-        return $this->cover;
-    }
-
-    /**
-     * @return string[]|null
-     */
-    public function getImages(): ?array
-    {
-        return $this->images;
     }
 }
