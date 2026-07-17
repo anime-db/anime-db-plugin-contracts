@@ -25,6 +25,10 @@ declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
     ->in([__DIR__.'/src', __DIR__.'/tests'])
+    // PHPStan rule-test fixtures under tests/*/data/ intentionally contain
+    // syntax the rules under test detect (backticks, eval, etc.) — normalizing
+    // their style would change what they test, not just how it's formatted.
+    ->exclude('PHPStan/Rules/data')
     ->append([__FILE__]);
 
 return (new PhpCsFixer\Config())

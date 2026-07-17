@@ -43,7 +43,7 @@ class NoDangerousPrimitivesRuleTest extends RuleTestCase
 
     public function testDetectsDangerousPrimitivesAndAllowsSafeUsage(): void
     {
-        $this->analyse([__DIR__ . '/data/dangerous-primitives.php'], [
+        $this->analyse([__DIR__.'/data/dangerous-primitives.php'], [
             ['Calling exec() directly is forbidden, use the abstraction provided by the host application instead.', 22],
             ['Calling shell_exec() directly is forbidden, use the abstraction provided by the host application instead.', 27],
             ['Using the shell exec operator (backticks) is forbidden, use the abstraction provided by the host application instead.', 32],

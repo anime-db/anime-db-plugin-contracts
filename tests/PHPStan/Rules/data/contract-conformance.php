@@ -6,7 +6,6 @@ namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data;
 
 use AnimeDb\PluginContracts\FillerInterface;
 use AnimeDb\PluginContracts\PluginAnimeData;
-use AnimeDb\PluginContracts\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\SyncInterface;
 use AnimeDb\PluginContracts\SyncItem;
 
