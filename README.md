@@ -71,9 +71,12 @@ class MySourcePlugin implements SearchByPluginInterface
 хост-приложения (при установке кастомного ZIP-плагина) — одна и та же
 логика проверки в одном месте.
 
-Если в проекте установлен [`phpstan/extension-installer`](https://github.com/phpstan/extension-installer),
-правила подключаются автоматически после `composer require anime-db/plugin-contracts`.
-Без него — добавьте `extension.neon` пакета в свой `phpstan.neon`:
+Пакет не тянет `phpstan/phpstan` как рантайм-зависимость — PHPStan нужен
+только тем, кто реально подключает эти правила. Чтобы включить их, в своём
+проекте установите `phpstan/phpstan` и [`phpstan/extension-installer`](https://github.com/phpstan/extension-installer);
+после этого правила подключатся автоматически, как только `anime-db/plugin-contracts`
+окажется среди зависимостей проекта (в `require` или `require-dev`).
+Без `extension-installer` — добавьте `extension.neon` пакета в свой `phpstan.neon` вручную:
 
 ```neon
 includes:
