@@ -63,7 +63,6 @@ final class NoDangerousPrimitivesRule implements Rule
         'proc_open',
         'proc_close',
         'pcntl_exec',
-        'file_get_contents',
     ];
 
     /**
@@ -74,6 +73,12 @@ final class NoDangerousPrimitivesRule implements Rule
     private const FORBIDDEN_FUNCTION_PREFIXES = [
         'curl_',
     ];
+
+    /**
+     * Matches the scheme of a PHP stream wrapper (e.g. `http://`, `https://`, `ftp://`),
+     * used to tell a remote `file_get_contents()` call apart from a local file read.
+     */
+    private const URL_SCHEME_PATTERN = '/^[a-z][a-z0-9+.\-]*:\/\//i';
 
     public function getNodeType(): string
     {
@@ -148,6 +153,14 @@ final class NoDangerousPrimitivesRule implements Rule
             ];
         }
 
+        if ('file_get_contents' === $functionName && $this->isCalledWithUrl($node, $scope)) {
+            return [
+                RuleErrorBuilder::message(
+                    'Calling file_get_contents() with a URL is forbidden, use the abstraction provided by the host application instead.',
+                )->identifier(self::ERROR_IDENTIFIER)->build(),
+            ];
+        }
+
         foreach (self::FORBIDDEN_FUNCTION_PREFIXES as $prefix) {
             if (str_starts_with($functionName, $prefix)) {
                 return [
@@ -165,8 +178,9 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * A string is technically callable too (PHP resolves it to a function by name at
      * call time), so `isCallable()` alone can't tell a dynamic-name dispatch apart from
-     * a genuine callback. Only the `callable` pseudo-type and Closure/invokable objects
-     * are treated as safe; strings (including constant ones) are always forbidden.
+     * a genuine callback. The `callable` pseudo-type, Closure/invokable objects, and
+     * array callables (`[$this, 'method']`, `[Foo::class, 'method']`) are treated as
+     * safe; strings (including constant ones) are always forbidden.
      */
     private function isSafeCallableReference(Type $type): bool
     {
@@ -174,6 +188,33 @@ final class NoDangerousPrimitivesRule implements Rule
             return true;
         }
 
-        return $type->isObject()->yes() && $type->isCallable()->yes();
+        if ($type->isObject()->yes() && $type->isCallable()->yes()) {
+            return true;
+        }
+
+        return $type->isArray()->yes() && $type->isCallable()->yes();
+    }
+
+    /**
+     * Only a statically known URL scheme (e.g. `https://`) counts as a URL; a plain
+     * local path, or an argument whose value can't be determined statically, is left
+     * alone since the rule only targets remote reads, not local file access.
+     */
+    private function isCalledWithUrl(Node\Expr\FuncCall $node, Scope $scope): bool
+    {
+        $args = $node->getArgs();
+        if ([] === $args) {
+            return false;
+        }
+
+        $type = $scope->getType($args[0]->value);
+
+        foreach ($type->getConstantStrings() as $constantString) {
+            if (1 === preg_match(self::URL_SCHEME_PATTERN, $constantString->getValue())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

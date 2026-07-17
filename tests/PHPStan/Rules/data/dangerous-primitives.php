@@ -13,6 +13,21 @@ class SafeUsage
 
         return implode(',', array_map('strtolower', [$formatted, $httpGet('https://example.com')]));
     }
+
+    public function callArrayCallable(): void
+    {
+        $callback = [$this, 'target'];
+        $callback();
+    }
+
+    public function target(): void
+    {
+    }
+
+    public function readLocalFile(): string
+    {
+        return file_get_contents(__DIR__.'/dangerous-primitives.php');
+    }
 }
 
 class DangerousUsage

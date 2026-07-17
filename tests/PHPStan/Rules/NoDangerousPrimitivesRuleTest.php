@@ -44,16 +44,16 @@ class NoDangerousPrimitivesRuleTest extends RuleTestCase
     public function testDetectsDangerousPrimitivesAndAllowsSafeUsage(): void
     {
         $this->analyse([__DIR__.'/data/dangerous-primitives.php'], [
-            ['Calling exec() directly is forbidden, use the abstraction provided by the host application instead.', 22],
-            ['Calling shell_exec() directly is forbidden, use the abstraction provided by the host application instead.', 27],
-            ['Using the shell exec operator (backticks) is forbidden, use the abstraction provided by the host application instead.', 32],
-            ['Using eval() is forbidden, use the abstraction provided by the host application instead.', 37],
-            ['Calling proc_open() directly is forbidden, use the abstraction provided by the host application instead.', 42],
-            ['Calling curl_init() directly is forbidden, use the abstraction provided by the host application instead.', 47],
-            ['Calling curl_setopt() directly is forbidden, use the abstraction provided by the host application instead.', 48],
-            ['Calling file_get_contents() directly is forbidden, use the abstraction provided by the host application instead.', 53],
-            ['Dynamic function calls through a variable are forbidden, use the abstraction provided by the host application instead.', 59],
-            ['Using variable variables is forbidden, use the abstraction provided by the host application instead.', 65],
+            ['Calling exec() directly is forbidden, use the abstraction provided by the host application instead.', 37],
+            ['Calling shell_exec() directly is forbidden, use the abstraction provided by the host application instead.', 42],
+            ['Using the shell exec operator (backticks) is forbidden, use the abstraction provided by the host application instead.', 47],
+            ['Using eval() is forbidden, use the abstraction provided by the host application instead.', 52],
+            ['Calling proc_open() directly is forbidden, use the abstraction provided by the host application instead.', 57],
+            ['Calling curl_init() directly is forbidden, use the abstraction provided by the host application instead.', 62],
+            ['Calling curl_setopt() directly is forbidden, use the abstraction provided by the host application instead.', 63],
+            ['Calling file_get_contents() with a URL is forbidden, use the abstraction provided by the host application instead.', 68],
+            ['Dynamic function calls through a variable are forbidden, use the abstraction provided by the host application instead.', 74],
+            ['Using variable variables is forbidden, use the abstraction provided by the host application instead.', 80],
         ]);
     }
 }
