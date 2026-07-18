@@ -273,6 +273,55 @@ class ManifestValidatorTest extends TestCase
         self::assertContains('update_url', array_map(static fn ($error) => $error->field, $errors));
     }
 
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function invalidIds(): iterable
+    {
+        yield 'underscore' => ['acme_demo'];
+        yield 'uppercase' => ['Acme-demo'];
+        yield 'space' => ['acme demo'];
+        yield 'no separator' => ['acme'];
+        yield 'leading hyphen' => ['-acme-demo'];
+        yield 'trailing hyphen' => ['acme-demo-'];
+        yield 'double hyphen' => ['acme--demo'];
+    }
+
+    /**
+     * @dataProvider invalidIds
+     */
+    public function testIdRejectsInvalidSlugFormat(string $id): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['id'] = $id;
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('id', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function validIds(): iterable
+    {
+        yield 'two segments' => ['vendor-name'];
+        yield 'three segments' => ['vendor-some-name'];
+    }
+
+    /**
+     * @dataProvider validIds
+     */
+    public function testIdAcceptsValidSlugFormat(string $id): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['id'] = $id;
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertSame([], $errors);
+    }
+
     public function testErrorContainsFieldAndMessage(): void
     {
         $errors = (new ManifestValidator())->validate([]);
