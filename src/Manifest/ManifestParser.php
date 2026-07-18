@@ -30,27 +30,43 @@ namespace AnimeDb\PluginContracts\Manifest;
 /**
  * Parses a plugin's `manifest.json` into a strictly typed {@see Manifest} DTO.
  *
- * Callers are expected to run {@see ManifestValidator::validate()} on {@see self::decode()}'s
- * result first and only call {@see self::parse()} once it reports no errors — {@see parse()}
- * itself only guards against malformed JSON syntax (via {@see InvalidManifestJsonException}),
- * it does not re-validate manifest content and trusts the required fields to be present and
- * well-formed.
+ * {@see self::parse()} decodes and validates the content itself, so it is safe to call
+ * directly on untrusted input. {@see self::decode()} and {@see ManifestValidator::validate()}
+ * remain public separately for callers (e.g. the client installer's UI) that need the full
+ * structured error list up front, before deciding whether to call {@see self::parse()} at all.
  */
 final class ManifestParser
 {
+    private ManifestValidator $validator;
+
+    public function __construct()
+    {
+        $this->validator = new ManifestValidator();
+    }
+
     /**
      * @throws InvalidManifestJsonException if `$json` is not syntactically valid JSON, or its
      *                                      top-level value is not a JSON object
+     * @throws InvalidManifestException     if `$json` is syntactically valid JSON but its content
+     *                                      fails {@see ManifestValidator} checks
      */
     public function parse(string $json): Manifest
     {
-        return $this->buildManifest($this->decode($json));
+        $data = $this->decode($json);
+
+        $errors = $this->validator->validate($data);
+        if ([] !== $errors) {
+            throw new InvalidManifestException($errors);
+        }
+
+        return $this->buildManifest($data);
     }
 
     /**
      * Decode raw `manifest.json` content into an associative array, without validating its
-     * content. Exposed separately so {@see ManifestValidator} can be run on the same raw data
-     * before {@see self::parse()} is trusted to build a DTO from it.
+     * content. Exposed separately for callers that need the raw array ahead of, or instead
+     * of, calling {@see self::parse()} (e.g. to run {@see ManifestValidator} and show the
+     * full error list before committing to building a {@see Manifest} DTO).
      *
      * @return array<string, mixed>
      *
@@ -65,7 +81,7 @@ final class ManifestParser
             throw new InvalidManifestJsonException('manifest.json is not valid JSON: '.$exception->getMessage(), previous: $exception);
         }
 
-        if (!\is_array($data) || array_is_list($data)) {
+        if (!\is_array($data) || ([] !== $data && array_is_list($data))) {
             throw new InvalidManifestJsonException('manifest.json must contain a JSON object at the top level.');
         }
 

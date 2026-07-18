@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\Manifest;
 
+use AnimeDb\PluginContracts\Manifest\InvalidManifestException;
 use AnimeDb\PluginContracts\Manifest\InvalidManifestJsonException;
 use AnimeDb\PluginContracts\Manifest\ManifestParser;
 use AnimeDb\PluginContracts\Manifest\PluginType;
@@ -120,5 +121,35 @@ class ManifestParserTest extends TestCase
         $data = (new ManifestParser())->decode('{"id": "vendor-shikimori", "type": "integration"}');
 
         self::assertSame(['id' => 'vendor-shikimori', 'type' => 'integration'], $data);
+    }
+
+    public function testDecodeAcceptsEmptyJsonObject(): void
+    {
+        $data = (new ManifestParser())->decode('{}');
+
+        self::assertSame([], $data);
+    }
+
+    public function testParseThrowsInvalidManifestExceptionOnEmptyJsonObject(): void
+    {
+        $this->expectException(InvalidManifestException::class);
+
+        (new ManifestParser())->parse('{}');
+    }
+
+    public function testParseThrowsInvalidManifestExceptionWithStructuredErrors(): void
+    {
+        try {
+            (new ManifestParser())->parse('{}');
+            self::fail('Expected InvalidManifestException to be thrown.');
+        } catch (InvalidManifestException $exception) {
+            $fields = array_map(static fn ($error) => $error->field, $exception->errors);
+
+            self::assertContains('id', $fields);
+            self::assertContains('name', $fields);
+            self::assertContains('version', $fields);
+            self::assertContains('type', $fields);
+            self::assertContains('require', $fields);
+        }
     }
 }
