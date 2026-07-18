@@ -59,7 +59,7 @@ final class ManifestValidator
     {
         $errors = [];
 
-        $errors = [...$errors, ...$this->validateRequiredString($data, 'id')];
+        $errors = [...$errors, ...$this->validateId($data)];
         $errors = [...$errors, ...$this->validateRequiredString($data, 'name')];
         $errors = [...$errors, ...$this->validateVersion($data)];
         $errors = [...$errors, ...$this->validateTypeField($data)];
@@ -90,6 +90,28 @@ final class ManifestValidator
 
         if (!\is_string($data[$field]) || '' === $data[$field]) {
             return [new ManifestValidationError($field, \sprintf('Field "%s" must be a non-empty string.', $field))];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return ManifestValidationError[]
+     */
+    private function validateId(array $data): array
+    {
+        $errors = $this->validateRequiredString($data, 'id');
+        if ([] !== $errors) {
+            return $errors;
+        }
+
+        if (1 !== preg_match('/^[a-z0-9]+(-[a-z0-9]+)+$/', $data['id'])) {
+            return [new ManifestValidationError(
+                'id',
+                \sprintf('"%s" is not a valid id. It must be a "vendor-name" slug: lowercase letters, digits and hyphen-separated segments (e.g. "vendor-name").', $data['id']),
+            )];
         }
 
         return [];
