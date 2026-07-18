@@ -65,7 +65,7 @@ class PluginAnimeDataTest extends TestCase
         $data = new PluginAnimeData(
             title: 'Cowboy Bebop',
             alternativeNames: ['Kaubōi Bibappu'],
-            descriptions: ['A bounty hunting crew chases criminals across space.'],
+            descriptions: ['en' => 'A bounty hunting crew chases criminals across space.'],
             genres: [GenreCode::Action, GenreCode::SciFi],
             themes: [ThemeCode::Space, ThemeCode::AdultCast],
             demographic: Demographic::Seinen,
@@ -82,7 +82,7 @@ class PluginAnimeDataTest extends TestCase
 
         self::assertSame('Cowboy Bebop', $data->title);
         self::assertSame(['Kaubōi Bibappu'], $data->alternativeNames);
-        self::assertSame(['A bounty hunting crew chases criminals across space.'], $data->descriptions);
+        self::assertSame(['en' => 'A bounty hunting crew chases criminals across space.'], $data->descriptions);
         self::assertSame([GenreCode::Action, GenreCode::SciFi], $data->genres);
         self::assertSame([ThemeCode::Space, ThemeCode::AdultCast], $data->themes);
         self::assertSame(Demographic::Seinen, $data->demographic);
