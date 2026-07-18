@@ -37,17 +37,19 @@ namespace AnimeDb\PluginContracts;
  * enums ({@see GenreCode}, {@see ThemeCode}, {@see Demographic},
  * {@see AnimeType}) rather than plain strings — decoupling from the host
  * application's internal enums does not require giving up type safety.
+ * `descriptions` is a locale-keyed map, not a list — e.g.
+ * `['en' => '...', 'ru' => '...']`.
  */
 class PluginAnimeData
 {
     /**
-     * @param string[]|null    $alternativeNames
-     * @param string[]|null    $descriptions
-     * @param GenreCode[]|null $genres
-     * @param ThemeCode[]|null $themes
-     * @param string[]|null    $studios
-     * @param string[]|null    $countries
-     * @param string[]|null    $images
+     * @param string[]|null              $alternativeNames
+     * @param array<string, string>|null $descriptions     locale => description text
+     * @param GenreCode[]|null           $genres
+     * @param ThemeCode[]|null           $themes
+     * @param string[]|null              $studios
+     * @param string[]|null              $countries
+     * @param string[]|null              $images
      */
     public function __construct(
         public readonly string $title,
