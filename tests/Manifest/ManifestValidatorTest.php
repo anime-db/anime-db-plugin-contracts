@@ -251,6 +251,28 @@ class ManifestValidatorTest extends TestCase
         self::assertSame([], $errors);
     }
 
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function nonHttpUpdateUrls(): iterable
+    {
+        yield 'file scheme' => ['file:///etc/passwd'];
+        yield 'ftp scheme' => ['ftp://example.com/x'];
+    }
+
+    /**
+     * @dataProvider nonHttpUpdateUrls
+     */
+    public function testUpdateUrlRejectsNonHttpSchemes(string $url): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['update_url'] = $url;
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('update_url', array_map(static fn ($error) => $error->field, $errors));
+    }
+
     public function testErrorContainsFieldAndMessage(): void
     {
         $errors = (new ManifestValidator())->validate([]);

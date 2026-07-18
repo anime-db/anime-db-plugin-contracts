@@ -330,8 +330,11 @@ final class ManifestValidator
             return [];
         }
 
-        if (!\is_string($data['update_url']) || false === filter_var($data['update_url'], \FILTER_VALIDATE_URL)) {
-            return [new ManifestValidationError('update_url', 'Field "update_url" must be a valid URL.')];
+        if (!\is_string($data['update_url'])
+            || false === filter_var($data['update_url'], \FILTER_VALIDATE_URL)
+            || !\in_array(parse_url($data['update_url'], \PHP_URL_SCHEME), ['http', 'https'], true)
+        ) {
+            return [new ManifestValidationError('update_url', 'Field "update_url" must be a valid "http" or "https" URL.')];
         }
 
         return [];
