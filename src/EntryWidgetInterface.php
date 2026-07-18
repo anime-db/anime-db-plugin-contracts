@@ -37,18 +37,20 @@ namespace AnimeDb\PluginContracts;
  * the common "list of records" case is a host-side optional helper, not a
  * rigid schema in this contract.
  *
- * A widget that needs its own external source id (to call its own API) can
- * use `resolveExternalId()` inherited from PluginInterface: the caller
- * resolves and caches the id on its side before calling `render()`.
+ * The host resolves the external source id via `resolveExternalId()`
+ * (inherited from PluginInterface) and passes it into `render()`; the
+ * widget never has access to host-internal record ids.
  */
 interface EntryWidgetInterface extends PluginInterface
 {
     /**
      * Render the widget for a single catalog record.
      *
-     * @param string $localId id of the catalog record the widget is rendered for
+     * @param string|null $externalId external source id resolved by the host via
+     *                                resolveExternalId() (null when the record has no
+     *                                link to this plugin's source)
      *
      * @return string rendered widget markup as a raw HTML string
      */
-    public function render(string $localId): string;
+    public function render(?string $externalId): string;
 }

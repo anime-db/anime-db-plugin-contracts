@@ -242,7 +242,8 @@ class NewReleasesWidget implements CatalogWidgetInterface
     }
 }
 
-// Виджет на странице отдельной записи каталога — получает id записи.
+// Виджет на странице отдельной записи каталога — получает внешний id,
+// уже резолвнутый хостом через resolveExternalId() этого же плагина.
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
     public function resolveExternalId(array $urls): ?string
@@ -250,7 +251,7 @@ class RelatedTitlesWidget implements EntryWidgetInterface
         // ...
     }
 
-    public function render(string $localId): string
+    public function render(?string $externalId): string
     {
         return '<div class="related-titles">...</div>';
     }
@@ -264,10 +265,11 @@ HTML-строка, не структурированные данные: это 
 частого случая «список записей» — опциональный хелпер на стороне
 хост-приложения, не жёсткая схема в этом контракте.
 
-Виджету, которому нужен свой внешний id источника (чтобы сходить в свой
-API), доступен `resolveExternalId()`, унаследованный от `PluginInterface`:
-вызывающий код резолвит и кэширует id на своей стороне перед вызовом
-`render()`.
+Виджет на странице записи живёт в пространстве внешнего источника, а не
+локальной БД хоста: `resolveExternalId()`, унаследованный от
+`PluginInterface`, резолвится хостом заранее, и результат передаётся в
+`EntryWidgetInterface::render()` как `?string $externalId` — `null`,
+если запись не сопоставлена с источником плагина.
 
 ## Закрытые словари (enum'ы)
 
