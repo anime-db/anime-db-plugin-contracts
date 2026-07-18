@@ -307,19 +307,21 @@ CI реестра маркета (перед приёмом плагина в с
 ```
 
 ```php
+use AnimeDb\PluginContracts\Manifest\InvalidManifestException;
+use AnimeDb\PluginContracts\Manifest\InvalidManifestJsonException;
 use AnimeDb\PluginContracts\Manifest\ManifestParser;
-use AnimeDb\PluginContracts\Manifest\ManifestValidator;
 
 $parser = new ManifestParser();
-$validator = new ManifestValidator();
 
-// decode() отделён от parse(): он бросает InvalidManifestJsonException только
-// при синтаксически невалидном JSON или JSON не-объекте на верхнем уровне.
-$data = $parser->decode($rawManifestJson);
-
-$errors = $validator->validate($data);
-if ($errors !== []) {
-    foreach ($errors as $error) {
+try {
+    // parse() сам декодирует и валидирует содержимое — отдельно вызывать
+    // decode()/validate() перед ним не нужно.
+    $manifest = $parser->parse($rawManifestJson);
+} catch (InvalidManifestJsonException $exception) {
+    // $rawManifestJson — не валидный JSON или JSON не-объект на верхнем уровне.
+    return;
+} catch (InvalidManifestException $exception) {
+    foreach ($exception->errors as $error) {
         // $error->field — dot-path, например "require.core" или "features.filler"
         // $error->message — человекочитаемая причина
         printf("%s: %s\n", $error->field, $error->message);
@@ -327,10 +329,18 @@ if ($errors !== []) {
 
     return;
 }
+```
 
-// parse() безопасен только после того, как validate() не вернул ошибок —
-// сам он повторную валидацию содержимого не делает.
-$manifest = $parser->parse($rawManifestJson);
+`decode()` и `ManifestValidator::validate()` остаются публичными отдельно от
+`parse()` — для потребителей (например, UI клиентского инсталлятора),
+которым нужен полный список ошибок валидации ещё до того, как решать,
+вызывать ли `parse()` вообще:
+
+```php
+use AnimeDb\PluginContracts\Manifest\ManifestValidator;
+
+$data = $parser->decode($rawManifestJson); // бросает InvalidManifestJsonException
+$errors = (new ManifestValidator())->validate($data);
 ```
 
 Обязательные поля манифеста — `id`, `name`, `version`, `type`. `type` —
