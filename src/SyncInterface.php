@@ -33,8 +33,13 @@ namespace AnimeDb\PluginContracts;
  * Unlike the interactive filler/widget/search features, sync is configured once and
  * runs in the background. It covers two independent directions: push (local state to
  * the external source) and pull (external source to local state).
+ *
+ * Extends FillerInterface: pull() creates local records from a remote list, and a
+ * "bare" record with nothing but a title is not a valid card. A sync plugin must be
+ * able to fill in a card (find(), findById(), getFillableFields()), so a sync-only
+ * plugin without a filler is impossible at the contract level.
  */
-interface SyncInterface extends PluginInterface
+interface SyncInterface extends FillerInterface
 {
     /**
      * Push a local list item change to the external source.

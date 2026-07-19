@@ -39,6 +39,21 @@ class RenamedParameterPlugin implements SyncInterface
         return null;
     }
 
+    public function find(string $name, ?callable $onHeartbeat = null): array
+    {
+        return [];
+    }
+
+    public function findById(string $externalId): ?PluginAnimeData
+    {
+        return null;
+    }
+
+    public function getFillableFields(): array
+    {
+        return [];
+    }
+
     public function push(SyncItem $syncItem): void
     {
     }
@@ -56,6 +71,21 @@ class WrongParameterTypePlugin implements SyncInterface
         return null;
     }
 
+    public function find(string $name, ?callable $onHeartbeat = null): array
+    {
+        return [];
+    }
+
+    public function findById(string $externalId): ?PluginAnimeData
+    {
+        return null;
+    }
+
+    public function getFillableFields(): array
+    {
+        return [];
+    }
+
     public function push(object $item): void
     {
     }
@@ -71,6 +101,21 @@ class WrongReturnTypePlugin implements SyncInterface
     public function resolveExternalId(array $urls): ?string
     {
         return null;
+    }
+
+    public function find(string $name, ?callable $onHeartbeat = null): array
+    {
+        return [];
+    }
+
+    public function findById(string $externalId): ?PluginAnimeData
+    {
+        return null;
+    }
+
+    public function getFillableFields(): array
+    {
+        return [];
     }
 
     public function push(SyncItem $item): void

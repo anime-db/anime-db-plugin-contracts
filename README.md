@@ -187,13 +187,23 @@ class MySourcePlugin implements FillerInterface
 настраивается один раз и работает в фоне — по двум независимым
 направлениям.
 
+Расширяет `FillerInterface`: pull() создаёт локальные записи из списка
+пользователя на внешнем источнике, а «голая» запись с одним заголовком —
+невалидная карточка. Sync-плагин обязан уметь и заполнять карточку
+(`find()`, `findById()`, `getFillableFields()`), поэтому sync-плагина без
+филлера не существует на уровне контракта.
+
 ```php
+use AnimeDb\PluginContracts\PluginAnimeData;
+use AnimeDb\PluginContracts\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\SyncInterface;
 use AnimeDb\PluginContracts\SyncItem;
 use AnimeDb\PluginContracts\SyncStatus;
 
 class MySourcePlugin implements SyncInterface
 {
+    // ... find(), findById(), getFillableFields() как у FillerInterface
+
     public function push(SyncItem $item): void
     {
         // отправить изменение статуса на внешний источник
