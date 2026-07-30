@@ -65,7 +65,7 @@ final class ManifestValidator
         $errors = [...$errors, ...$this->validateTypeField($data)];
 
         $type = \is_string($data['type'] ?? null) ? PluginType::tryFrom($data['type']) : null;
-        if (null !== $type) {
+        if ($type !== null) {
             $errors = [...$errors, ...$this->validateFeaturesOrLocales($data, $type)];
         }
 
@@ -88,7 +88,7 @@ final class ManifestValidator
             return [new ManifestValidationError($field, \sprintf('Field "%s" is required.', $field))];
         }
 
-        if (!\is_string($data[$field]) || '' === $data[$field]) {
+        if (!\is_string($data[$field]) || $data[$field] === '') {
             return [new ManifestValidationError($field, \sprintf('Field "%s" must be a non-empty string.', $field))];
         }
 
@@ -103,11 +103,11 @@ final class ManifestValidator
     private function validateId(array $data): array
     {
         $errors = $this->validateRequiredString($data, 'id');
-        if ([] !== $errors) {
+        if ($errors !== []) {
             return $errors;
         }
 
-        if (1 !== preg_match('/^[a-z0-9]+(-[a-z0-9]+)+$/', $data['id'])) {
+        if (preg_match('/^[a-z0-9]+(-[a-z0-9]+)+$/', $data['id']) !== 1) {
             return [new ManifestValidationError(
                 'id',
                 \sprintf('"%s" is not a valid id. It must be a "vendor-name" slug: lowercase letters, digits and hyphen-separated segments (e.g. "vendor-name").', $data['id']),
@@ -124,7 +124,7 @@ final class ManifestValidator
      */
     private function validateOptionalString(array $data, string $field): array
     {
-        if (!array_key_exists($field, $data) || null === $data[$field]) {
+        if (!array_key_exists($field, $data) || $data[$field] === null) {
             return [];
         }
 
@@ -143,7 +143,7 @@ final class ManifestValidator
     private function validateVersion(array $data): array
     {
         $errors = $this->validateRequiredString($data, 'version');
-        if ([] !== $errors) {
+        if ($errors !== []) {
             return $errors;
         }
 
@@ -167,7 +167,7 @@ final class ManifestValidator
             return [new ManifestValidationError('type', 'Field "type" is required.')];
         }
 
-        if (!\is_string($data['type']) || null === PluginType::tryFrom($data['type'])) {
+        if (!\is_string($data['type']) || PluginType::tryFrom($data['type']) === null) {
             $allowed = implode('", "', array_map(static fn (PluginType $case) => $case->value, PluginType::cases()));
 
             return [new ManifestValidationError('type', \sprintf('Field "type" must be one of "%s".', $allowed))];
@@ -252,7 +252,7 @@ final class ManifestValidator
 
         $errors = [];
         foreach ($locales as $index => $locale) {
-            if (!\is_string($locale) || '' === $locale) {
+            if (!\is_string($locale) || $locale === '') {
                 $errors[] = new ManifestValidationError(\sprintf('locales.%d', $index), 'Locale code must be a non-empty string.');
             }
         }
@@ -295,7 +295,7 @@ final class ManifestValidator
             return [new ManifestValidationError($dotPath, \sprintf('Field "%s" is required.', $dotPath))];
         }
 
-        if (!\is_string($require[$key]) || '' === $require[$key]) {
+        if (!\is_string($require[$key]) || $require[$key] === '') {
             return [new ManifestValidationError($dotPath, \sprintf('Field "%s" must be a non-empty string.', $dotPath))];
         }
 
@@ -316,11 +316,11 @@ final class ManifestValidator
      */
     private function validatePluginContractsConstraint(array $require): array
     {
-        if (!array_key_exists('plugin-contracts', $require) || null === $require['plugin-contracts']) {
+        if (!array_key_exists('plugin-contracts', $require) || $require['plugin-contracts'] === null) {
             return [];
         }
 
-        if (!\is_string($require['plugin-contracts']) || '' === $require['plugin-contracts']) {
+        if (!\is_string($require['plugin-contracts']) || $require['plugin-contracts'] === '') {
             return [new ManifestValidationError('require.plugin-contracts', 'Field "require.plugin-contracts" must be a non-empty string.')];
         }
 
@@ -344,7 +344,7 @@ final class ManifestValidator
             return false;
         }
 
-        return $parsed instanceof Constraint && Constraint::STR_OP_GE === $parsed->getOperator();
+        return $parsed instanceof Constraint && $parsed->getOperator() === Constraint::STR_OP_GE;
     }
 
     /**
@@ -354,12 +354,12 @@ final class ManifestValidator
      */
     private function validateUpdateUrl(array $data): array
     {
-        if (!array_key_exists('update_url', $data) || null === $data['update_url']) {
+        if (!array_key_exists('update_url', $data) || $data['update_url'] === null) {
             return [];
         }
 
         if (!\is_string($data['update_url'])
-            || false === filter_var($data['update_url'], \FILTER_VALIDATE_URL)
+            || filter_var($data['update_url'], \FILTER_VALIDATE_URL) === false
             || !\in_array(parse_url($data['update_url'], \PHP_URL_SCHEME), ['http', 'https'], true)
         ) {
             return [new ManifestValidationError('update_url', 'Field "update_url" must be a valid "http" or "https" URL.')];
