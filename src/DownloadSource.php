@@ -51,7 +51,7 @@ final class DownloadSource
      */
     public static function magnet(string $uri): self
     {
-        if (1 !== preg_match('/^magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}(&.*)?$/', $uri)) {
+        if (preg_match('/^magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}(&.*)?$/', $uri) !== 1) {
             throw new \InvalidArgumentException(\sprintf('"%s" is not a valid "magnet:?xt=urn:btih:..." URI.', $uri));
         }
 
@@ -65,7 +65,7 @@ final class DownloadSource
      */
     public static function torrentFile(string $path): self
     {
-        if ('' === $path || '.torrent' !== strtolower(substr($path, -8))) {
+        if ($path === '' || strtolower(substr($path, -8)) !== '.torrent') {
             throw new \InvalidArgumentException(\sprintf('"%s" is not a path to a ".torrent" file.', $path));
         }
 
