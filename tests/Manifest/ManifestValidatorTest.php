@@ -325,7 +325,7 @@ class ManifestValidatorTest extends TestCase
     public function testErrorContainsFieldAndMessage(): void
     {
         $errors = (new ManifestValidator())->validate([]);
-        $idError = array_values(array_filter($errors, static fn ($error) => 'id' === $error->field))[0];
+        $idError = array_values(array_filter($errors, static fn ($error) => $error->field === 'id'))[0];
 
         self::assertSame('id', $idError->field);
         self::assertNotSame('', $idError->message);

@@ -195,7 +195,7 @@ final class NoDangerousPrimitivesRule implements Rule
 
         if (in_array($functionName, self::URL_SCOPED_FUNCTIONS, true)) {
             $args = $node->getArgs();
-            if ([] !== $args && $this->isUrlExpression($args[0]->value, $scope)) {
+            if ($args !== [] && $this->isUrlExpression($args[0]->value, $scope)) {
                 return [
                     RuleErrorBuilder::message(sprintf(
                         'Calling %s() with a URL is forbidden, use the abstraction provided by the host application instead.',
@@ -249,7 +249,7 @@ final class NoDangerousPrimitivesRule implements Rule
         $type = $scope->getType($expr);
 
         foreach ($type->getConstantStrings() as $constantString) {
-            if (1 === preg_match(self::URL_SCHEME_PATTERN, $constantString->getValue())) {
+            if (preg_match(self::URL_SCHEME_PATTERN, $constantString->getValue()) === 1) {
                 return true;
             }
         }
