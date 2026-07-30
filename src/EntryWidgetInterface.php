@@ -38,10 +38,10 @@ namespace AnimeDb\PluginContracts;
  * rigid schema in this contract.
  *
  * The host resolves the external source id via `resolveExternalId()`
- * (inherited from PluginInterface) and passes it into `render()`; the
- * widget never has access to host-internal record ids.
+ * (inherited from IntegrationPluginInterface) and passes it into `render()`;
+ * the widget never has access to host-internal record ids.
  */
-interface EntryWidgetInterface extends PluginInterface
+interface EntryWidgetInterface extends IntegrationPluginInterface
 {
     /**
      * Render the widget for a single catalog record.

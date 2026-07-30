@@ -28,9 +28,10 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
 use AnimeDb\PluginContracts\CatalogWidgetInterface;
+use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\EntryWidgetInterface;
 use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\PluginInterface;
+use AnimeDb\PluginContracts\IntegrationPluginInterface;
 use AnimeDb\PluginContracts\SearchByPluginInterface;
 use AnimeDb\PluginContracts\SyncInterface;
 use PhpParser\Node;
@@ -62,19 +63,20 @@ final class ContractConformanceRule implements Rule
     private const ERROR_IDENTIFIER = 'animedb.contractConformance';
 
     /**
-     * Marker interfaces of the plugin contract. Every one of them, directly
+     * Role interfaces of the plugin contract. Every one of them, directly
      * or through inheritance (e.g. FillerInterface extends
-     * SearchByPluginInterface extends PluginInterface), is checked.
+     * SearchByPluginInterface extends IntegrationPluginInterface), is checked.
      *
      * @var string[]
      */
     private const CONTRACT_INTERFACES = [
-        PluginInterface::class,
+        IntegrationPluginInterface::class,
         FillerInterface::class,
         SearchByPluginInterface::class,
         SyncInterface::class,
         CatalogWidgetInterface::class,
         EntryWidgetInterface::class,
+        DownloadCandidateSearchInterface::class,
     ];
 
     public function __construct(
@@ -115,9 +117,10 @@ final class ContractConformanceRule implements Rule
             foreach ($interfaceReflection->getNativeReflection()->getMethods() as $interfaceMethod) {
                 $methodName = $interfaceMethod->getName();
 
-                // A method inherited through more than one marker interface
-                // (e.g. resolveExternalId() from PluginInterface, reached
-                // both directly and through FillerInterface) is checked once.
+                // A method inherited through more than one role interface
+                // (e.g. resolveExternalId() from IntegrationPluginInterface,
+                // reached both directly and through FillerInterface) is
+                // checked once.
                 if (isset($checkedMethods[$methodName])) {
                     continue;
                 }

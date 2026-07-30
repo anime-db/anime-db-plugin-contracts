@@ -28,22 +28,21 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Contract for plugins that can search/match by title.
+ * A single action offered by the plugin for an {@see AnimeSearchResultItem}
+ * (e.g. "download"), shown to the user and, once picked, passed back to
+ * {@see DownloadCandidateSearchInterface::runAction()} by `id`.
  */
-interface SearchByPluginInterface extends IntegrationPluginInterface
+final class AnimeSearchResultAction
 {
-    /**
-     * Search for candidates matching the given title.
-     *
-     * $onHeartbeat, when given, may be called by the plugin between internal
-     * steps (retries, pagination pages) of a long-running search, so the
-     * caller can refresh a "work in progress" signal (e.g. extend a
-     * background job lock). The plugin is not required to call it, and the
-     * caller is not required to pass it.
-     *
-     * @param callable(): void|null $onHeartbeat
-     *
-     * @return SearchByPluginCandidate[]
-     */
-    public function find(string $name, ?callable $onHeartbeat = null): array;
+    public function __construct(
+        /**
+         * Action id, opaque to the core, interpreted by the plugin that produced it.
+         */
+        public readonly string $id,
+        /**
+         * Human-readable label shown to the user for this action.
+         */
+        public readonly string $label,
+    ) {
+    }
 }

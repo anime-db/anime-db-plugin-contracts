@@ -28,22 +28,11 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Contract for plugins that can search/match by title.
+ * Closed dictionary of kinds of {@see DownloadSource}, one per named constructor.
+ * Grows as {@see DownloadSource} grows new named constructors (e.g. a future `::url()`).
  */
-interface SearchByPluginInterface extends IntegrationPluginInterface
+enum DownloadSourceType: string
 {
-    /**
-     * Search for candidates matching the given title.
-     *
-     * $onHeartbeat, when given, may be called by the plugin between internal
-     * steps (retries, pagination pages) of a long-running search, so the
-     * caller can refresh a "work in progress" signal (e.g. extend a
-     * background job lock). The plugin is not required to call it, and the
-     * caller is not required to pass it.
-     *
-     * @param callable(): void|null $onHeartbeat
-     *
-     * @return SearchByPluginCandidate[]
-     */
-    public function find(string $name, ?callable $onHeartbeat = null): array;
+    case Magnet = 'magnet';
+    case TorrentFile = 'torrent_file';
 }

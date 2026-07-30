@@ -95,6 +95,25 @@ class ManifestParserTest extends TestCase
         self::assertNull($manifest->author);
     }
 
+    public function testParseValidLocalManifest(): void
+    {
+        $json = <<<'JSON'
+            {
+                "id": "vendor-auto-tagger",
+                "name": "Auto Tagger",
+                "version": "1.0.0",
+                "type": "local",
+                "require": {"core": ">=2.0.0", "php": ">=8.2"}
+            }
+            JSON;
+
+        $manifest = (new ManifestParser())->parse($json);
+
+        self::assertSame(PluginType::Local, $manifest->type);
+        self::assertNull($manifest->features);
+        self::assertNull($manifest->locales);
+    }
+
     public function testParseThrowsOnMalformedJson(): void
     {
         $this->expectException(InvalidManifestJsonException::class);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data;
 
+use AnimeDb\PluginContracts\AnimeSearchResult;
+use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\FillerInterface;
 use AnimeDb\PluginContracts\PluginAnimeData;
 use AnimeDb\PluginContracts\SyncInterface;
@@ -133,5 +135,22 @@ abstract class AbstractSyncPlugin implements SyncInterface
     public function resolveExternalId(array $urls): ?string
     {
         return null;
+    }
+}
+
+class ConformingDownloadCandidateSearchPlugin implements DownloadCandidateSearchInterface
+{
+    public function resolveExternalId(array $urls): ?string
+    {
+        return null;
+    }
+
+    public function search(string $query): AnimeSearchResult
+    {
+        return new AnimeSearchResult([]);
+    }
+
+    public function runAction(string $actionId, string $meta): void
+    {
     }
 }

@@ -28,22 +28,21 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Contract for plugins that can search/match by title.
+ * Dispatched by the core when a task queued through {@see DownloadServiceInterface::enqueue()}
+ * finishes.
+ *
+ * A plain event object, not tied to any particular Symfony event base class — the
+ * event dispatcher only needs the class name to route it to subscribers. A plugin
+ * subscribes to it with a regular Symfony `EventSubscriberInterface`, matches
+ * {@see self::$task} against the {@see DownloadTaskId} it persisted when it called
+ * `enqueue()`, and reacts only if it recognizes the task as its own — e.g. by moving
+ * heavy card-filling work off into its own background job.
  */
-interface SearchByPluginInterface extends IntegrationPluginInterface
+final class DownloadCompletedEvent
 {
-    /**
-     * Search for candidates matching the given title.
-     *
-     * $onHeartbeat, when given, may be called by the plugin between internal
-     * steps (retries, pagination pages) of a long-running search, so the
-     * caller can refresh a "work in progress" signal (e.g. extend a
-     * background job lock). The plugin is not required to call it, and the
-     * caller is not required to pass it.
-     *
-     * @param callable(): void|null $onHeartbeat
-     *
-     * @return SearchByPluginCandidate[]
-     */
-    public function find(string $name, ?callable $onHeartbeat = null): array;
+    public function __construct(
+        public readonly AnimeId $anime,
+        public readonly DownloadTaskId $task,
+    ) {
+    }
 }

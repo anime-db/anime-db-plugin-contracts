@@ -28,25 +28,19 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Base interface for all plugins.
+ * Core-provided service for queuing a download, neutral with respect to whichever
+ * download manager/backend the host application actually uses.
  *
- * Common ancestor for all specialized plugin interfaces (Filler, Widget,
- * Search, Sync). Also acts as a marker/tag interface for a plugin registry:
- * a way to list all installed plugins regardless of which other interfaces
- * they implement.
+ * A plugin never touches the download manager or its queue directly — it only asks
+ * for a task to be queued and gets back a {@see DownloadTaskId} to remember. Once the
+ * download finishes, the core dispatches a {@see DownloadCompletedEvent} the plugin can
+ * subscribe to (via a regular Symfony `EventSubscriberInterface`) to match against ids
+ * it persisted earlier and react, e.g. by filling in the card from the downloaded files.
  */
-interface PluginInterface
+interface DownloadServiceInterface
 {
     /**
-     * Resolve this plugin's external id from a list of catalog record URLs.
-     *
-     * The plugin receives all external source URLs already attached to a
-     * catalog record, parses them against its own vendor URL pattern, and
-     * returns the id it recognizes, or null if none of the URLs belong to it.
-     *
-     * @param string[] $urls list of external source URLs already attached to the catalog record
-     *
-     * @return string|null external id resolved by this plugin from the URLs, or null if none matched
+     * Queue a download task for the given source, attached to the given anime.
      */
-    public function resolveExternalId(array $urls): ?string;
+    public function enqueue(DownloadSource $source, AnimeId $anime): DownloadTaskId;
 }

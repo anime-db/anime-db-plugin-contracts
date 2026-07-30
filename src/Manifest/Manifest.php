@@ -34,6 +34,7 @@ namespace AnimeDb\PluginContracts\Manifest;
  * Built by {@see ManifestParser} from already-validated data (see {@see ManifestValidator}) —
  * consumers should never work with the raw decoded JSON array directly. `features` is only
  * meaningful for {@see PluginType::Integration}, `locales` only for {@see PluginType::Translation}.
+ * {@see PluginType::Local} declares neither.
  */
 final class Manifest
 {

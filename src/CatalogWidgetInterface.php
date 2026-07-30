@@ -39,10 +39,10 @@ namespace AnimeDb\PluginContracts;
  * rigid schema in this contract.
  *
  * A widget that needs its own external source id (to call its own API) can
- * use `resolveExternalId()` inherited from PluginInterface: the caller
- * resolves and caches the id on its side before calling `render()`.
+ * use `resolveExternalId()` inherited from IntegrationPluginInterface: the
+ * caller resolves and caches the id on its side before calling `render()`.
  */
-interface CatalogWidgetInterface extends PluginInterface
+interface CatalogWidgetInterface extends IntegrationPluginInterface
 {
     /**
      * Render the widget without any single-record context.
