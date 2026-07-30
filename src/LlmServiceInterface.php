@@ -48,6 +48,8 @@ interface LlmServiceInterface
      * Run the local LLM on the given prompt and decode its JSON response.
      *
      * @return array<string, mixed> JSON decoded from the model's response
+     *
+     * @throws \JsonException if the model's response cannot be decoded as valid JSON
      */
     public function parse(string $prompt): array;
 }
