@@ -55,7 +55,7 @@ final class ManifestParser
         $data = $this->decode($json);
 
         $errors = $this->validator->validate($data);
-        if ([] !== $errors) {
+        if ($errors !== []) {
             throw new InvalidManifestException($errors);
         }
 
@@ -81,7 +81,7 @@ final class ManifestParser
             throw new InvalidManifestJsonException('manifest.json is not valid JSON: '.$exception->getMessage(), previous: $exception);
         }
 
-        if (!\is_array($data) || ([] !== $data && array_is_list($data))) {
+        if (!\is_array($data) || ($data !== [] && array_is_list($data))) {
             throw new InvalidManifestJsonException('manifest.json must contain a JSON object at the top level.');
         }
 
@@ -108,8 +108,8 @@ final class ManifestParser
             ),
             description: $data['description'] ?? null,
             author: $data['author'] ?? null,
-            features: PluginType::Integration === $type ? $data['features'] : null,
-            locales: PluginType::Translation === $type ? $data['locales'] : null,
+            features: $type === PluginType::Integration ? $data['features'] : null,
+            locales: $type === PluginType::Translation ? $data['locales'] : null,
             updateUrl: $data['update_url'] ?? null,
         );
     }
