@@ -69,6 +69,23 @@ class ManifestValidatorTest extends TestCase
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function validLocalManifest(): array
+    {
+        return [
+            'id' => 'vendor-auto-tagger',
+            'name' => 'Auto Tagger',
+            'version' => '1.0.0',
+            'type' => 'local',
+            'require' => [
+                'core' => '>=2.0.0',
+                'php' => '>=8.2',
+            ],
+        ];
+    }
+
     public function testValidIntegrationManifestHasNoErrors(): void
     {
         $errors = (new ManifestValidator())->validate($this->validIntegrationManifest());
@@ -81,6 +98,33 @@ class ManifestValidatorTest extends TestCase
         $errors = (new ManifestValidator())->validate($this->validTranslationManifest());
 
         self::assertSame([], $errors);
+    }
+
+    public function testValidLocalManifestHasNoErrors(): void
+    {
+        $errors = (new ManifestValidator())->validate($this->validLocalManifest());
+
+        self::assertSame([], $errors);
+    }
+
+    public function testFeaturesIsNotAllowedForLocalType(): void
+    {
+        $data = $this->validLocalManifest();
+        $data['features'] = ['filler' => true];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('features', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testLocalesIsNotAllowedForLocalType(): void
+    {
+        $data = $this->validLocalManifest();
+        $data['locales'] = ['ru'];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('locales', array_map(static fn ($error) => $error->field, $errors));
     }
 
     public function testMissingRequiredFieldsAreReported(): void

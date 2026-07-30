@@ -28,22 +28,19 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Contract for plugins that can search/match by title.
+ * Core-provided service for queuing a download, neutral with respect to whichever
+ * download manager/backend the host application actually uses.
+ *
+ * A plugin never touches the download manager or its queue directly — it only asks
+ * for a task to be queued and gets back a {@see DownloadTaskId} to remember. Once the
+ * download finishes, the core dispatches a {@see DownloadCompletedEvent} the plugin can
+ * subscribe to (via a regular Symfony `EventSubscriberInterface`) to match against ids
+ * it persisted earlier and react, e.g. by filling in the card from the downloaded files.
  */
-interface SearchByPluginInterface extends ExternalIdResolutionInterface
+interface DownloadServiceInterface
 {
     /**
-     * Search for candidates matching the given title.
-     *
-     * $onHeartbeat, when given, may be called by the plugin between internal
-     * steps (retries, pagination pages) of a long-running search, so the
-     * caller can refresh a "work in progress" signal (e.g. extend a
-     * background job lock). The plugin is not required to call it, and the
-     * caller is not required to pass it.
-     *
-     * @param callable(): void|null $onHeartbeat
-     *
-     * @return SearchByPluginCandidate[]
+     * Queue a download task for the given source, attached to the given anime.
      */
-    public function find(string $name, ?callable $onHeartbeat = null): array;
+    public function enqueue(DownloadSource $source, AnimeId $anime): DownloadTaskId;
 }

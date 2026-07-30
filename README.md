@@ -12,9 +12,8 @@
 composer require anime-db/plugin-contracts
 ```
 
-Пакет пока не опубликован на Packagist и лежит в приватном репозитории —
-до публикации добавьте в свой `composer.json` VCS-репозиторий и настройте
-аутентификацию Composer для приватного GitHub-репозитория:
+Пакет пока не опубликован на Packagist — до публикации добавьте в свой
+`composer.json` VCS-репозиторий:
 
 ```json
 {
@@ -29,16 +28,29 @@ composer require anime-db/plugin-contracts
 
 ## Интерфейсы
 
-### `PluginInterface`
+### `ExternalIdResolutionInterface`
 
-Общий предок всех остальных интерфейсов контракта. Единственный метод —
-`resolveExternalId()` — нужен любому типу плагина одинаково, а заодно
-служит общим маркером/тегом для реестра плагинов.
+Способность резолвить собственный внешний id плагина. Единственный метод —
+`resolveExternalId()` — нужен интерфейсам, которым требуется эта способность:
+`SearchByPluginInterface`, `SyncInterface`, `EntryWidgetInterface`,
+`CatalogWidgetInterface` и транзитивно `FillerInterface`. Интерфейс называет
+способность, а не категорию плагина — по этой же причине его **не**
+реализует `DownloadCandidateSearchInterface`: `search()` принимает
+свободный текстовый запрос, а не список ссылок, а идентичность кандидата
+несёт `AnimeSearchResultItem::$externalId`.
+
+Это **не** общий предок всех плагинов: плагин, который реагирует на события
+каталога и не обращается ни к какому внешнему источнику (`type: local` в
+манифесте), не реализует этот интерфейс — `resolveExternalId()` ему не нужен.
+Категория «интеграция» живёт только в манифестном `type`
+(`integration`/`translation`/`local`), кодового маркера-категории нет.
+Перечисление установленных плагинов делается из манифестов, а не из
+маркер-интерфейса.
 
 ```php
-use AnimeDb\PluginContracts\PluginInterface;
+use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 
-class MySourcePlugin implements PluginInterface
+class MySourcePlugin implements ExternalIdResolutionInterface
 {
     public function resolveExternalId(array $urls): ?string
     {
@@ -71,7 +83,7 @@ use AnimeDb\PluginContracts\SearchByPluginInterface;
 class MySourcePlugin implements SearchByPluginInterface
 {
     // Собственный, известный только этому плагину id — из его manifest.json,
-    // не из контракта: PluginInterface такого метода не предоставляет.
+    // не из контракта: ExternalIdResolutionInterface такого метода не предоставляет.
     private const ID = 'my-vendor-my-source';
 
     public function resolveExternalId(array $urls): ?string
@@ -277,9 +289,199 @@ HTML-строка, не структурированные данные: это 
 
 Виджет на странице записи живёт в пространстве внешнего источника, а не
 локальной БД хоста: `resolveExternalId()`, унаследованный от
-`PluginInterface`, резолвится хостом заранее, и результат передаётся в
-`EntryWidgetInterface::render()` как `?string $externalId` — `null`,
-если запись не сопоставлена с источником плагина.
+`ExternalIdResolutionInterface`, резолвится хостом заранее, и результат
+передаётся в `EntryWidgetInterface::render()` как `?string $externalId` —
+`null`, если запись не сопоставлена с источником плагина.
+
+### `LlmServiceInterface`
+
+Сервис ядра, дающий плагину доступ к локальной LLM. Мотив: некоторые
+источники отдают метаданные свободным человеческим текстом (например,
+описание релиза на форуме, где каждый автор пишет как хочет), и парсер
+такого текста в структурированные данные должен жить в ядре одним
+экземпляром, а не дублироваться в каждом плагине.
+
+```php
+use AnimeDb\PluginContracts\LlmServiceInterface;
+
+class MyForumFillerPlugin
+{
+    public function __construct(
+        private readonly LlmServiceInterface $llm,
+    ) {
+    }
+
+    private function parseReleasePost(string $rawText): array
+    {
+        $prompt = "Верни JSON с полями title, episodesCount, genres. Текст поста:\n".$rawText;
+
+        return $this->llm->parse($prompt);
+    }
+}
+```
+
+Плагин сам формирует промпт (в том числе явно просит вернуть JSON), ядро
+прогоняет локальную модель, дополнительно подкрепляет JSON-режим своим
+системным промптом и декодит ответ в ассоциативный массив. Плагин получает
+сервис через DI по тому же принципу, что и PSR-18 HTTP-клиент (см. ниже):
+type-hint интерфейса в конструкторе — реализация целиком на стороне
+хост-приложения. Плагин, которому нужен этот сервис, декларирует это в
+`manifest.json` флагом `features.llm` (см. раздел «Манифест плагина»).
+
+### `DownloadCandidateSearchInterface`
+
+Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
+источнику — отдельная функция от `SearchByPluginInterface`. Разница:
+`SearchByPluginInterface` — лёгкое распознавание тайтла при сканировании
+тысяч папок (`SearchByPluginCandidate`: id плагина + название + внешний
+id). `DownloadCandidateSearchInterface` — по явному запросу пользователя,
+возвращает богатые элементы для показа в UI и постановки действий над
+ними (в т.ч. «скачать»).
+
+```php
+use AnimeDb\PluginContracts\AnimeId;
+use AnimeDb\PluginContracts\AnimeSearchResult;
+use AnimeDb\PluginContracts\AnimeSearchResultAction;
+use AnimeDb\PluginContracts\AnimeSearchResultItem;
+use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\DownloadServiceInterface;
+use AnimeDb\PluginContracts\DownloadSource;
+
+class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
+{
+    public function __construct(
+        private readonly DownloadServiceInterface $downloads,
+    ) {
+    }
+
+    public function search(string $query): AnimeSearchResult
+    {
+        $items = [];
+
+        foreach ($this->fetchResults($query) as $candidate) {
+            $items[] = new AnimeSearchResultItem(
+                title: $candidate->title,
+                externalId: $candidate->id, // сводит кандидата к записи каталога
+                image: $candidate->coverBase64, // плагин сам фетчит и уменьшает превью
+                fields: ['quality' => $candidate->quality, 'size' => $candidate->size],
+                actions: [new AnimeSearchResultAction('download', 'Скачать')],
+                meta: $candidate->source, // непрозрачно для ядра, вернётся как есть в runAction()
+            );
+        }
+
+        return new AnimeSearchResult($items);
+    }
+
+    public function runAction(string $actionId, string $meta, AnimeId $anime): void
+    {
+        if ($actionId === 'download') {
+            $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
+        }
+    }
+}
+```
+
+#### `AnimeSearchResult` / `AnimeSearchResultItem` / `AnimeSearchResultAction`
+
+Нейтральные, аниме-типизированные DTO без семантики конкретного источника:
+
+- `AnimeSearchResult::$items` — список `AnimeSearchResultItem`.
+- `AnimeSearchResultItem` — `title`, `externalId` (id кандидата на
+  источнике, по которому кандидат сводится к записи каталога — новой или
+  уже существующей; если у источника нет канонического id, крайний
+  фолбэк — стабильный хеш от magnet/торрент-файла), `image`
+  (превью-обложка в base64 или `null`, плагин фетчит и уменьшает её сам —
+  клиент не ходит во внешнюю сеть напрямую), `fields` (произвольные
+  визуализируемые доп. поля, `label => value`), `actions` (список
+  `AnimeSearchResultAction`), `meta` (непрозрачная для ядра строка,
+  специфичная для плагина).
+- `AnimeSearchResultAction` — `id` действия и `label` для показа
+  пользователю.
+
+`meta` ядро не интерпретирует — только переносит и возвращает плагину
+как есть при вызове `runAction()`. Всё специфичное для источника (как
+понимать `fields`, что делает конкретное действие) — на стороне плагина.
+
+**Про защиту `meta`:** DTO уходит на клиента (в т.ч. мобильного) и
+возвращается обратно при `runAction()`. Ядро оборачивает `meta` в
+подписанный конверт (HMAC на секрете приложения) на отдаче и верифицирует
+на возврате — защита от подмены на клиенте. Это ответственность
+хост-приложения; на уровне контракта `meta` — просто строка.
+
+### `DownloadServiceInterface`
+
+Сервис ядра для постановки задачи на скачивание. Плагин не работает с
+менеджером загрузок и очередью напрямую — только просит поставить задачу
+и получает `DownloadTaskId`, который сохраняет в свой срез метаданных
+аниме (закачка идёт долго, и `DownloadCompletedEvent` может прийти уже
+после перезапуска приложения, поэтому хранить id только в памяти нельзя).
+
+```php
+use AnimeDb\PluginContracts\AnimeId;
+use AnimeDb\PluginContracts\DownloadCompletedEvent;
+use AnimeDb\PluginContracts\DownloadServiceInterface;
+use AnimeDb\PluginContracts\DownloadSource;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class ExampleDownloadPlugin implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly DownloadServiceInterface $downloads,
+    ) {
+    }
+
+    public function startDownload(string $magnetUri, AnimeId $anime): void
+    {
+        $taskId = $this->downloads->enqueue(DownloadSource::magnet($magnetUri), $anime);
+
+        // сохранить $taskId в собственный срез метаданных $anime
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [DownloadCompletedEvent::class => 'onDownloadCompleted'];
+    }
+
+    public function onDownloadCompleted(DownloadCompletedEvent $event): void
+    {
+        // сопоставить $event->task с сохранённым ранее id;
+        // если совпало — обогатить карточку из скачанных файлов
+        // (тяжёлую работу увести в свою фоновую задачу)
+    }
+}
+```
+
+#### `DownloadSource`
+
+Именованные конструкторы с самовалидацией — они же документируют, что
+вообще поддерживается:
+
+- `DownloadSource::magnet(string $uri): self` — валидирует форму
+  `magnet:?xt=urn:btih:...`.
+- `DownloadSource::torrentFile(string $path): self` — валидирует, что
+  путь оканчивается на `.torrent`.
+
+Обе выбрасывают `\InvalidArgumentException` при некорректном значении.
+Набор расширяемый — например, `::url()` в будущем — без изменения уже
+написанных плагинов.
+
+#### `AnimeId` / `DownloadTaskId` / `DownloadCompletedEvent`
+
+`AnimeId` — id записи каталога, `DownloadTaskId` — id поставленной
+задачи, возвращаемый `enqueue()`. `DownloadCompletedEvent` — событие
+завершения закачки (`$anime`, `$task`), на которое плагин подписывается
+штатным Symfony `EventSubscriberInterface`: это обычный класс, без
+привязки к базовому классу события Symfony — диспетчеру достаточно имени
+класса, чтобы разослать событие подписчикам.
+
+### PSR-18 HTTP-клиент
+
+Плагины не создают HTTP-клиент сами — получают **преднастроенный**
+PSR-18 `Psr\Http\Client\ClientInterface` через DI (type-hint в
+конструкторе). Это позволяет включать прокси централизованно, в фабрике
+клиента на стороне хост-приложения, прозрачно для плагинов. Отдельного
+интерфейса в этом пакете для этого не заводится — соглашение, не
+контрактный тип.
 
 ## Закрытые словари (enum'ы)
 
@@ -308,7 +510,7 @@ CI реестра маркета (перед приёмом плагина в с
     "description": "Описание плагина",
     "author": "Vendor Name",
     "type": "integration",
-    "features": {"filler": true, "related_widget": true, "sync": true},
+    "features": {"filler": true, "related_widget": true, "sync": true, "llm": true},
     "require": {
         "core": ">=2.0.0",
         "php": ">=8.2",
@@ -356,10 +558,17 @@ $errors = (new ManifestValidator())->validate($data);
 ```
 
 Обязательные поля манифеста — `id`, `name`, `version`, `type`. `type` —
-закрытый словарь (`PluginType::Integration` или `PluginType::Translation`):
-обычный код-плагин объявляет `features` (плоский набор булевых флагов),
-чисто декларативный ресурс переводов — `locales` (список кодов локалей)
-вместо `features`.
+закрытый словарь (`PluginType::Integration`, `PluginType::Translation` или
+`PluginType::Local`): обычный код-плагин, интегрирующийся с внешним
+источником, объявляет `features` (плоский набор булевых флагов); чисто
+декларативный ресурс переводов — `locales` (список кодов локалей) вместо
+`features`; код-плагин `local`, реагирующий на события каталога и не
+ходящий в сеть (реализует Symfony `EventSubscriberInterface`, не
+`ExternalIdResolutionInterface`), не объявляет ни `features`, ни `locales`.
+
+Пакет не проверяет конкретные ключи `features` (кроме того, что значения —
+булевы) — это открытый набор флагов по соглашению между плагином и хостом.
+Флаг `llm: true` — плагин декларирует, что ему нужен `LlmServiceInterface`.
 
 `require.core` и `require.php` — только нижняя граница версии (`>=X.Y.Z`,
 без верхней границы: верхнюю границу совместимости определяет отдельный
@@ -414,11 +623,11 @@ includes:
 
 ### `ContractConformanceRule`
 
-Проверяет, что классы, объявляющие реализацию `PluginInterface` (и всех
-интерфейсов, которые его расширяют: `FillerInterface`,
+Проверяет, что классы, объявляющие реализацию `ExternalIdResolutionInterface`
+(и всех интерфейсов, которые его расширяют: `FillerInterface`,
 `SearchByPluginInterface`, `SyncInterface`, `CatalogWidgetInterface`,
-`EntryWidgetInterface`), имеют сигнатуры методов, точно совпадающие с
-сигнатурами из установленной версии этого пакета. Ловит рассинхронизацию
-между версией контракта, под которую написан плагин, и версией, реально
-установленной у потребителя — то, что одна успешная компиляция
-DI-контейнера может не заметить.
+`EntryWidgetInterface`) или `DownloadCandidateSearchInterface`, имеют
+сигнатуры методов, точно совпадающие с сигнатурами из установленной
+версии этого пакета. Ловит рассинхронизацию между версией контракта, под
+которую написан плагин, и версией, реально установленной у потребителя —
+то, что одна успешная компиляция DI-контейнера может не заметить.

@@ -28,14 +28,20 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Base interface for all plugins.
+ * Capability of resolving this plugin's own external source id.
  *
- * Common ancestor for all specialized plugin interfaces (Filler, Widget,
- * Search, Sync). Also acts as a marker/tag interface for a plugin registry:
- * a way to list all installed plugins regardless of which other interfaces
- * they implement.
+ * Extended by every role interface that needs this capability
+ * (SearchByPluginInterface, SyncInterface, EntryWidgetInterface,
+ * CatalogWidgetInterface, and transitively FillerInterface).
+ * Not a common ancestor of all plugins, and not implemented by
+ * {@see DownloadCandidateSearchInterface}, whose search() takes a free-text
+ * query rather than a list of urls and whose candidates carry their own
+ * identity via {@see AnimeSearchResultItem::$externalId}. A plugin that
+ * reacts to catalog events without talking to an external source (manifest
+ * `type: local`) has no use for resolveExternalId() either. Listing
+ * installed plugins is done from manifests, not from a marker interface.
  */
-interface PluginInterface
+interface ExternalIdResolutionInterface
 {
     /**
      * Resolve this plugin's external id from a list of catalog record URLs.

@@ -184,20 +184,26 @@ final class ManifestValidator
     private function validateFeaturesOrLocales(array $data, PluginType $type): array
     {
         $errors = [];
-        $unexpectedField = $type === PluginType::Integration ? 'locales' : 'features';
+        $unexpectedFields = match ($type) {
+            PluginType::Integration => ['locales'],
+            PluginType::Translation => ['features'],
+            PluginType::Local => ['features', 'locales'],
+        };
 
-        if (array_key_exists($unexpectedField, $data)) {
-            $errors[] = new ManifestValidationError(
-                $unexpectedField,
-                \sprintf('Field "%s" is not allowed for type "%s".', $unexpectedField, $type->value),
-            );
+        foreach ($unexpectedFields as $unexpectedField) {
+            if (array_key_exists($unexpectedField, $data)) {
+                $errors[] = new ManifestValidationError(
+                    $unexpectedField,
+                    \sprintf('Field "%s" is not allowed for type "%s".', $unexpectedField, $type->value),
+                );
+            }
         }
 
-        if ($type === PluginType::Integration) {
-            $errors = [...$errors, ...$this->validateFeatures($data)];
-        } else {
-            $errors = [...$errors, ...$this->validateLocales($data)];
-        }
+        $errors = match ($type) {
+            PluginType::Integration => [...$errors, ...$this->validateFeatures($data)],
+            PluginType::Translation => [...$errors, ...$this->validateLocales($data)],
+            PluginType::Local => $errors,
+        };
 
         return $errors;
     }

@@ -26,16 +26,28 @@ Entry point for Claude Code agents working in this repository.
 ```
 anime-db-plugin-contracts/
 ├── src/
-│   ├── PluginInterface.php            # базовый интерфейс всех плагинов
-│   ├── FillerInterface.php            # заполнение карточки (extends SearchByPluginInterface)
-│   ├── WidgetInterface.php            # виджеты (два под-интерфейса под контекст размещения)
-│   ├── SyncInterface.php              # синхронизация пользовательских списков
-│   ├── SearchByPluginInterface.php    # поиск/сопоставление по названию
-│   ├── SearchByPluginCandidate.php    # DTO кандидата поиска
-│   ├── PluginAnimeData.php            # DTO заполненных данных тайтла (не сущность хоста)
-│   ├── SyncItem.php                   # DTO элемента списка синхронизации
-│   └── Manifest/                      # парсинг и валидация manifest.json плагина
-├── phpstan/                           # правила статического анализа контракта
+│   ├── ExternalIdResolutionInterface.php   # способность резолвить внешний id (не общий предок всех плагинов)
+│   ├── FillerInterface.php                 # заполнение карточки (extends SearchByPluginInterface)
+│   ├── EntryWidgetInterface.php            # виджет на странице записи
+│   ├── CatalogWidgetInterface.php          # виджет на общей странице каталога
+│   ├── SyncInterface.php                   # синхронизация пользовательских списков
+│   ├── SearchByPluginInterface.php         # лёгкое распознавание тайтла при сканировании
+│   ├── SearchByPluginCandidate.php         # DTO кандидата распознавания
+│   ├── DownloadCandidateSearchInterface.php # интерактивный пользовательский поиск скачиваемых кандидатов
+│   ├── AnimeSearchResult.php               # DTO результата DownloadCandidateSearchInterface::search()
+│   ├── AnimeSearchResultItem.php           # DTO элемента результата поиска
+│   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
+│   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
+│   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
+│   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
+│   ├── DownloadSourceType.php              # закрытый словарь видов DownloadSource
+│   ├── AnimeId.php                         # VO id записи каталога
+│   ├── DownloadTaskId.php                  # VO id поставленной задачи закачки
+│   ├── DownloadCompletedEvent.php          # событие завершения закачки
+│   ├── PluginAnimeData.php                 # DTO заполненных данных тайтла (не сущность хоста)
+│   ├── SyncItem.php                        # DTO элемента списка синхронизации
+│   └── Manifest/                           # парсинг и валидация manifest.json плагина
+├── phpstan/                                # правила статического анализа контракта
 ├── composer.json
 └── LICENSE
 ```
@@ -46,13 +58,34 @@ anime-db-plugin-contracts/
   не ссылается на ORM-сущности, схему БД или внутреннее устройство
   конкретного хост-приложения. Всё, что плагин отдаёт/принимает — плоские
   DTO этого же пакета (`PluginAnimeData`, `SyncItem`,
-  `SearchByPluginCandidate`). Маппинг DTO во внутреннее представление —
-  ответственность хост-приложения, не этого пакета.
-- **`PluginInterface` — общий предок для всех интерфейсов.** Единственный
-  обязательный метод — `resolveExternalId(array $urls): ?string`
+  `SearchByPluginCandidate`, `AnimeSearchResult`/`AnimeSearchResultItem`).
+  Маппинг DTO во внутреннее представление — ответственность
+  хост-приложения, не этого пакета.
+- **`ExternalIdResolutionInterface` называет способность, а не категорию
+  плагина.** Единственный метод — `resolveExternalId(array $urls): ?string`
   (плагин определяет свой внешний id по списку уже известных ссылок на
-  источники). Остальные интерфейсы (`FillerInterface`/`WidgetInterface`/
-  `SyncInterface`/`SearchByPluginInterface`) наследуют его.
+  источники). Его наследуют интерфейсы, которым нужна эта способность
+  (`FillerInterface`/`SearchByPluginInterface`/`SyncInterface`/
+  `EntryWidgetInterface`/`CatalogWidgetInterface`) — по ISP. Не наследует
+  `DownloadCandidateSearchInterface`: его `search()` принимает свободный
+  текстовый запрос, а не список ссылок, а идентичность кандидата несёт
+  `AnimeSearchResultItem::$externalId`. Плагин с манифестным `type: local`
+  (реагирует на события каталога, реализует Symfony
+  `EventSubscriberInterface`, в сеть не ходит) его тоже не реализует —
+  принцип на будущее: каждый тип плагина получает свой role-named
+  интерфейс по нужным ему способностям, нет универсальной базы, к которой
+  прирастают неуниверсальные допущения. Категория «интеграция» живёт
+  только в манифестном `type` (`integration`/`translation`/`local`),
+  кодового маркера-категории нет. Перечисление установленных плагинов —
+  из манифестов, не из маркер-интерфейса.
+- **Сервисы, которые ядро даёт плагинам, тоже часть контракта.**
+  `LlmServiceInterface` (доступ к локальной LLM) и
+  `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
+  VO `DownloadSource`/`AnimeId`/`DownloadTaskId` и событием
+  `DownloadCompletedEvent`) — интерфейсы, которые реализует
+  хост-приложение, а получает плагин через DI (как и преднастроенный
+  PSR-18 HTTP-клиент — тот случай, когда отдельный интерфейс в пакете не
+  нужен, достаточно type-hint на `Psr\Http\Client\ClientInterface`).
 - **Направление зависимости — только в одну сторону.** И хост-приложение,
   и любой плагин зависят от этого пакета. Этот пакет не зависит ни от
   хост-приложения, ни от какого-либо конкретного плагина.
@@ -84,5 +117,7 @@ anime-db-plugin-contracts/
 - Не добавлять зависимость на хост-приложение или на конкретную ORM —
   ломает независимость контракта
 - Не смешивать в одном интерфейсе логику разных фич (filler/widget/
-  sync/search) — у каждой фичи свой отдельный интерфейс, общее у них
-  только `PluginInterface`
+  sync/search) — у каждой фичи свой отдельный интерфейс; общая
+  способность резолвить внешний id вынесена в отдельный
+  `ExternalIdResolutionInterface`, и то не у всех типов плагинов (у
+  `local` и у `DownloadCandidateSearchInterface` — нет и его)

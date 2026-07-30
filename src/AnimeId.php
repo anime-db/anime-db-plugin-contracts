@@ -28,22 +28,17 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 /**
- * Contract for plugins that can search/match by title.
+ * Identifier of a catalog anime entry, as known to the host application.
+ *
+ * A thin value object rather than a plain int: {@see DownloadServiceInterface::enqueue()}
+ * and {@see DownloadCompletedEvent} both carry it, and a typed wrapper keeps it from
+ * being confused with any other numeric id crossing the contract (e.g. a
+ * {@see DownloadTaskId}).
  */
-interface SearchByPluginInterface extends ExternalIdResolutionInterface
+final class AnimeId
 {
-    /**
-     * Search for candidates matching the given title.
-     *
-     * $onHeartbeat, when given, may be called by the plugin between internal
-     * steps (retries, pagination pages) of a long-running search, so the
-     * caller can refresh a "work in progress" signal (e.g. extend a
-     * background job lock). The plugin is not required to call it, and the
-     * caller is not required to pass it.
-     *
-     * @param callable(): void|null $onHeartbeat
-     *
-     * @return SearchByPluginCandidate[]
-     */
-    public function find(string $name, ?callable $onHeartbeat = null): array;
+    public function __construct(
+        public readonly int $value,
+    ) {
+    }
 }
