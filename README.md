@@ -374,7 +374,7 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
 
     public function runAction(string $actionId, string $meta): void
     {
-        if ('download' === $actionId) {
+        if ($actionId === 'download') {
             $this->downloads->enqueue(DownloadSource::magnet($meta), /* ... */);
         }
     }
