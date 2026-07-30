@@ -30,8 +30,8 @@ namespace AnimeDb\PluginContracts\PHPStan\Rules;
 use AnimeDb\PluginContracts\CatalogWidgetInterface;
 use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\EntryWidgetInterface;
+use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\IntegrationPluginInterface;
 use AnimeDb\PluginContracts\SearchByPluginInterface;
 use AnimeDb\PluginContracts\SyncInterface;
 use PhpParser\Node;
@@ -65,12 +65,12 @@ final class ContractConformanceRule implements Rule
     /**
      * Role interfaces of the plugin contract. Every one of them, directly
      * or through inheritance (e.g. FillerInterface extends
-     * SearchByPluginInterface extends IntegrationPluginInterface), is checked.
+     * SearchByPluginInterface extends ExternalIdResolutionInterface), is checked.
      *
      * @var string[]
      */
     private const CONTRACT_INTERFACES = [
-        IntegrationPluginInterface::class,
+        ExternalIdResolutionInterface::class,
         FillerInterface::class,
         SearchByPluginInterface::class,
         SyncInterface::class,
@@ -118,7 +118,7 @@ final class ContractConformanceRule implements Rule
                 $methodName = $interfaceMethod->getName();
 
                 // A method inherited through more than one role interface
-                // (e.g. resolveExternalId() from IntegrationPluginInterface,
+                // (e.g. resolveExternalId() from ExternalIdResolutionInterface,
                 // reached both directly and through FillerInterface) is
                 // checked once.
                 if (isset($checkedMethods[$methodName])) {

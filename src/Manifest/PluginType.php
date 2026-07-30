@@ -34,7 +34,7 @@ namespace AnimeDb\PluginContracts\Manifest;
  * features). `Translation` is a purely declarative resource with no code — a set of
  * locale files — and declares `locales` instead of `features`. `Local` is a code plugin
  * that reacts to catalog events and does not talk to an external source (e.g. it does
- * not implement `IntegrationPluginInterface`, so `resolveExternalId()` is not meaningful
+ * not implement `ExternalIdResolutionInterface`, so `resolveExternalId()` is not meaningful
  * for it); it declares neither `features` nor `locales`.
  */
 enum PluginType: string

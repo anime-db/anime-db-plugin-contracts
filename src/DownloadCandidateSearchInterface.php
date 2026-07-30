@@ -39,8 +39,12 @@ namespace AnimeDb\PluginContracts;
  *
  * Source-specific implementations of this interface live in their own plugins;
  * this package only defines the interface and its DTOs.
+ *
+ * Not an {@see ExternalIdResolutionInterface}: search() takes a free-text query
+ * rather than a list of urls, and a candidate's identity is carried by
+ * {@see AnimeSearchResultItem::$externalId} instead.
  */
-interface DownloadCandidateSearchInterface extends IntegrationPluginInterface
+interface DownloadCandidateSearchInterface
 {
     /**
      * Search the external source for the given free-text query.
@@ -54,6 +58,11 @@ interface DownloadCandidateSearchInterface extends IntegrationPluginInterface
      * item's `meta` when it was returned from {@see self::search()}, round-tripped
      * through the client unmodified. The plugin alone knows how to interpret
      * $actionId together with $meta.
+     *
+     * $anime is the catalog record this download is attached to, resolved by the
+     * core from the calling context or, if none existed yet, created from the
+     * item's {@see AnimeSearchResultItem::$externalId} — the plugin passes it
+     * straight through to {@see DownloadServiceInterface::enqueue()}.
      */
-    public function runAction(string $actionId, string $meta): void;
+    public function runAction(string $actionId, string $meta, AnimeId $anime): void;
 }

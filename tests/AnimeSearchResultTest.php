@@ -39,6 +39,7 @@ class AnimeSearchResultTest extends TestCase
         $action = new AnimeSearchResultAction('download', 'Download');
         $item = new AnimeSearchResultItem(
             title: 'Cowboy Bebop',
+            externalId: 'external-42',
             image: 'base64-cover-data',
             fields: ['seeders' => '42', 'size' => '4.1 GB'],
             actions: [$action],
@@ -46,6 +47,7 @@ class AnimeSearchResultTest extends TestCase
         );
 
         self::assertSame('Cowboy Bebop', $item->title);
+        self::assertSame('external-42', $item->externalId);
         self::assertSame('base64-cover-data', $item->image);
         self::assertSame(['seeders' => '42', 'size' => '4.1 GB'], $item->fields);
         self::assertSame([$action], $item->actions);
@@ -56,7 +58,7 @@ class AnimeSearchResultTest extends TestCase
 
     public function testResultCarriesItemsList(): void
     {
-        $item = new AnimeSearchResultItem('Cowboy Bebop', null, [], [], 'meta');
+        $item = new AnimeSearchResultItem('Cowboy Bebop', 'external-42', null, [], [], 'meta');
 
         $result = new AnimeSearchResult([$item]);
 

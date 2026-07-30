@@ -30,7 +30,7 @@ namespace AnimeDb\PluginContracts;
 /**
  * Contract for plugins that can search/match by title.
  */
-interface SearchByPluginInterface extends IntegrationPluginInterface
+interface SearchByPluginInterface extends ExternalIdResolutionInterface
 {
     /**
      * Search for candidates matching the given title.

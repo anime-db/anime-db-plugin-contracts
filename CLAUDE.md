@@ -26,7 +26,7 @@ Entry point for Claude Code agents working in this repository.
 ```
 anime-db-plugin-contracts/
 ├── src/
-│   ├── IntegrationPluginInterface.php      # интерфейс интеграций с внешним источником (не общий предок всех плагинов)
+│   ├── ExternalIdResolutionInterface.php   # способность резолвить внешний id (не общий предок всех плагинов)
 │   ├── FillerInterface.php                 # заполнение карточки (extends SearchByPluginInterface)
 │   ├── EntryWidgetInterface.php            # виджет на странице записи
 │   ├── CatalogWidgetInterface.php          # виджет на общей странице каталога
@@ -61,20 +61,23 @@ anime-db-plugin-contracts/
   `SearchByPluginCandidate`, `AnimeSearchResult`/`AnimeSearchResultItem`).
   Маппинг DTO во внутреннее представление — ответственность
   хост-приложения, не этого пакета.
-- **`IntegrationPluginInterface` — не общий предок всех плагинов, а
-  интерфейс плагинов-интеграций с внешним источником.** Единственный
-  метод — `resolveExternalId(array $urls): ?string` (плагин определяет
-  свой внешний id по списку уже известных ссылок на источники) — осмыслен
-  только для такой интеграции. Его наследуют интерфейсы, которым нужна
-  эта способность (`FillerInterface`/`SearchByPluginInterface`/
-  `SyncInterface`/`EntryWidgetInterface`/`CatalogWidgetInterface`/
-  `DownloadCandidateSearchInterface`). Плагин с манифестным `type: local`
+- **`ExternalIdResolutionInterface` называет способность, а не категорию
+  плагина.** Единственный метод — `resolveExternalId(array $urls): ?string`
+  (плагин определяет свой внешний id по списку уже известных ссылок на
+  источники). Его наследуют интерфейсы, которым нужна эта способность
+  (`FillerInterface`/`SearchByPluginInterface`/`SyncInterface`/
+  `EntryWidgetInterface`/`CatalogWidgetInterface`) — по ISP. Не наследует
+  `DownloadCandidateSearchInterface`: его `search()` принимает свободный
+  текстовый запрос, а не список ссылок, а идентичность кандидата несёт
+  `AnimeSearchResultItem::$externalId`. Плагин с манифестным `type: local`
   (реагирует на события каталога, реализует Symfony
-  `EventSubscriberInterface`, в сеть не ходит) его не реализует — принцип
-  на будущее: каждый тип плагина получает свой role-named интерфейс, нет
-  универсальной базы, к которой прирастают неуниверсальные допущения.
-  Перечисление установленных плагинов — из манифестов, не из
-  маркер-интерфейса.
+  `EventSubscriberInterface`, в сеть не ходит) его тоже не реализует —
+  принцип на будущее: каждый тип плагина получает свой role-named
+  интерфейс по нужным ему способностям, нет универсальной базы, к которой
+  прирастают неуниверсальные допущения. Категория «интеграция» живёт
+  только в манифестном `type` (`integration`/`translation`/`local`),
+  кодового маркера-категории нет. Перечисление установленных плагинов —
+  из манифестов, не из маркер-интерфейса.
 - **Сервисы, которые ядро даёт плагинам, тоже часть контракта.**
   `LlmServiceInterface` (доступ к локальной LLM) и
   `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
@@ -114,6 +117,7 @@ anime-db-plugin-contracts/
 - Не добавлять зависимость на хост-приложение или на конкретную ORM —
   ломает независимость контракта
 - Не смешивать в одном интерфейсе логику разных фич (filler/widget/
-  sync/search) — у каждой фичи свой отдельный интерфейс; общее у
-  интеграционных интерфейсов — только `IntegrationPluginInterface`, и то
-  не у всех типов плагинов (у `local` — нет и его)
+  sync/search) — у каждой фичи свой отдельный интерфейс; общая
+  способность резолвить внешний id вынесена в отдельный
+  `ExternalIdResolutionInterface`, и то не у всех типов плагинов (у
+  `local` и у `DownloadCandidateSearchInterface` — нет и его)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data;
 
+use AnimeDb\PluginContracts\AnimeId;
 use AnimeDb\PluginContracts\AnimeSearchResult;
 use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\FillerInterface;
@@ -140,17 +141,12 @@ abstract class AbstractSyncPlugin implements SyncInterface
 
 class ConformingDownloadCandidateSearchPlugin implements DownloadCandidateSearchInterface
 {
-    public function resolveExternalId(array $urls): ?string
-    {
-        return null;
-    }
-
     public function search(string $query): AnimeSearchResult
     {
         return new AnimeSearchResult([]);
     }
 
-    public function runAction(string $actionId, string $meta): void
+    public function runAction(string $actionId, string $meta, AnimeId $anime): void
     {
     }
 }

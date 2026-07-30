@@ -29,25 +29,29 @@ composer require anime-db/plugin-contracts
 
 ## Интерфейсы
 
-### `IntegrationPluginInterface`
+### `ExternalIdResolutionInterface`
 
-Интерфейс плагинов, интегрирующихся с внешним источником метаданных/синхронизации.
-Единственный метод — `resolveExternalId()` — осмыслен только для такой интеграции,
-поэтому этот интерфейс расширяют все остальные интерфейсы, которым нужно резолвить
-свой внешний id: `SearchByPluginInterface`, `SyncInterface`, `EntryWidgetInterface`,
-`CatalogWidgetInterface`, `DownloadCandidateSearchInterface` и транзитивно
-`FillerInterface`.
+Способность резолвить собственный внешний id плагина. Единственный метод —
+`resolveExternalId()` — нужен интерфейсам, которым требуется эта способность:
+`SearchByPluginInterface`, `SyncInterface`, `EntryWidgetInterface`,
+`CatalogWidgetInterface` и транзитивно `FillerInterface`. Интерфейс называет
+способность, а не категорию плагина — по этой же причине его **не**
+реализует `DownloadCandidateSearchInterface`: `search()` принимает
+свободный текстовый запрос, а не список ссылок, а идентичность кандидата
+несёт `AnimeSearchResultItem::$externalId`.
 
 Это **не** общий предок всех плагинов: плагин, который реагирует на события
 каталога и не обращается ни к какому внешнему источнику (`type: local` в
 манифесте), не реализует этот интерфейс — `resolveExternalId()` ему не нужен.
+Категория «интеграция» живёт только в манифестном `type`
+(`integration`/`translation`/`local`), кодового маркера-категории нет.
 Перечисление установленных плагинов делается из манифестов, а не из
 маркер-интерфейса.
 
 ```php
-use AnimeDb\PluginContracts\IntegrationPluginInterface;
+use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 
-class MySourcePlugin implements IntegrationPluginInterface
+class MySourcePlugin implements ExternalIdResolutionInterface
 {
     public function resolveExternalId(array $urls): ?string
     {
@@ -80,7 +84,7 @@ use AnimeDb\PluginContracts\SearchByPluginInterface;
 class MySourcePlugin implements SearchByPluginInterface
 {
     // Собственный, известный только этому плагину id — из его manifest.json,
-    // не из контракта: IntegrationPluginInterface такого метода не предоставляет.
+    // не из контракта: ExternalIdResolutionInterface такого метода не предоставляет.
     private const ID = 'my-vendor-my-source';
 
     public function resolveExternalId(array $urls): ?string
@@ -286,7 +290,7 @@ HTML-строка, не структурированные данные: это 
 
 Виджет на странице записи живёт в пространстве внешнего источника, а не
 локальной БД хоста: `resolveExternalId()`, унаследованный от
-`IntegrationPluginInterface`, резолвится хостом заранее, и результат
+`ExternalIdResolutionInterface`, резолвится хостом заранее, и результат
 передаётся в `EntryWidgetInterface::render()` как `?string $externalId` —
 `null`, если запись не сопоставлена с источником плагина.
 
@@ -336,6 +340,7 @@ id). `DownloadCandidateSearchInterface` — по явному запросу п�
 ними (в т.ч. «скачать»).
 
 ```php
+use AnimeDb\PluginContracts\AnimeId;
 use AnimeDb\PluginContracts\AnimeSearchResult;
 use AnimeDb\PluginContracts\AnimeSearchResultAction;
 use AnimeDb\PluginContracts\AnimeSearchResultItem;
@@ -350,11 +355,6 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
     ) {
     }
 
-    public function resolveExternalId(array $urls): ?string
-    {
-        // ...
-    }
-
     public function search(string $query): AnimeSearchResult
     {
         $items = [];
@@ -362,6 +362,7 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
         foreach ($this->fetchReleases($query) as $release) {
             $items[] = new AnimeSearchResultItem(
                 title: $release->title,
+                externalId: $release->id, // сводит кандидата к записи каталога
                 image: $release->coverBase64, // плагин сам фетчит и уменьшает превью
                 fields: ['seeders' => (string) $release->seeders, 'size' => $release->size],
                 actions: [new AnimeSearchResultAction('download', 'Скачать')],
@@ -372,10 +373,10 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
         return new AnimeSearchResult($items);
     }
 
-    public function runAction(string $actionId, string $meta): void
+    public function runAction(string $actionId, string $meta, AnimeId $anime): void
     {
         if ($actionId === 'download') {
-            $this->downloads->enqueue(DownloadSource::magnet($meta), /* ... */);
+            $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
         }
     }
 }
@@ -386,11 +387,15 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
 Нейтральные, аниме-типизированные DTO без семантики конкретного источника:
 
 - `AnimeSearchResult::$items` — список `AnimeSearchResultItem`.
-- `AnimeSearchResultItem` — `title`, `image` (превью-обложка в base64 или
-  `null`, плагин фетчит и уменьшает её сам — клиент не ходит во внешнюю
-  сеть напрямую), `fields` (произвольные визуализируемые доп. поля,
-  `label => value`), `actions` (список `AnimeSearchResultAction`), `meta`
-  (непрозрачная для ядра строка, специфичная для плагина).
+- `AnimeSearchResultItem` — `title`, `externalId` (id кандидата на
+  источнике, по которому кандидат сводится к записи каталога — новой или
+  уже существующей; если у источника нет канонического id, крайний
+  фолбэк — стабильный хеш от magnet/торрент-файла), `image`
+  (превью-обложка в base64 или `null`, плагин фетчит и уменьшает её сам —
+  клиент не ходит во внешнюю сеть напрямую), `fields` (произвольные
+  визуализируемые доп. поля, `label => value`), `actions` (список
+  `AnimeSearchResultAction`), `meta` (непрозрачная для ядра строка,
+  специфичная для плагина).
 - `AnimeSearchResultAction` — `id` действия и `label` для показа
   пользователю.
 
@@ -560,7 +565,7 @@ $errors = (new ManifestValidator())->validate($data);
 декларативный ресурс переводов — `locales` (список кодов локалей) вместо
 `features`; код-плагин `local`, реагирующий на события каталога и не
 ходящий в сеть (реализует Symfony `EventSubscriberInterface`, не
-`IntegrationPluginInterface`), не объявляет ни `features`, ни `locales`.
+`ExternalIdResolutionInterface`), не объявляет ни `features`, ни `locales`.
 
 Пакет не проверяет конкретные ключи `features` (кроме того, что значения —
 булевы) — это открытый набор флагов по соглашению между плагином и хостом.
@@ -619,10 +624,10 @@ includes:
 
 ### `ContractConformanceRule`
 
-Проверяет, что классы, объявляющие реализацию `IntegrationPluginInterface`
+Проверяет, что классы, объявляющие реализацию `ExternalIdResolutionInterface`
 (и всех интерфейсов, которые его расширяют: `FillerInterface`,
 `SearchByPluginInterface`, `SyncInterface`, `CatalogWidgetInterface`,
-`EntryWidgetInterface`, `DownloadCandidateSearchInterface`), имеют
+`EntryWidgetInterface`) или `DownloadCandidateSearchInterface`, имеют
 сигнатуры методов, точно совпадающие с сигнатурами из установленной
 версии этого пакета. Ловит рассинхронизацию между версией контракта, под
 которую написан плагин, и версией, реально установленной у потребителя —

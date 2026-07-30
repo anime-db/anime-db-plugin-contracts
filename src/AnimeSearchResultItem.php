@@ -45,6 +45,14 @@ final class AnimeSearchResultItem
     public function __construct(
         public readonly string $title,
         /**
+         * Id of this candidate on the source, used by the core to match it to an
+         * existing catalog record or create a new one when a download is enqueued
+         * for it. When the source has no canonical id for the candidate, the
+         * plugin falls back to a stable hash of the magnet link/torrent file, so
+         * the same candidate always resolves to the same id.
+         */
+        public readonly string $externalId,
+        /**
          * Base64-encoded preview cover image, already fetched and downsized by the
          * plugin — the core/client never reaches out to the external source itself.
          */
