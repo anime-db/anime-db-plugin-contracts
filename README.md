@@ -347,7 +347,7 @@ use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\DownloadServiceInterface;
 use AnimeDb\PluginContracts\DownloadSource;
 
-class MyTrackerPlugin implements DownloadCandidateSearchInterface
+class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
 {
     public function __construct(
         private readonly DownloadServiceInterface $downloads,
@@ -358,14 +358,14 @@ class MyTrackerPlugin implements DownloadCandidateSearchInterface
     {
         $items = [];
 
-        foreach ($this->fetchReleases($query) as $release) {
+        foreach ($this->fetchResults($query) as $candidate) {
             $items[] = new AnimeSearchResultItem(
-                title: $release->title,
-                externalId: $release->id, // сводит кандидата к записи каталога
-                image: $release->coverBase64, // плагин сам фетчит и уменьшает превью
-                fields: ['seeders' => (string) $release->seeders, 'size' => $release->size],
+                title: $candidate->title,
+                externalId: $candidate->id, // сводит кандидата к записи каталога
+                image: $candidate->coverBase64, // плагин сам фетчит и уменьшает превью
+                fields: ['quality' => $candidate->quality, 'size' => $candidate->size],
                 actions: [new AnimeSearchResultAction('download', 'Скачать')],
-                meta: $release->magnetUri, // непрозрачно для ядра, вернётся как есть в runAction()
+                meta: $candidate->source, // непрозрачно для ядра, вернётся как есть в runAction()
             );
         }
 
@@ -423,7 +423,7 @@ use AnimeDb\PluginContracts\DownloadServiceInterface;
 use AnimeDb\PluginContracts\DownloadSource;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class MyTrackerPlugin implements EventSubscriberInterface
+class ExampleDownloadPlugin implements EventSubscriberInterface
 {
     public function __construct(
         private readonly DownloadServiceInterface $downloads,
