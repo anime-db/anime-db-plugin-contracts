@@ -29,7 +29,7 @@ namespace AnimeDb\PluginContracts;
 
 /**
  * Core-provided access to a local LLM, for plugins that need to parse free-form
- * human text (e.g. a forum release post written however its author felt like) into
+ * human text (e.g. a loosely-formatted textual description coming from a source) into
  * structured data.
  *
  * The model itself is a core concern, not something every plugin should bundle or
