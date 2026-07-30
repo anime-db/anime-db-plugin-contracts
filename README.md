@@ -12,9 +12,8 @@
 composer require anime-db/plugin-contracts
 ```
 
-Пакет пока не опубликован на Packagist и лежит в приватном репозитории —
-до публикации добавьте в свой `composer.json` VCS-репозиторий и настройте
-аутентификацию Composer для приватного GitHub-репозитория:
+Пакет пока не опубликован на Packagist — до публикации добавьте в свой
+`composer.json` VCS-репозиторий:
 
 ```json
 {
