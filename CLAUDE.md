@@ -38,6 +38,7 @@ anime-db-plugin-contracts/
 │   ├── AnimeSearchResultItem.php           # DTO элемента результата поиска
 │   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
 │   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
+│   ├── LlmDisabledException.php            # LLM выключен в настройках хоста — плагин деградирует без падения
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
 │   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
 │   ├── DownloadSourceType.php              # закрытый словарь видов DownloadSource

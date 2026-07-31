@@ -27,6 +27,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts;
 
+use Psr\Http\Client\ClientExceptionInterface;
+
 /**
  * Core-provided access to a local LLM, for plugins that need to parse free-form
  * human text (e.g. a loosely-formatted textual description coming from a source) into
@@ -41,6 +43,9 @@ namespace AnimeDb\PluginContracts;
  * A plugin obtains this service the same way it obtains a PSR-18 HTTP client: via
  * constructor injection, type-hinting this interface. The plugin depends only on
  * this contracts package; the implementation lives in the host application.
+ *
+ * The host implementation reaches the model over HTTP through a PSR-18 client, so
+ * transport failures surface to the plugin as {@see ClientExceptionInterface}.
  */
 interface LlmServiceInterface
 {
@@ -49,7 +54,12 @@ interface LlmServiceInterface
      *
      * @return array<string, mixed> JSON decoded from the model's response
      *
-     * @throws \JsonException if the model's response cannot be decoded as valid JSON
+     * @throws LlmDisabledException     if the local LLM is disabled in the host application's settings
+     * @throws ClientExceptionInterface if the underlying PSR-18 HTTP transport fails (network
+     *                                  error, timeout, non-2xx response from the backend); covers its subtypes
+     *                                  {@see \Psr\Http\Client\NetworkExceptionInterface} and
+     *                                  {@see \Psr\Http\Client\RequestExceptionInterface}
+     * @throws \JsonException           if the model's response cannot be decoded as valid JSON
      */
     public function parse(string $prompt): array;
 }
