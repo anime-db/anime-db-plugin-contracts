@@ -39,6 +39,7 @@ anime-db-plugin-contracts/
 │   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
 │   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
+│   ├── PluginDataStoreInterface.php        # сервис ядра: read/write собственного payload плагина по AnimeId (без flush)
 │   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
 │   ├── DownloadSourceType.php              # закрытый словарь видов DownloadSource
 │   ├── AnimeId.php                         # VO id записи каталога
@@ -79,13 +80,19 @@ anime-db-plugin-contracts/
   кодового маркера-категории нет. Перечисление установленных плагинов —
   из манифестов, не из маркер-интерфейса.
 - **Сервисы, которые ядро даёт плагинам, тоже часть контракта.**
-  `LlmServiceInterface` (доступ к локальной LLM) и
+  `LlmServiceInterface` (доступ к локальной LLM),
   `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
   VO `DownloadSource`/`AnimeId`/`DownloadTaskId` и событием
-  `DownloadCompletedEvent`) — интерфейсы, которые реализует
+  `DownloadCompletedEvent`) и `PluginDataStoreInterface`
+  (read/write собственного payload плагина по `AnimeId`, скоупнутый на
+  сам плагин: `pluginId` не в сигнатуре — инстанс, который DI отдаёт
+  плагину, уже знает свой) — интерфейсы, которые реализует
   хост-приложение, а получает плагин через DI (как и преднастроенный
   PSR-18 HTTP-клиент — тот случай, когда отдельный интерфейс в пакете не
   нужен, достаточно type-hint на `Psr\Http\Client\ClientInterface`).
+  `PluginDataStoreInterface::write()` — намеренно без `flush()`: это
+  выражение намерения «сохрани», а не шаг жизненного цикла ORM — когда и
+  как персистить, решает реализация в хост-приложении, не контракт.
 - **Направление зависимости — только в одну сторону.** И хост-приложение,
   и любой плагин зависят от этого пакета. Этот пакет не зависит ни от
   хост-приложения, ни от какого-либо конкретного плагина.
