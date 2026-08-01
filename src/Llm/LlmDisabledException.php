@@ -25,27 +25,16 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Llm;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Thrown by a {@see LlmServiceInterface::parse()} implementation when the local LLM is
+ * disabled in the host application's settings.
+ *
+ * Deliberately not a transport failure: a plugin catches this separately from
+ * {@see \Psr\Http\Client\ClientExceptionInterface} and gracefully degrades — continues
+ * without LLM-assisted enrichment — rather than treating it as a hard failure.
+ */
+final class LlmDisabledException extends \RuntimeException
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
-    }
 }

@@ -25,28 +25,24 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Download;
 
 use AnimeDb\PluginContracts\Model\AnimeId;
-use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
-use PHPUnit\Framework\TestCase;
 
-class EntryWidgetInterfaceTest extends TestCase
+/**
+ * Core-provided service for queuing a download, neutral with respect to whichever
+ * download manager/backend the host application actually uses.
+ *
+ * A plugin never touches the download manager or its queue directly — it only asks
+ * for a task to be queued and gets back a {@see DownloadTaskId} to remember. Once the
+ * download finishes, the core dispatches a {@see DownloadCompletedEvent} the plugin can
+ * subscribe to (via a regular Symfony `EventSubscriberInterface`) to match against ids
+ * it persisted earlier and react, e.g. by filling in the card from the downloaded files.
+ */
+interface DownloadServiceInterface
 {
-    public function testRenderReceivesAnimeId(): void
-    {
-        $widget = new class implements EntryWidgetInterface {
-            public function resolveExternalId(array $urls): ?string
-            {
-                return null;
-            }
-
-            public function render(AnimeId $anime): string
-            {
-                return \sprintf('<div data-anime-id="%d"></div>', $anime->value);
-            }
-        };
-
-        self::assertSame('<div data-anime-id="42"></div>', $widget->render(new AnimeId(42)));
-    }
+    /**
+     * Queue a download task for the given source, attached to the given anime.
+     */
+    public function enqueue(DownloadSource $source, AnimeId $anime): DownloadTaskId;
 }

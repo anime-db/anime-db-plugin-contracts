@@ -45,11 +45,11 @@ class ContractConformanceRuleTest extends RuleTestCase
     {
         $this->analyse([__DIR__.'/data/contract-conformance.php'], [
             [
-                'Method AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\WrongParameterTypePlugin::push() does not match the contract declared by AnimeDb\PluginContracts\SyncInterface for the installed version of anime-db/plugin-contracts: expected `push(AnimeDb\PluginContracts\SyncItem): void`, got `push(object): void`.',
+                'Method AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\WrongParameterTypePlugin::push() does not match the contract declared by AnimeDb\PluginContracts\Sync\SyncInterface for the installed version of anime-db/plugin-contracts: expected `push(AnimeDb\PluginContracts\Sync\SyncItem): void`, got `push(object): void`.',
                 92,
             ],
             [
-                'Method AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\WrongReturnTypePlugin::pull() does not match the contract declared by AnimeDb\PluginContracts\SyncInterface for the installed version of anime-db/plugin-contracts: expected `pull(): iterable<AnimeDb\PluginContracts\SyncItem>`, got `pull(): array`.',
+                'Method AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\WrongReturnTypePlugin::pull() does not match the contract declared by AnimeDb\PluginContracts\Sync\SyncInterface for the installed version of anime-db/plugin-contracts: expected `pull(): iterable<AnimeDb\PluginContracts\Sync\SyncItem>`, got `pull(): array`.',
                 128,
             ],
         ]);

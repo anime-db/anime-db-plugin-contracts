@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\DownloadSource;
-use AnimeDb\PluginContracts\DownloadSourceType;
+use AnimeDb\PluginContracts\Download\DownloadSource;
+use AnimeDb\PluginContracts\Download\DownloadSourceType;
 use PHPUnit\Framework\TestCase;
 
 class DownloadSourceTest extends TestCase

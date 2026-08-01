@@ -25,27 +25,19 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\CandidateSearch;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Result of an interactive user search performed by a
+ * {@see DownloadCandidateSearchInterface}.
+ */
+final class AnimeSearchResult
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    /**
+     * @param AnimeSearchResultItem[] $items
+     */
+    public function __construct(
+        public readonly array $items,
+    ) {
     }
 }

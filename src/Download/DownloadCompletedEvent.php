@@ -25,27 +25,26 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Download;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
+use AnimeDb\PluginContracts\Model\AnimeId;
 
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Dispatched by the core when a task queued through {@see DownloadServiceInterface::enqueue()}
+ * finishes.
+ *
+ * A plain event object, not tied to any particular Symfony event base class — the
+ * event dispatcher only needs the class name to route it to subscribers. A plugin
+ * subscribes to it with a regular Symfony `EventSubscriberInterface`, matches
+ * {@see self::$task} against the {@see DownloadTaskId} it persisted when it called
+ * `enqueue()`, and reacts only if it recognizes the task as its own — e.g. by moving
+ * heavy card-filling work off into its own background job.
+ */
+final class DownloadCompletedEvent
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    public function __construct(
+        public readonly AnimeId $anime,
+        public readonly DownloadTaskId $task,
+    ) {
     }
 }

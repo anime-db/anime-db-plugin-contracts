@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data;
 
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\AnimeSearchResult;
-use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
-use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\PluginAnimeData;
-use AnimeDb\PluginContracts\SyncInterface;
-use AnimeDb\PluginContracts\SyncItem;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResult;
+use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\Filler\FillerInterface;
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\Sync\SyncInterface;
+use AnimeDb\PluginContracts\Sync\SyncItem;
 
 class ConformingFillerPlugin implements FillerInterface
 {

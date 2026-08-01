@@ -25,27 +25,30 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Sync;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * A single user list entry synced between the host application and an external source.
+ *
+ * Plain DTO used by {@see SyncInterface}, not a host application entity. Minimal field
+ * set for a pilot integration; expect it to grow once the first real sync plugin
+ * (e.g. Shikimori) is implemented.
+ */
+final class SyncItem
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    public function __construct(
+        /**
+         * External id of the title on the source, as recognized by the plugin.
+         */
+        public readonly string $externalId,
+        /**
+         * Watch status of the title, normalized by the plugin from the source's own vocabulary.
+         */
+        public readonly SyncStatus $status,
+        /**
+         * Title of the anime, as known to the source.
+         */
+        public readonly string $title,
+    ) {
     }
 }

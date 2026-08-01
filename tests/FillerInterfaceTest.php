@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\PluginAnimeData;
-use AnimeDb\PluginContracts\SearchByPluginCandidate;
+use AnimeDb\PluginContracts\Filler\FillerInterface;
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
 use PHPUnit\Framework\TestCase;
 
 class FillerInterfaceTest extends TestCase

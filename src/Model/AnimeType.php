@@ -25,27 +25,22 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Model;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Media type of a title.
+ *
+ * A closed dictionary, not free-form input, so it is a contract-owned enum
+ * rather than a plain string: values are kept 1:1 with the host
+ * application's own type enum, but this package does not depend on it, so
+ * the host maps this enum to its internal one instead of sharing it.
+ */
+enum AnimeType: string
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
-    }
+    case Tv = 'tv';
+    case Movie = 'movie';
+    case Ova = 'ova';
+    case Ona = 'ona';
+    case Special = 'special';
+    case Music = 'music';
 }

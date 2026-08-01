@@ -25,27 +25,24 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\CandidateSearch;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * A single action offered by the plugin for an {@see AnimeSearchResultItem}
+ * (e.g. "download"), shown to the user and, once picked, passed back to
+ * {@see DownloadCandidateSearchInterface::runAction()} by `id`.
+ */
+final class AnimeSearchResultAction
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    public function __construct(
+        /**
+         * Action id, opaque to the core, interpreted by the plugin that produced it.
+         */
+        public readonly string $id,
+        /**
+         * Human-readable label shown to the user for this action.
+         */
+        public readonly string $label,
+    ) {
     }
 }

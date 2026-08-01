@@ -26,7 +26,30 @@ composer require anime-db/plugin-contracts
 }
 ```
 
-## Интерфейсы
+## Оглавление
+
+- [Что реализует плагин](#что-реализует-плагин)
+  - [`ExternalIdResolutionInterface`](#externalidresolutioninterface)
+  - [`SearchByPluginInterface`](#searchbyplugininterface)
+  - [`FillerInterface`](#fillerinterface)
+  - [`SyncInterface`](#syncinterface)
+  - [`CatalogWidgetInterface` и `EntryWidgetInterface`](#catalogwidgetinterface-и-entrywidgetinterface)
+  - [`DownloadCandidateSearchInterface`](#downloadcandidatesearchinterface)
+- [Что предоставляет ядро](#что-предоставляет-ядро)
+  - [`CatalogReaderInterface` и `AnimeView`](#catalogreaderinterface-и-animeview)
+  - [`LlmServiceInterface`](#llmserviceinterface)
+  - [`PluginDataStoreInterface`](#plugindatastoreinterface)
+  - [`DownloadServiceInterface`](#downloadserviceinterface)
+  - [PSR-18 HTTP-клиент](#psr-18-http-клиент)
+- [Общие примитивы](#общие-примитивы)
+- [Манифест плагина (`manifest.json`)](#манифест-плагина-manifestjson)
+- [PHPStan-правила](#phpstan-правила)
+
+## Что реализует плагин
+
+Интерфейсы, которые реализует сам плагин под конкретный внешний источник.
+Все они, кроме `DownloadCandidateSearchInterface`, наследуют базовую
+способность `ExternalIdResolutionInterface`.
 
 ### `ExternalIdResolutionInterface`
 
@@ -77,8 +100,8 @@ class MySourcePlugin implements ExternalIdResolutionInterface
 источником.
 
 ```php
-use AnimeDb\PluginContracts\SearchByPluginCandidate;
-use AnimeDb\PluginContracts\SearchByPluginInterface;
+use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
+use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
 
 class MySourcePlugin implements SearchByPluginInterface
 {
@@ -141,8 +164,8 @@ class MySourcePlugin implements SearchByPluginInterface
 метода поиска с полными объектами нет).
 
 ```php
-use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\PluginAnimeData;
+use AnimeDb\PluginContracts\Filler\FillerInterface;
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
 
 class MySourcePlugin implements FillerInterface
 {
@@ -184,9 +207,9 @@ class MySourcePlugin implements FillerInterface
 обязательно только `title`, всё остальное — nullable и может быть не
 заполнено плагином, который этого не поддерживает. Закрытые словари
 (жанр, тема, демография, тип) — контрактные enum'ы (`GenreCode`,
-`ThemeCode`, `Demographic`, `AnimeType`), а не произвольные строки, чтобы
-не терять типобезопасность при развязке с внутренними enum'ами
-хост-приложения.
+`ThemeCode`, `Demographic`, `AnimeType`, см. [«Общие примитивы»](#общие-примитивы)),
+а не произвольные строки, чтобы не терять типобезопасность при развязке с
+внутренними enum'ами хост-приложения.
 
 Поля: `title`, `alternativeNames`, `descriptions`, `genres`, `themes`,
 `demographic`, `studios`, `type`, `datePremiere`, `dateEnd`,
@@ -206,11 +229,11 @@ class MySourcePlugin implements FillerInterface
 филлера не существует на уровне контракта.
 
 ```php
-use AnimeDb\PluginContracts\PluginAnimeData;
-use AnimeDb\PluginContracts\SearchByPluginCandidate;
-use AnimeDb\PluginContracts\SyncInterface;
-use AnimeDb\PluginContracts\SyncItem;
-use AnimeDb\PluginContracts\SyncStatus;
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
+use AnimeDb\PluginContracts\Sync\SyncInterface;
+use AnimeDb\PluginContracts\Sync\SyncItem;
+use AnimeDb\PluginContracts\Sync\SyncStatus;
 
 class MySourcePlugin implements SyncInterface
 {
@@ -247,8 +270,8 @@ class MySourcePlugin implements SyncInterface
 с разным входом, поэтому не один интерфейс с опциональным параметром:
 
 ```php
-use AnimeDb\PluginContracts\CatalogWidgetInterface;
-use AnimeDb\PluginContracts\EntryWidgetInterface;
+use AnimeDb\PluginContracts\Widget\CatalogWidgetInterface;
+use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
 
 // Виджет на общей странице каталога (например, "новинки") — без контекста.
 class NewReleasesWidget implements CatalogWidgetInterface
@@ -293,7 +316,95 @@ id: многим виджетам он вообще не нужен (напри�
 внешний id, доступны два пути — резолвить самому через `resolveExternalId()`
 (унаследован от `ExternalIdResolutionInterface`) по `AnimeView::$sources`,
 либо взять уже резолвнутый хостом `AnimeView::$externalId` — в обоих
-случаях данные приходят через `CatalogReaderInterface` (см. ниже).
+случаях данные приходят через [`CatalogReaderInterface`](#catalogreaderinterface-и-animeview).
+
+### `DownloadCandidateSearchInterface`
+
+Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
+источнику — отдельная функция от `SearchByPluginInterface`. Разница:
+`SearchByPluginInterface` — лёгкое распознавание тайтла при сканировании
+тысяч папок (`SearchByPluginCandidate`: id плагина + название + внешний
+id). `DownloadCandidateSearchInterface` — по явному запросу пользователя,
+возвращает богатые элементы для показа в UI и постановки действий над
+ними (в т.ч. «скачать»).
+
+```php
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResult;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultAction;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultItem;
+use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
+use AnimeDb\PluginContracts\Download\DownloadSource;
+use AnimeDb\PluginContracts\Model\AnimeId;
+
+class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
+{
+    public function __construct(
+        private readonly DownloadServiceInterface $downloads,
+    ) {
+    }
+
+    public function search(string $query): AnimeSearchResult
+    {
+        $items = [];
+
+        foreach ($this->fetchResults($query) as $candidate) {
+            $items[] = new AnimeSearchResultItem(
+                title: $candidate->title,
+                externalId: $candidate->id, // сводит кандидата к записи каталога
+                image: $candidate->coverBase64, // плагин сам фетчит и уменьшает превью
+                fields: ['quality' => $candidate->quality, 'size' => $candidate->size],
+                actions: [new AnimeSearchResultAction('download', 'Скачать')],
+                meta: $candidate->source, // непрозрачно для ядра, вернётся как есть в runAction()
+            );
+        }
+
+        return new AnimeSearchResult($items);
+    }
+
+    public function runAction(string $actionId, string $meta, AnimeId $anime): void
+    {
+        if ($actionId === 'download') {
+            $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
+        }
+    }
+}
+```
+
+#### `AnimeSearchResult` / `AnimeSearchResultItem` / `AnimeSearchResultAction`
+
+Нейтральные, аниме-типизированные DTO без семантики конкретного источника:
+
+- `AnimeSearchResult::$items` — список `AnimeSearchResultItem`.
+- `AnimeSearchResultItem` — `title`, `externalId` (id кандидата на
+  источнике, по которому кандидат сводится к записи каталога — новой или
+  уже существующей; если у источника нет канонического id, крайний
+  фолбэк — стабильный хеш от лежащей в основе ссылки на закачку /
+  специфичного для источника идентификатора, так что один и тот же
+  кандидат всегда сводится к одному и тому же id), `image`
+  (превью-обложка в base64 или `null`, плагин фетчит и уменьшает её сам —
+  клиент не ходит во внешнюю сеть напрямую), `fields` (произвольные
+  визуализируемые доп. поля, `label => value`), `actions` (список
+  `AnimeSearchResultAction`), `meta` (непрозрачная для ядра строка,
+  специфичная для плагина).
+- `AnimeSearchResultAction` — `id` действия и `label` для показа
+  пользователю.
+
+`meta` ядро не интерпретирует — только переносит и возвращает плагину
+как есть при вызове `runAction()`. Всё специфичное для источника (как
+понимать `fields`, что делает конкретное действие) — на стороне плагина.
+
+**Про защиту `meta`:** DTO уходит на клиента (в т.ч. мобильного) и
+возвращается обратно при `runAction()`. Ядро оборачивает `meta` в
+подписанный конверт (HMAC на секрете приложения) на отдаче и верифицирует
+на возврате — защита от подмены на клиенте. Это ответственность
+хост-приложения; на уровне контракта `meta` — просто строка.
+
+## Что предоставляет ядро
+
+Сервисы, которые хост-приложение инжектирует в конструктор плагина
+(type-hint интерфейса в конструкторе — реализация целиком на стороне
+хост-приложения).
 
 ### `CatalogReaderInterface` и `AnimeView`
 
@@ -304,10 +415,10 @@ Read-only проекция текущего состояния записи ка
 донасыщению после закачки — список эпизодов и т.п.
 
 ```php
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\AnimeView;
-use AnimeDb\PluginContracts\CatalogReaderInterface;
-use AnimeDb\PluginContracts\EntryWidgetInterface;
+use AnimeDb\PluginContracts\Catalog\AnimeView;
+use AnimeDb\PluginContracts\Catalog\CatalogReaderInterface;
+use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
 
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
@@ -360,7 +471,7 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 экземпляром, а не дублироваться в каждом плагине.
 
 ```php
-use AnimeDb\PluginContracts\LlmServiceInterface;
+use AnimeDb\PluginContracts\Llm\LlmServiceInterface;
 
 class MyForumFillerPlugin
 {
@@ -392,7 +503,7 @@ type-hint интерфейса в конструкторе — реализац�
 `RequestExceptionInterface`, определяет сам PSR-18):
 
 ```php
-use AnimeDb\PluginContracts\LlmDisabledException;
+use AnimeDb\PluginContracts\Llm\LlmDisabledException;
 use Psr\Http\Client\ClientExceptionInterface;
 
 try {
@@ -418,9 +529,9 @@ try {
 что-либо без этого сервиса.
 
 ```php
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\DownloadCompletedEvent;
-use AnimeDb\PluginContracts\PluginDataStoreInterface;
+use AnimeDb\PluginContracts\Download\DownloadCompletedEvent;
+use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExampleDownloadPlugin implements EventSubscriberInterface
@@ -461,86 +572,6 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 персистится (write-through в БД, батчинг и т.п.) — забота реализации
 сервиса на стороне хост-приложения, не контракта.
 
-### `DownloadCandidateSearchInterface`
-
-Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
-источнику — отдельная функция от `SearchByPluginInterface`. Разница:
-`SearchByPluginInterface` — лёгкое распознавание тайтла при сканировании
-тысяч папок (`SearchByPluginCandidate`: id плагина + название + внешний
-id). `DownloadCandidateSearchInterface` — по явному запросу пользователя,
-возвращает богатые элементы для показа в UI и постановки действий над
-ними (в т.ч. «скачать»).
-
-```php
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\AnimeSearchResult;
-use AnimeDb\PluginContracts\AnimeSearchResultAction;
-use AnimeDb\PluginContracts\AnimeSearchResultItem;
-use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
-use AnimeDb\PluginContracts\DownloadServiceInterface;
-use AnimeDb\PluginContracts\DownloadSource;
-
-class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
-{
-    public function __construct(
-        private readonly DownloadServiceInterface $downloads,
-    ) {
-    }
-
-    public function search(string $query): AnimeSearchResult
-    {
-        $items = [];
-
-        foreach ($this->fetchResults($query) as $candidate) {
-            $items[] = new AnimeSearchResultItem(
-                title: $candidate->title,
-                externalId: $candidate->id, // сводит кандидата к записи каталога
-                image: $candidate->coverBase64, // плагин сам фетчит и уменьшает превью
-                fields: ['quality' => $candidate->quality, 'size' => $candidate->size],
-                actions: [new AnimeSearchResultAction('download', 'Скачать')],
-                meta: $candidate->source, // непрозрачно для ядра, вернётся как есть в runAction()
-            );
-        }
-
-        return new AnimeSearchResult($items);
-    }
-
-    public function runAction(string $actionId, string $meta, AnimeId $anime): void
-    {
-        if ($actionId === 'download') {
-            $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
-        }
-    }
-}
-```
-
-#### `AnimeSearchResult` / `AnimeSearchResultItem` / `AnimeSearchResultAction`
-
-Нейтральные, аниме-типизированные DTO без семантики конкретного источника:
-
-- `AnimeSearchResult::$items` — список `AnimeSearchResultItem`.
-- `AnimeSearchResultItem` — `title`, `externalId` (id кандидата на
-  источнике, по которому кандидат сводится к записи каталога — новой или
-  уже существующей; если у источника нет канонического id, крайний
-  фолбэк — стабильный хеш от magnet/торрент-файла), `image`
-  (превью-обложка в base64 или `null`, плагин фетчит и уменьшает её сам —
-  клиент не ходит во внешнюю сеть напрямую), `fields` (произвольные
-  визуализируемые доп. поля, `label => value`), `actions` (список
-  `AnimeSearchResultAction`), `meta` (непрозрачная для ядра строка,
-  специфичная для плагина).
-- `AnimeSearchResultAction` — `id` действия и `label` для показа
-  пользователю.
-
-`meta` ядро не интерпретирует — только переносит и возвращает плагину
-как есть при вызове `runAction()`. Всё специфичное для источника (как
-понимать `fields`, что делает конкретное действие) — на стороне плагина.
-
-**Про защиту `meta`:** DTO уходит на клиента (в т.ч. мобильного) и
-возвращается обратно при `runAction()`. Ядро оборачивает `meta` в
-подписанный конверт (HMAC на секрете приложения) на отдаче и верифицирует
-на возврате — защита от подмены на клиенте. Это ответственность
-хост-приложения; на уровне контракта `meta` — просто строка.
-
 ### `DownloadServiceInterface`
 
 Сервис ядра для постановки задачи на скачивание. Плагин не работает с
@@ -550,10 +581,10 @@ class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
 после перезапуска приложения, поэтому хранить id только в памяти нельзя).
 
 ```php
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\DownloadCompletedEvent;
-use AnimeDb\PluginContracts\DownloadServiceInterface;
-use AnimeDb\PluginContracts\DownloadSource;
+use AnimeDb\PluginContracts\Download\DownloadCompletedEvent;
+use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
+use AnimeDb\PluginContracts\Download\DownloadSource;
+use AnimeDb\PluginContracts\Model\AnimeId;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ExampleDownloadPlugin implements EventSubscriberInterface
@@ -598,14 +629,13 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 Набор расширяемый — например, `::url()` в будущем — без изменения уже
 написанных плагинов.
 
-#### `AnimeId` / `DownloadTaskId` / `DownloadCompletedEvent`
+#### `DownloadTaskId` / `DownloadCompletedEvent`
 
-`AnimeId` — id записи каталога, `DownloadTaskId` — id поставленной
-задачи, возвращаемый `enqueue()`. `DownloadCompletedEvent` — событие
-завершения закачки (`$anime`, `$task`), на которое плагин подписывается
-штатным Symfony `EventSubscriberInterface`: это обычный класс, без
-привязки к базовому классу события Symfony — диспетчеру достаточно имени
-класса, чтобы разослать событие подписчикам.
+`DownloadTaskId` — id поставленной задачи, возвращаемый `enqueue()`.
+`DownloadCompletedEvent` — событие завершения закачки (`$anime`, `$task`),
+на которое плагин подписывается штатным Symfony `EventSubscriberInterface`:
+это обычный класс, без привязки к базовому классу события Symfony —
+диспетчеру достаточно имени класса, чтобы разослать событие подписчикам.
 
 ### PSR-18 HTTP-клиент
 
@@ -616,10 +646,21 @@ PSR-18 `Psr\Http\Client\ClientInterface` через DI (type-hint в
 интерфейса в этом пакете для этого не заводится — соглашение, не
 контрактный тип.
 
-## Закрытые словари (enum'ы)
+## Общие примитивы
 
-Значения синхронизированы 1:1 со словарями MyAnimeList; пакет не зависит
-от внутренних enum'ов хост-приложения — сопоставление на его стороне.
+Namespace `AnimeDb\PluginContracts\Model\` — общие для всех фич value-объекты
+и закрытые словари (enum'ы).
+
+`AnimeId` — id записи каталога, как он известен хост-приложению. Тонкий
+value-объект, а не голый `int`: используется и стороной плагина
+(`EntryWidgetInterface::render()`, `PluginDataStoreInterface`,
+`CatalogReaderInterface::read()`), и сервисами ядра (`DownloadServiceInterface`,
+`DownloadCompletedEvent`), поэтому он не привязан ни к одному конкретному
+namespace фичи.
+
+Закрытые словари (enum'ы). Значения синхронизированы 1:1 со словарями
+MyAnimeList; пакет не зависит от внутренних enum'ов хост-приложения —
+сопоставление на его стороне.
 
 - **`AnimeType`** — тип тайтла: `Tv`, `Movie`, `Ova`, `Ona`, `Special`, `Music`.
 - **`Demographic`** — демографическая ось MAL: `Shounen`, `Shoujo`, `Seinen`, `Josei`, `Kids`.

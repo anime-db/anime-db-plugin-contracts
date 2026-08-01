@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\LlmDisabledException;
-use AnimeDb\PluginContracts\LlmServiceInterface;
+use AnimeDb\PluginContracts\Llm\LlmDisabledException;
+use AnimeDb\PluginContracts\Llm\LlmServiceInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 

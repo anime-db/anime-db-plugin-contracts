@@ -25,27 +25,27 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Search;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
+use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Contract for plugins that can search/match by title.
+ */
+interface SearchByPluginInterface extends ExternalIdResolutionInterface
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
-    }
+    /**
+     * Search for candidates matching the given title.
+     *
+     * $onHeartbeat, when given, may be called by the plugin between internal
+     * steps (retries, pagination pages) of a long-running search, so the
+     * caller can refresh a "work in progress" signal (e.g. extend a
+     * background job lock). The plugin is not required to call it, and the
+     * caller is not required to pass it.
+     *
+     * @param callable(): void|null $onHeartbeat
+     *
+     * @return SearchByPluginCandidate[]
+     */
+    public function find(string $name, ?callable $onHeartbeat = null): array;
 }

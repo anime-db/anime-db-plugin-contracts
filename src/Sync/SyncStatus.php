@@ -25,27 +25,21 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Sync;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Watch status of a title in a user's list, as used by {@see SyncItem}.
+ *
+ * Closed vocabulary shared by the host application and every sync plugin. A plugin
+ * normalizes its source's own status dictionary (e.g. "watching"/"completed") into
+ * this enum once, in its adapter; the host then maps it to its own internal status
+ * representation.
+ */
+enum SyncStatus: string
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
-    }
+    case Plan = 'plan';
+    case Watching = 'watching';
+    case Completed = 'completed';
+    case Dropped = 'dropped';
+    case OnHold = 'on_hold';
 }

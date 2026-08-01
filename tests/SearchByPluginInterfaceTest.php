@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\SearchByPluginCandidate;
-use AnimeDb\PluginContracts\SearchByPluginInterface;
+use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
+use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
 use PHPUnit\Framework\TestCase;
 
 class SearchByPluginInterfaceTest extends TestCase

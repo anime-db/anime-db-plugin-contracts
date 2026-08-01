@@ -27,11 +27,11 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\AnimeType;
-use AnimeDb\PluginContracts\Demographic;
-use AnimeDb\PluginContracts\GenreCode;
-use AnimeDb\PluginContracts\PluginAnimeData;
-use AnimeDb\PluginContracts\ThemeCode;
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Model\AnimeType;
+use AnimeDb\PluginContracts\Model\Demographic;
+use AnimeDb\PluginContracts\Model\GenreCode;
+use AnimeDb\PluginContracts\Model\ThemeCode;
 use PHPUnit\Framework\TestCase;
 
 class PluginAnimeDataTest extends TestCase
