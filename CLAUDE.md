@@ -40,6 +40,7 @@ anime-db-plugin-contracts/
 │   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
 │   ├── LlmDisabledException.php            # LLM выключен в настройках хоста — плагин деградирует без падения
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
+│   ├── PluginDataStoreInterface.php        # сервис ядра: read/write собственного payload плагина по AnimeId (без flush)
 │   ├── CatalogReaderInterface.php          # сервис ядра: read-only проекция текущего состояния записи по AnimeId
 │   ├── AnimeView.php                       # DTO read-only проекции (не PluginAnimeData, не сущность хоста)
 │   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
@@ -85,12 +86,18 @@ anime-db-plugin-contracts/
   `LlmServiceInterface` (доступ к локальной LLM),
   `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
   VO `DownloadSource`/`AnimeId`/`DownloadTaskId` и событием
-  `DownloadCompletedEvent`) и `CatalogReaderInterface` (read-only проекция
+  `DownloadCompletedEvent`), `PluginDataStoreInterface`
+  (read/write собственного payload плагина по `AnimeId`, скоупнутый на
+  сам плагин: `pluginId` не в сигнатуре — инстанс, который DI отдаёт
+  плагину, уже знает свой) и `CatalogReaderInterface` (read-only проекция
   текущего состояния записи по `AnimeId`, DTO `AnimeView`) — интерфейсы,
   которые реализует хост-приложение, а получает плагин через DI (как и
   преднастроенный PSR-18 HTTP-клиент — тот случай, когда отдельный
   интерфейс в пакете не нужен, достаточно type-hint на
   `Psr\Http\Client\ClientInterface`).
+  `PluginDataStoreInterface::write()` — намеренно без `flush()`: это
+  выражение намерения «сохрани», а не шаг жизненного цикла ORM — когда и
+  как персистить, решает реализация в хост-приложении, не контракт.
 - **`CatalogReaderInterface`/`AnimeView` — «на чтение», не путать с
   `PluginAnimeData` — «на запись».** `AnimeView` — плоский иммутабельный
   DTO текущего смёрженного состояния каталога (не Doctrine-сущность и не

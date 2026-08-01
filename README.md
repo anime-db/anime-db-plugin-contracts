@@ -407,6 +407,60 @@ try {
 }
 ```
 
+### `PluginDataStoreInterface`
+
+Сервис ядра для чтения/записи собственного payload плагина по `AnimeId` —
+для плагин-инициированных записей, которые не проходят через filler-флоу
+(там плагин просто возвращает `PluginAnimeData`, а маппинг во внутреннее
+представление и сохранение делает ядро). Пример: обработчик
+`DownloadCompletedEvent` донасыщает карточку данными из скачанных файлов —
+у него на руках `AnimeId`, но нет способа ни прочитать, ни записать
+что-либо без этого сервиса.
+
+```php
+use AnimeDb\PluginContracts\AnimeId;
+use AnimeDb\PluginContracts\DownloadCompletedEvent;
+use AnimeDb\PluginContracts\PluginDataStoreInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class ExampleDownloadPlugin implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly PluginDataStoreInterface $store,
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [DownloadCompletedEvent::class => 'onDownloadCompleted'];
+    }
+
+    public function onDownloadCompleted(DownloadCompletedEvent $event): void
+    {
+        $known = $this->store->read($event->anime);
+
+        // ... разобрать скачанные файлы, дополнить $known своими полями
+
+        $this->store->write($event->anime, $known);
+    }
+}
+```
+
+`read()` возвращает пустой массив, если для этого плагина и этой записи
+ещё ничего не сохранено. `write()` — это **merge**, а не перезапись: ключи,
+записанные предыдущим вызовом и отсутствующие в переданных данных,
+сохраняются как есть.
+
+Экземпляр, который получает плагин через DI, **скоупнут на сам плагин** —
+плагин физически не может прочитать или перезаписать срез другого
+плагина, потому что метод не принимает id плагина: экземпляр уже знает
+свой.
+
+В контракте намеренно нет `flush()` — это была бы протечка реализации.
+`write()` выражает намерение «сохрани мои данные»; как и когда это
+персистится (write-through в БД, батчинг и т.п.) — забота реализации
+сервиса на стороне хост-приложения, не контракта.
+
 ### `DownloadCandidateSearchInterface`
 
 Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
