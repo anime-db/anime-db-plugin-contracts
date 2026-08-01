@@ -386,6 +386,27 @@ type-hint интерфейса в конструкторе — реализац�
 хост-приложения. Плагин, которому нужен этот сервис, декларирует это в
 `manifest.json` флагом `features.llm` (см. раздел «Манифест плагина»).
 
+Реализация всегда обращается к модели по HTTP через PSR-18 клиент, поэтому
+`parse()` может бросить исключения трёх категорий (виды исключений внутри
+`ClientExceptionInterface`, например `NetworkExceptionInterface` и
+`RequestExceptionInterface`, определяет сам PSR-18):
+
+```php
+use AnimeDb\PluginContracts\LlmDisabledException;
+use Psr\Http\Client\ClientExceptionInterface;
+
+try {
+    $data = $this->llm->parse($prompt);
+} catch (LlmDisabledException $exception) {
+    // LLM выключен в настройках хост-приложения — плагин продолжает
+    // работу без LLM-обогащения, это не сбой.
+} catch (ClientExceptionInterface $exception) {
+    // сбой транспорта: сеть отвалилась, таймаут, 5xx от бэкенда.
+} catch (\JsonException $exception) {
+    // ответ модели не удалось декодировать как JSON.
+}
+```
+
 ### `DownloadCandidateSearchInterface`
 
 Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
