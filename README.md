@@ -329,7 +329,9 @@ type-hint интерфейса в конструкторе — реализац�
 `manifest.json` флагом `features.llm` (см. раздел «Манифест плагина»).
 
 Реализация всегда обращается к модели по HTTP через PSR-18 клиент, поэтому
-`parse()` может бросить три вида исключений:
+`parse()` может бросить исключения трёх категорий (виды исключений внутри
+`ClientExceptionInterface`, например `NetworkExceptionInterface` и
+`RequestExceptionInterface`, определяет сам PSR-18):
 
 ```php
 use AnimeDb\PluginContracts\LlmDisabledException;
