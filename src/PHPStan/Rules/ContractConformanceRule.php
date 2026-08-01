@@ -27,13 +27,13 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
-use AnimeDb\PluginContracts\CatalogWidgetInterface;
-use AnimeDb\PluginContracts\DownloadCandidateSearchInterface;
-use AnimeDb\PluginContracts\EntryWidgetInterface;
+use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
-use AnimeDb\PluginContracts\FillerInterface;
-use AnimeDb\PluginContracts\SearchByPluginInterface;
-use AnimeDb\PluginContracts\SyncInterface;
+use AnimeDb\PluginContracts\Filler\FillerInterface;
+use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
+use AnimeDb\PluginContracts\Sync\SyncInterface;
+use AnimeDb\PluginContracts\Widget\CatalogWidgetInterface;
+use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
 use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Node\InClassNode;

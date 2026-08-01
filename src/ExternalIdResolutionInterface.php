@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts;
 
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultItem;
+use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+
 /**
  * Capability of resolving this plugin's own external source id.
  *

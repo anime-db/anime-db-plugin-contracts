@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\AnimeView;
-use AnimeDb\PluginContracts\CatalogReaderInterface;
+use AnimeDb\PluginContracts\Catalog\AnimeView;
+use AnimeDb\PluginContracts\Catalog\CatalogReaderInterface;
+use AnimeDb\PluginContracts\Model\AnimeId;
 use PHPUnit\Framework\TestCase;
 
 class CatalogReaderInterfaceTest extends TestCase

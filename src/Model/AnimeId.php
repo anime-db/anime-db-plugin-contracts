@@ -25,27 +25,24 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Model;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
+use AnimeDb\PluginContracts\Download\DownloadCompletedEvent;
+use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
+use AnimeDb\PluginContracts\Download\DownloadTaskId;
 
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Identifier of a catalog anime entry, as known to the host application.
+ *
+ * A thin value object rather than a plain int: {@see DownloadServiceInterface::enqueue()}
+ * and {@see DownloadCompletedEvent} both carry it, and a typed wrapper keeps it from
+ * being confused with any other numeric id crossing the contract (e.g. a
+ * {@see DownloadTaskId}).
+ */
+final class AnimeId
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    public function __construct(
+        public readonly int $value,
+    ) {
     }
 }

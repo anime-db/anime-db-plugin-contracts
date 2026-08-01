@@ -27,8 +27,8 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\AnimeId;
-use AnimeDb\PluginContracts\PluginDataStoreInterface;
+use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface;
 use PHPUnit\Framework\TestCase;
 
 class PluginDataStoreInterfaceTest extends TestCase

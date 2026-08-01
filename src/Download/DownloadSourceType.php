@@ -25,27 +25,14 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Download;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Closed dictionary of kinds of {@see DownloadSource}, one per named constructor.
+ * Grows as {@see DownloadSource} grows new named constructors (e.g. a future `::url()`).
+ */
+enum DownloadSourceType: string
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
-    }
+    case Magnet = 'magnet';
+    case TorrentFile = 'torrent_file';
 }

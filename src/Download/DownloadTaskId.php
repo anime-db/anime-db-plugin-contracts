@@ -25,27 +25,21 @@ declare(strict_types=1);
  * along with this program. If not, see <https://gnu.org>.
  */
 
-namespace AnimeDb\PluginContracts\Tests;
+namespace AnimeDb\PluginContracts\Download;
 
-use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
-use PHPUnit\Framework\TestCase;
-
-class SearchByPluginCandidateTest extends TestCase
+/**
+ * Identifier of a queued download task, returned by {@see DownloadServiceInterface::enqueue()}.
+ *
+ * A plugin is expected to persist this id in its own slice of the anime's metadata:
+ * a download can take a long time, and {@see DownloadCompletedEvent} may arrive after
+ * an application restart, so the plugin cannot rely on keeping the id only in memory.
+ * On the event, the plugin matches {@see DownloadCompletedEvent::$task} against what
+ * it persisted to recognize its own completed task.
+ */
+final class DownloadTaskId
 {
-    public function testGettersReturnConstructorValues(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', '12345');
-
-        self::assertSame('my-plugin', $candidate->getPluginId());
-        self::assertSame('Cowboy Bebop', $candidate->getName());
-        self::assertSame('12345', $candidate->getExternalId());
-    }
-
-    public function testExternalIdAcceptsNonNumericString(): void
-    {
-        $candidate = new SearchByPluginCandidate('my-plugin', 'Cowboy Bebop', 'cowboy-bebop');
-
-        self::assertIsString($candidate->getExternalId());
-        self::assertSame('cowboy-bebop', $candidate->getExternalId());
+    public function __construct(
+        public readonly string $value,
+    ) {
     }
 }

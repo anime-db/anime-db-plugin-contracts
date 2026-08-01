@@ -27,9 +27,9 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\AnimeSearchResult;
-use AnimeDb\PluginContracts\AnimeSearchResultAction;
-use AnimeDb\PluginContracts\AnimeSearchResultItem;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResult;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultAction;
+use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultItem;
 use PHPUnit\Framework\TestCase;
 
 class AnimeSearchResultTest extends TestCase
