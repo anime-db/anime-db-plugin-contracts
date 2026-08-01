@@ -264,8 +264,8 @@ class NewReleasesWidget implements CatalogWidgetInterface
     }
 }
 
-// Виджет на странице отдельной записи каталога — получает внешний id,
-// уже резолвнутый хостом через resolveExternalId() этого же плагина.
+// Виджет на странице отдельной записи каталога — получает AnimeId записи,
+// а не внешний id: сам резолвит его, если он ему вообще нужен.
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
     public function resolveExternalId(array $urls): ?string
@@ -273,7 +273,7 @@ class RelatedTitlesWidget implements EntryWidgetInterface
         // ...
     }
 
-    public function render(?string $externalId): string
+    public function render(AnimeId $anime): string
     {
         return '<div class="related-titles">...</div>';
     }
@@ -287,11 +287,69 @@ HTML-строка, не структурированные данные: это 
 частого случая «список записей» — опциональный хелпер на стороне
 хост-приложения, не жёсткая схема в этом контракте.
 
-Виджет на странице записи живёт в пространстве внешнего источника, а не
-локальной БД хоста: `resolveExternalId()`, унаследованный от
-`ExternalIdResolutionInterface`, резолвится хостом заранее, и результат
-передаётся в `EntryWidgetInterface::render()` как `?string $externalId` —
-`null`, если запись не сопоставлена с источником плагина.
+`EntryWidgetInterface::render()` получает `AnimeId` записи, а не внешний
+id: многим виджетам он вообще не нужен (например, виджету статуса закачки
+достаточно `AnimeId`, чтобы прочитать свой срез). Виджету, которому нужен
+внешний id, доступны два пути — резолвить самому через `resolveExternalId()`
+(унаследован от `ExternalIdResolutionInterface`) по `AnimeView::$sources`,
+либо взять уже резолвнутый хостом `AnimeView::$externalId` — в обоих
+случаях данные приходят через `CatalogReaderInterface` (см. ниже).
+
+### `CatalogReaderInterface` и `AnimeView`
+
+Read-only проекция текущего состояния записи каталога — сервис ядра,
+даваемый плагину через DI, как `LlmServiceInterface` и
+`DownloadServiceInterface`. Нужен, когда плагину требуются **общие** поля
+записи, а не только свой срез: виджету — отрендерить карточку по `AnimeId`,
+донасыщению после закачки — список эпизодов и т.п.
+
+```php
+use AnimeDb\PluginContracts\AnimeId;
+use AnimeDb\PluginContracts\AnimeView;
+use AnimeDb\PluginContracts\CatalogReaderInterface;
+use AnimeDb\PluginContracts\EntryWidgetInterface;
+
+class RelatedTitlesWidget implements EntryWidgetInterface
+{
+    public function __construct(
+        private readonly CatalogReaderInterface $catalog,
+    ) {
+    }
+
+    public function resolveExternalId(array $urls): ?string
+    {
+        // ...
+    }
+
+    public function render(AnimeId $anime): string
+    {
+        $view = $this->catalog->read($anime);
+
+        if ($view === null) {
+            return '';
+        }
+
+        // $view->externalId уже резолвлен хостом для этого плагина —
+        // не нужно самому парсить $view->sources на каждый HTMX-рендер.
+        return \sprintf('<div class="related-titles">%s</div>', $view->title);
+    }
+}
+```
+
+`AnimeView` — плоский иммутабельный DTO: `title`, `alternativeNames`,
+`type`, `genres`, `themes`, `episodesCount`, `sources` (внешние ссылки,
+уже привязанные к записи) и `externalId` — собственный внешний id
+вызывающего плагина, дешёво резолвнутый хостом заранее (lookup по
+таблице external_id, а не парсинг `sources` на каждый вызов). В отличие
+от списочных полей `PluginAnimeData`, где `null` означает «плагин-источник
+это поле не заполнил», списочные поля `AnimeView` не бывают `null` —
+только пустой массив, если ничего не известно: это уже смёрженное
+текущее состояние, а не вклад одного источника.
+
+Не путать с `PluginAnimeData` — тот DTO «на запись» из источника, этот —
+«на чтение» уже смёрженного состояния каталога. Только чтение: в этом
+интерфейсе нет и не будет метода записи — мутации своего среза плагина и
+мутации записи целиком остаются задачей других частей контракта, не этой.
 
 ### `LlmServiceInterface`
 
@@ -327,6 +385,27 @@ class MyForumFillerPlugin
 type-hint интерфейса в конструкторе — реализация целиком на стороне
 хост-приложения. Плагин, которому нужен этот сервис, декларирует это в
 `manifest.json` флагом `features.llm` (см. раздел «Манифест плагина»).
+
+Реализация всегда обращается к модели по HTTP через PSR-18 клиент, поэтому
+`parse()` может бросить исключения трёх категорий (виды исключений внутри
+`ClientExceptionInterface`, например `NetworkExceptionInterface` и
+`RequestExceptionInterface`, определяет сам PSR-18):
+
+```php
+use AnimeDb\PluginContracts\LlmDisabledException;
+use Psr\Http\Client\ClientExceptionInterface;
+
+try {
+    $data = $this->llm->parse($prompt);
+} catch (LlmDisabledException $exception) {
+    // LLM выключен в настройках хост-приложения — плагин продолжает
+    // работу без LLM-обогащения, это не сбой.
+} catch (ClientExceptionInterface $exception) {
+    // сбой транспорта: сеть отвалилась, таймаут, 5xx от бэкенда.
+} catch (\JsonException $exception) {
+    // ответ модели не удалось декодировать как JSON.
+}
+```
 
 ### `PluginDataStoreInterface`
 

@@ -37,20 +37,20 @@ namespace AnimeDb\PluginContracts;
  * the common "list of records" case is a host-side optional helper, not a
  * rigid schema in this contract.
  *
- * The host resolves the external source id via `resolveExternalId()`
- * (inherited from ExternalIdResolutionInterface) and passes it into `render()`;
- * the widget never has access to host-internal record ids.
+ * `render()` takes the record's {@see AnimeId}, not a pre-resolved external
+ * id: many widgets don't need one at all (e.g. a download-status widget
+ * reads its own slice by `AnimeId`), and a widget that does can resolve it
+ * itself via `resolveExternalId()` (inherited) against
+ * {@see AnimeView::$sources}, or read the already-resolved
+ * {@see AnimeView::$externalId} — both reachable through
+ * {@see CatalogReaderInterface} injected into the plugin.
  */
 interface EntryWidgetInterface extends ExternalIdResolutionInterface
 {
     /**
      * Render the widget for a single catalog record.
      *
-     * @param string|null $externalId external source id resolved by the host via
-     *                                resolveExternalId() (null when the record has no
-     *                                link to this plugin's source)
-     *
      * @return string rendered widget markup as a raw HTML string
      */
-    public function render(?string $externalId): string;
+    public function render(AnimeId $anime): string;
 }

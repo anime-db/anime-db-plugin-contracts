@@ -38,8 +38,11 @@ anime-db-plugin-contracts/
 │   ├── AnimeSearchResultItem.php           # DTO элемента результата поиска
 │   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
 │   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
+│   ├── LlmDisabledException.php            # LLM выключен в настройках хоста — плагин деградирует без падения
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
 │   ├── PluginDataStoreInterface.php        # сервис ядра: read/write собственного payload плагина по AnimeId (без flush)
+│   ├── CatalogReaderInterface.php          # сервис ядра: read-only проекция текущего состояния записи по AnimeId
+│   ├── AnimeView.php                       # DTO read-only проекции (не PluginAnimeData, не сущность хоста)
 │   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
 │   ├── DownloadSourceType.php              # закрытый словарь видов DownloadSource
 │   ├── AnimeId.php                         # VO id записи каталога
@@ -83,16 +86,39 @@ anime-db-plugin-contracts/
   `LlmServiceInterface` (доступ к локальной LLM),
   `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
   VO `DownloadSource`/`AnimeId`/`DownloadTaskId` и событием
-  `DownloadCompletedEvent`) и `PluginDataStoreInterface`
+  `DownloadCompletedEvent`), `PluginDataStoreInterface`
   (read/write собственного payload плагина по `AnimeId`, скоупнутый на
   сам плагин: `pluginId` не в сигнатуре — инстанс, который DI отдаёт
-  плагину, уже знает свой) — интерфейсы, которые реализует
-  хост-приложение, а получает плагин через DI (как и преднастроенный
-  PSR-18 HTTP-клиент — тот случай, когда отдельный интерфейс в пакете не
-  нужен, достаточно type-hint на `Psr\Http\Client\ClientInterface`).
+  плагину, уже знает свой) и `CatalogReaderInterface` (read-only проекция
+  текущего состояния записи по `AnimeId`, DTO `AnimeView`) — интерфейсы,
+  которые реализует хост-приложение, а получает плагин через DI (как и
+  преднастроенный PSR-18 HTTP-клиент — тот случай, когда отдельный
+  интерфейс в пакете не нужен, достаточно type-hint на
+  `Psr\Http\Client\ClientInterface`).
   `PluginDataStoreInterface::write()` — намеренно без `flush()`: это
   выражение намерения «сохрани», а не шаг жизненного цикла ORM — когда и
   как персистить, решает реализация в хост-приложении, не контракт.
+- **`CatalogReaderInterface`/`AnimeView` — «на чтение», не путать с
+  `PluginAnimeData` — «на запись».** `AnimeView` — плоский иммутабельный
+  DTO текущего смёрженного состояния каталога (не Doctrine-сущность и не
+  ORM-модель хоста): виджету нужны общие поля записи, а не только свой
+  срез, чтобы отрендерить карточку по `AnimeId`; донасыщению после
+  закачки — список эпизодов и т.п. Только чтение — мутации своего среза
+  плагина и мутации записи целиком идут другими путями, не через этот
+  интерфейс. `AnimeView::$externalId` — внешний id **вызывающего плагина**,
+  резолвнутый хостом заранее (дешёвый lookup, а не парсинг `$sources` на
+  каждый вызов), поэтому одна и та же реализация `CatalogReaderInterface`
+  не может быть общей на всех плагинов без слоя, знающего, для какого
+  плагина она инжектирована.
+- **`EntryWidgetInterface::render()` принимает `AnimeId`, не внешний id
+  (breaking change v0.7.0).** До v0.7.0 сигнатура была
+  `render(?string $externalId)` — этого больше нет. Многим виджетам
+  внешний id не нужен вовсе (например, виджету статуса закачки достаточно
+  `AnimeId`, чтобы прочитать свой срез); тому, кому нужен — резолвит сам
+  через унаследованный `resolveExternalId()` по `AnimeView::$sources`,
+  либо берёт уже резолвнутый `AnimeView::$externalId` — оба пути идут
+  через `CatalogReaderInterface`. `CatalogWidgetInterface` (без контекста
+  записи) этой правкой не затронут.
 - **Направление зависимости — только в одну сторону.** И хост-приложение,
   и любой плагин зависят от этого пакета. Этот пакет не зависит ни от
   хост-приложения, ни от какого-либо конкретного плагина.
