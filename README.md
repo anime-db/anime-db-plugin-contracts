@@ -35,10 +35,12 @@ composer require anime-db/plugin-contracts
   - [`SyncInterface`](#syncinterface)
   - [`CatalogWidgetInterface` и `EntryWidgetInterface`](#catalogwidgetinterface-и-entrywidgetinterface)
   - [`DownloadCandidateSearchInterface`](#downloadcandidatesearchinterface)
+  - [`SettingsPageInterface`](#settingspageinterface)
 - [Что предоставляет ядро](#что-предоставляет-ядро)
   - [`CatalogReaderInterface` и `AnimeView`](#catalogreaderinterface-и-animeview)
   - [`LlmServiceInterface`](#llmserviceinterface)
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
+  - [`SettingsStoreInterface`](#settingsstoreinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [PSR-18 HTTP-клиент](#psr-18-http-клиент)
 - [Общие примитивы](#общие-примитивы)
@@ -48,8 +50,8 @@ composer require anime-db/plugin-contracts
 ## Что реализует плагин
 
 Интерфейсы, которые реализует сам плагин под конкретный внешний источник.
-Все они, кроме `DownloadCandidateSearchInterface`, наследуют базовую
-способность `ExternalIdResolutionInterface`.
+Все они, кроме `DownloadCandidateSearchInterface` и `SettingsPageInterface`,
+наследуют базовую способность `ExternalIdResolutionInterface`.
 
 ### `ExternalIdResolutionInterface`
 
@@ -400,6 +402,45 @@ class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
 на возврате — защита от подмены на клиенте. Это ответственность
 хост-приложения; на уровне контракта `meta` — просто строка.
 
+### `SettingsPageInterface`
+
+Собственная страница настроек плагина, встраиваемая в settings-область
+хост-приложения (модель Chrome `options_ui`). В отличие от виджетов,
+**не** наследует `ExternalIdResolutionInterface`: страница настроек не
+привязана к конкретной записи каталога, резолв внешнего id ей не нужен.
+
+```php
+use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
+use AnimeDb\PluginContracts\Settings\SettingsStoreInterface;
+
+class MySourceSettingsPage implements SettingsPageInterface
+{
+    public function __construct(
+        private readonly SettingsStoreInterface $settings,
+        private readonly \Twig\Environment $twig,
+    ) {
+    }
+
+    public function render(): string
+    {
+        return $this->twig->render('@my-source/settings.html.twig', [
+            'settings' => $this->settings->read(),
+        ]);
+    }
+}
+```
+
+Контракт покрывает только рендер. Вся интерактивность — сохранение формы,
+кнопка «Авторизоваться», OAuth redirect/callback — идёт через собственные
+роуты плагина (`plugin-routing.yaml`); `render()` отдаёт HTMX-форму,
+целящуюся в эти роуты. Ядро OAuth за плагин не реализует.
+
+Обвязка для реализаторов: плагин получает `SettingsStoreInterface` и
+прочие host-сервисы через DI и рендерит через host-Twig (локаль и
+`csrf_token()` там ambient). Хост оборачивает вызов `render()` в
+try/catch, чтобы одна сломанная страница не роняла всю settings-область.
+Ровно одна страница настроек на плагин.
+
 ## Что предоставляет ядро
 
 Сервисы, которые хост-приложение инжектирует в конструктор плагина
@@ -558,9 +599,9 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 ```
 
 `read()` возвращает пустой массив, если для этого плагина и этой записи
-ещё ничего не сохранено. `write()` — это **merge**, а не перезапись: ключи,
+ещё ничего не сохранено. `write()` — это **override**, а не merge: ключи,
 записанные предыдущим вызовом и отсутствующие в переданных данных,
-сохраняются как есть.
+удаляются. Так плагин может явно очистить часть своего среза.
 
 Экземпляр, который получает плагин через DI, **скоупнут на сам плагин** —
 плагин физически не может прочитать или перезаписать срез другого
@@ -571,6 +612,55 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 `write()` выражает намерение «сохрани мои данные»; как и когда это
 персистится (write-through в БД, батчинг и т.п.) — забота реализации
 сервиса на стороне хост-приложения, не контракта.
+
+### `SettingsStoreInterface`
+
+Сервис ядра для чтения/записи собственных настроек плагина — конфигурации
+и токенов/секретов, которые плагин получает в ходе своего OAuth-флоу.
+Параллель `PluginDataStoreInterface`, но без `AnimeId`: настройки —
+per-плагин, а не per-запись каталога.
+
+```php
+use AnimeDb\PluginContracts\Settings\SettingsStoreInterface;
+
+class MySourceSettingsPage
+{
+    public function __construct(
+        private readonly SettingsStoreInterface $settings,
+    ) {
+    }
+
+    public function saveApiToken(string $token): void
+    {
+        $current = $this->settings->read();
+
+        $this->settings->write([...$current, 'apiToken' => $token]);
+    }
+
+    public function revokeApiToken(): void
+    {
+        $current = $this->settings->read();
+        unset($current['apiToken']);
+
+        $this->settings->write($current);
+    }
+}
+```
+
+`read()` возвращает пустой массив, если для этого плагина ещё ничего не
+сохранено. `write()` — это **override**, а не merge: заменяет весь payload
+плагина целиком, ключи, отсутствующие в переданных данных, удаляются.
+Так плагин отзывает OAuth-токен или чистит поле — просто не передавая его
+ключ в очередном `write()`.
+
+Как и `PluginDataStoreInterface`, экземпляр скоупнут на сам плагин (id
+плагина не в сигнатурах) и не имеет `flush()` — по тем же причинам.
+
+Скоупинг per-id — это изоляция от коллизий ключей между плагинами, **не**
+security-граница: плагин — доверенный код после установки, исполняющий
+произвольный PHP в процессе хоста, это нормально by design. Секреты в
+хранилище защищены на уровне реализации хост-приложения (шифрование на
+диске и т.п.), а не на уровне этого контракта.
 
 ### `DownloadServiceInterface`
 

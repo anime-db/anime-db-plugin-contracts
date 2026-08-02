@@ -31,6 +31,7 @@ use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
+use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use AnimeDb\PluginContracts\Widget\CatalogWidgetInterface;
 use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
@@ -77,6 +78,7 @@ final class ContractConformanceRule implements Rule
         CatalogWidgetInterface::class,
         EntryWidgetInterface::class,
         DownloadCandidateSearchInterface::class,
+        SettingsPageInterface::class,
     ];
 
     public function __construct(

@@ -9,6 +9,7 @@ use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
 use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use AnimeDb\PluginContracts\Sync\SyncItem;
 
@@ -148,5 +149,13 @@ class ConformingDownloadCandidateSearchPlugin implements DownloadCandidateSearch
 
     public function runAction(string $actionId, string $meta, AnimeId $anime): void
     {
+    }
+}
+
+class ConformingSettingsPagePlugin implements SettingsPageInterface
+{
+    public function render(): string
+    {
+        return '';
     }
 }
