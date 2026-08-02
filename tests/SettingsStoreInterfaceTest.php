@@ -27,37 +27,34 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\Model\AnimeId;
-use AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface;
+use AnimeDb\PluginContracts\Settings\SettingsStoreInterface;
 use PHPUnit\Framework\TestCase;
 
-class PluginDataStoreInterfaceTest extends TestCase
+class SettingsStoreInterfaceTest extends TestCase
 {
-    public function testWriteOverridesPreviouslyStoredData(): void
+    public function testWriteOverridesPreviouslyStoredSettings(): void
     {
-        $store = new class implements PluginDataStoreInterface {
-            /** @var array<int, array<string, mixed>> */
+        $store = new class implements SettingsStoreInterface {
+            /** @var array<string, mixed> */
             private array $storage = [];
 
-            public function read(AnimeId $anime): array
+            public function read(): array
             {
-                return $this->storage[$anime->value] ?? [];
+                return $this->storage;
             }
 
-            public function write(AnimeId $anime, array $data): void
+            public function write(array $settings): void
             {
-                $this->storage[$anime->value] = $data;
+                $this->storage = $settings;
             }
         };
 
-        $anime = new AnimeId(1);
+        self::assertSame([], $store->read());
 
-        self::assertSame([], $store->read($anime));
+        $store->write(['apiKey' => 'abc', 'syncEnabled' => true]);
+        self::assertSame(['apiKey' => 'abc', 'syncEnabled' => true], $store->read());
 
-        $store->write($anime, ['taskId' => 'abc']);
-        self::assertSame(['taskId' => 'abc'], $store->read($anime));
-
-        $store->write($anime, ['status' => 'done']);
-        self::assertSame(['status' => 'done'], $store->read($anime));
+        $store->write(['syncEnabled' => true]);
+        self::assertSame(['syncEnabled' => true], $store->read());
     }
 }

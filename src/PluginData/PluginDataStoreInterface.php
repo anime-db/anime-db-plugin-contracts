@@ -59,11 +59,11 @@ interface PluginDataStoreInterface
     public function read(AnimeId $anime): array;
 
     /**
-     * Merge the given data into this plugin's stored payload for the given
-     * anime and persist it.
+     * Replace this plugin's stored payload for the given anime with the
+     * given data and persist it.
      *
-     * A merge, not a replace: keys already stored from a previous write()
-     * that are absent from $data are kept as-is.
+     * An override, not a merge: keys already stored from a previous write()
+     * that are absent from $data are removed.
      *
      * @param array<string, mixed> $data
      */
