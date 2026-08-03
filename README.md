@@ -43,6 +43,7 @@ composer require anime-db/plugin-contracts
   - [`SettingsStoreInterface`](#settingsstoreinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [PSR-18 HTTP-клиент](#psr-18-http-клиент)
+  - [`OAuth\AbstractOAuthClient`](#oauthabstractoauthclient)
 - [Общие примитивы](#общие-примитивы)
 - [Манифест плагина (`manifest.json`)](#манифест-плагина-manifestjson)
 - [PHPStan-правила](#phpstan-правила)
@@ -433,7 +434,14 @@ class MySourceSettingsPage implements SettingsPageInterface
 Контракт покрывает только рендер. Вся интерактивность — сохранение формы,
 кнопка «Авторизоваться», OAuth redirect/callback — идёт через собственные
 роуты плагина (`plugin-routing.yaml`); `render()` отдаёт HTMX-форму,
-целящуюся в эти роуты. Ядро OAuth за плагин не реализует.
+целящуюся в эти роуты. Ядро OAuth за плагин не реализует; плагину со
+стандартным Authorization Code + PKCE флоу не нужно реализовывать его
+самому — см. `OAuth\AbstractOAuthClient` ниже.
+
+Кнопка «Авторизоваться» — обычная top-level навигация (ссылка/сабмит формы
+с перезагрузкой страницы), не HTMX-swap: Electron-обвязка хоста
+перехватывает OAuth-редирект браузера только на настоящей top-level
+навигации, HTMX-запрос она не увидит, и кнопка молча не сработает.
 
 Обвязка для реализаторов: плагин получает `SettingsStoreInterface` и
 прочие host-сервисы через DI и рендерит через host-Twig (локаль и
@@ -734,7 +742,116 @@ PSR-18 `Psr\Http\Client\ClientInterface` через DI (type-hint в
 конструкторе). Это позволяет включать прокси централизованно, в фабрике
 клиента на стороне хост-приложения, прозрачно для плагинов. Отдельного
 интерфейса в этом пакете для этого не заводится — соглашение, не
-контрактный тип.
+контрактный тип. Тот же клиент — с per-plugin User-Agent (некоторые
+вендоры, например Shikimori, банят запросы без него) — используется и
+`OAuth\AbstractOAuthClient` ниже для обмена/обновления токена.
+
+### `OAuth\AbstractOAuthClient`
+
+Тонкий абстрактный базовый класс OAuth 2.0 Authorization Code + PKCE для
+плагинов-источников (Shikimori, MyAnimeList и т.п.), чтобы каждый плагин не
+переизобретал PKCE/`state`/обмен кода на токен заново. Живёт в этом пакете,
+а не в отдельной библиотеке (`league/oauth2-client` и подобные), потому что
+плагин поставляется **без своего `vendor/`** — всё, что ему нужно в
+рантайме, должно быть доступно из `plugin-contracts`. Построен на PSR-18
+клиенте и PSR-17 фабриках запросов/потоков (`psr/http-factory`), без внешних
+OAuth-зависимостей.
+
+```php
+use AnimeDb\PluginContracts\OAuth\AbstractOAuthClient;
+
+final class ShikimoriOAuthClient extends AbstractOAuthClient
+{
+    protected function authorizeEndpoint(): string
+    {
+        return 'https://shikimori.one/oauth/authorize';
+    }
+
+    protected function tokenEndpoint(): string
+    {
+        return 'https://shikimori.one/oauth/token';
+    }
+
+    protected function clientId(): string
+    {
+        return 'shikimori-client-id';
+    }
+
+    protected function clientSecret(): ?string
+    {
+        return 'shikimori-client-secret';
+    }
+
+    protected function scopes(): array
+    {
+        return [];
+    }
+
+    protected function pkceMethod(): string
+    {
+        return 'S256';
+    }
+
+    protected function callbackPath(): string
+    {
+        return '/oauth/shikimori/callback';
+    }
+}
+```
+
+Плагин подключает эти два метода к своим собственным роутам:
+
+```php
+// GET /oauth/shikimori/start — top-level навигация, не HTMX
+public function start(): RedirectResponse
+{
+    return new RedirectResponse($this->oauth->buildAuthorizeUrl());
+}
+
+// GET /oauth/shikimori/callback?state=...&code=...
+public function callback(Request $request): Response
+{
+    $this->oauth->handleCallback($request->query->get('state'), $request->query->get('code'));
+
+    return new Response('Авторизация завершена, вкладку можно закрыть.');
+}
+```
+
+Ни один из методов класса не принимает и не возвращает
+Symfony-HTTP-типы (`Request`/`Response`) — это чистая логика (строки,
+PSR-18, PSR-17, `SettingsStoreInterface`), иначе `symfony/http-foundation`
+стал бы зависимостью контракта. HTTP-обвязку поверх неё пишет сам плагин.
+
+Что берёт на себя базовый класс:
+
+- сборку authorize-URL (`redirect_uri`, `client_id`, `scope`, `state`,
+  PKCE `code_challenge`) и генерацию `state`/PKCE code verifier, с
+  сохранением обоих в `SettingsStoreInterface` на время сессии
+  (`buildAuthorizeUrl()`);
+- обмен `code` + verifier на токен и **обязательную** сверку `state`
+  через `hash_equals()` — это то, что делает безопасным
+  неаутентифицированный loopback callback (`handleCallback()`);
+- обновление access-токена по refresh-токену, с ротацией: новый
+  refresh-токен пишется в `SettingsStoreInterface` **отдельным** вызовом
+  `write()` **до** того, как в настройки попадёт новый access-токен —
+  крах процесса между «потратил старый refresh» и «записал новый» не
+  теряет токен (`refreshAccessToken()`).
+
+`authorizeEndpoint()`/`tokenEndpoint()` — вендорные домены, **прибитые
+гвоздями** в подклассе, а не выведенные из пользовательского
+`api_endpoint`: иначе смена домена пользователем (соц. инженерия) уводит
+долгоживущий refresh-токен на чужой сервер при плановом обновлении.
+Настраиваемым остаётся только *data* `api_endpoint`, не auth-эндпоинты.
+
+`redirect_uri` собирается как `$_SERVER['OAUTH_CALLBACK_ORIGIN']` (задаёт
+хост-приложение; читается из `$_SERVER`, не `getenv()`) плюс
+`callbackPath()` подкласса. Ожидается, что origin — уже `http://127.0.0.1:<port>`
+(буквальный loopback-адрес, RFC 8252 §8.3, не `localhost`) без trailing
+slash; класс не хардкодит порт и не резолвит хост сам, только
+конкатенирует.
+
+Плагин с нестандартным OAuth-флоу этот класс не использует вообще
+(escape hatch) — реализует свои роуты сам.
 
 ## Общие примитивы
 

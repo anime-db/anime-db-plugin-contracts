@@ -39,7 +39,16 @@ namespace AnimeDb\PluginContracts\Settings;
  * an "Authorize" button, OAuth redirect/callback — goes through the
  * plugin's own routes (declared in its `plugin-routing.yaml`); `render()`
  * returns an HTMX form targeting those routes. The core does not implement
- * OAuth on the plugin's behalf.
+ * OAuth on the plugin's behalf; a plugin that needs the standard Authorization
+ * Code + PKCE flow builds it on
+ * {@see \AnimeDb\PluginContracts\OAuth\AbstractOAuthClient} instead of
+ * reimplementing it.
+ *
+ * The "Authorize" button itself must be a plain top-level navigation (a link
+ * or a form submit that reloads the page), never an HTMX in-page swap: the
+ * desktop host's Electron shell intercepts the browser-bound OAuth redirect
+ * only on a real top-level navigation, not on an HTMX-driven fetch, so an
+ * HTMX-swapped button would silently fail to open the authorize page.
  *
  * A plugin obtains a {@see SettingsStoreInterface} and any other host
  * services through the same constructor injection as other role
