@@ -35,8 +35,11 @@ namespace AnimeDb\PluginContracts\Manifest;
  * consumers should never work with the raw decoded JSON array directly. `features` is only
  * meaningful for {@see PluginType::Integration}, `locales` only for {@see PluginType::Translation}.
  * {@see PluginType::Local} declares neither.
+ *
+ * Also implements {@see OwnManifestInterface} — the narrow read-only view of
+ * this data that the host injects into the plugin itself.
  */
-final class Manifest
+final class Manifest implements OwnManifestInterface
 {
     /**
      * @param array<string, bool>|null $features flat set of feature flags, only for {@see PluginType::Integration}
@@ -54,5 +57,20 @@ final class Manifest
         public readonly ?array $locales = null,
         public readonly ?string $updateUrl = null,
     ) {
+    }
+
+    public function id(): string
+    {
+        return $this->id;
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function version(): string
+    {
+        return $this->version;
     }
 }
