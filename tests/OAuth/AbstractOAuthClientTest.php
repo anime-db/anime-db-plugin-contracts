@@ -185,13 +185,13 @@ class AbstractOAuthClientTest extends TestCase
         self::assertSame('refresh_token', $sentParams['grant_type']);
         self::assertSame('old-refresh', $sentParams['refresh_token']);
 
-        self::assertCount(2, $settings->writes);
-        self::assertSame('new-refresh', $settings->writes[0]['oauth_refresh_token']);
-        // The rotated refresh token is safely on disk in the first write,
-        // before the second write even touches the access token.
-        self::assertSame('old-access', $settings->writes[0]['oauth_access_token']);
-        self::assertSame('new-access', $settings->writes[1]['oauth_access_token']);
-        self::assertSame('new-refresh', $settings->writes[1]['oauth_refresh_token']);
+        self::assertCount(2, $settings->updates);
+        self::assertSame('new-refresh', $settings->updates[0]['oauth_refresh_token']);
+        // The rotated refresh token is safely on disk in the first update,
+        // before the second update even touches the access token.
+        self::assertSame('old-access', $settings->updates[0]['oauth_access_token']);
+        self::assertSame('new-access', $settings->updates[1]['oauth_access_token']);
+        self::assertSame('new-refresh', $settings->updates[1]['oauth_refresh_token']);
     }
 
     public function testRefreshAccessTokenThrowsWhenNoRefreshTokenStored(): void
@@ -222,7 +222,7 @@ class AbstractOAuthClientTest extends TestCase
             public array $data;
 
             /** @var list<array<string, mixed>> */
-            public array $writes = [];
+            public array $updates = [];
 
             /**
              * @param array<string, mixed> $data
@@ -237,10 +237,10 @@ class AbstractOAuthClientTest extends TestCase
                 return $this->data;
             }
 
-            public function write(array $settings): void
+            public function update(callable $modifier): void
             {
-                $this->data = $settings;
-                $this->writes[] = $settings;
+                $this->data = $modifier($this->data);
+                $this->updates[] = $this->data;
             }
         };
     }

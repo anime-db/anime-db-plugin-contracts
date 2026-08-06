@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
 
 class SettingsStoreInterfaceTest extends TestCase
 {
-    public function testWriteOverridesPreviouslyStoredSettings(): void
+    public function testUpdateReplacesStoredSettingsWithModifierResult(): void
     {
         $store = new class implements SettingsStoreInterface {
             /** @var array<string, mixed> */
@@ -43,18 +43,40 @@ class SettingsStoreInterfaceTest extends TestCase
                 return $this->storage;
             }
 
-            public function write(array $settings): void
+            public function update(callable $modifier): void
             {
-                $this->storage = $settings;
+                $this->storage = $modifier($this->storage);
             }
         };
 
         self::assertSame([], $store->read());
 
-        $store->write(['apiKey' => 'abc', 'syncEnabled' => true]);
+        $store->update(static fn (): array => ['apiKey' => 'abc', 'syncEnabled' => true]);
         self::assertSame(['apiKey' => 'abc', 'syncEnabled' => true], $store->read());
 
-        $store->write(['syncEnabled' => true]);
+        $store->update(static fn (): array => ['syncEnabled' => true]);
         self::assertSame(['syncEnabled' => true], $store->read());
+    }
+
+    public function testUpdatePassesCurrentSettingsToModifierForMerging(): void
+    {
+        $store = new class implements SettingsStoreInterface {
+            /** @var array<string, mixed> */
+            private array $storage = ['apiKey' => 'abc', 'syncEnabled' => true];
+
+            public function read(): array
+            {
+                return $this->storage;
+            }
+
+            public function update(callable $modifier): void
+            {
+                $this->storage = $modifier($this->storage);
+            }
+        };
+
+        $store->update(static fn (array $settings): array => [...$settings, 'apiKey' => 'new']);
+
+        self::assertSame(['apiKey' => 'new', 'syncEnabled' => true], $store->read());
     }
 }
