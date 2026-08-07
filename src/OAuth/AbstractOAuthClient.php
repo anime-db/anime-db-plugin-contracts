@@ -97,12 +97,11 @@ use Psr\Http\Message\StreamFactoryInterface;
  *   {@see self::callbackPath()}, it does not construct or validate the
  *   origin itself.
  * - On {@see self::refreshAccessToken()}, a rotated refresh token (MyAnimeList
- *   rotates on every refresh) is persisted to {@see SettingsStoreInterface}
- *   in its own `write()` call *before* the new access token is added and
- *   persisted in a second `write()` call. If the host process crashes
- *   between the two, the new refresh token is already safe on disk; nothing
- *   is lost, unlike storing both in one call that could fail after the
- *   refresh token was already consumed by the vendor.
+ *   rotates on every refresh) and the new access token are persisted to
+ *   {@see SettingsStoreInterface} together in a single `update()` call. The
+ *   call is already atomic (locked read-modify-write), so splitting it into
+ *   two calls would add no safety margin — it would only leave a window in
+ *   which the access token is briefly absent from settings.
  */
 abstract class AbstractOAuthClient
 {
@@ -175,10 +174,12 @@ abstract class AbstractOAuthClient
         $state = bin2hex(random_bytes(32));
         $codeVerifier = self::base64UrlEncode(random_bytes(32));
 
-        $settings = $this->settings->read();
-        $settings[self::SETTINGS_KEY_STATE] = $state;
-        $settings[self::SETTINGS_KEY_CODE_VERIFIER] = $codeVerifier;
-        $this->settings->write($settings);
+        $this->settings->update(static function (array $settings) use ($state, $codeVerifier): array {
+            $settings[self::SETTINGS_KEY_STATE] = $state;
+            $settings[self::SETTINGS_KEY_CODE_VERIFIER] = $codeVerifier;
+
+            return $settings;
+        });
 
         $query = http_build_query([
             'response_type' => 'code',
@@ -212,15 +213,20 @@ abstract class AbstractOAuthClient
      */
     public function handleCallback(string $state, string $code): void
     {
-        $settings = $this->settings->read();
-        $expectedState = $settings[self::SETTINGS_KEY_STATE] ?? null;
-        $codeVerifier = $settings[self::SETTINGS_KEY_CODE_VERIFIER] ?? null;
+        $expectedState = null;
+        $codeVerifier = null;
 
         // Single-use: the session's state/verifier are consumed here
         // regardless of outcome, so a stale or already-used callback can't
         // be replayed.
-        unset($settings[self::SETTINGS_KEY_STATE], $settings[self::SETTINGS_KEY_CODE_VERIFIER]);
-        $this->settings->write($settings);
+        $this->settings->update(function (array $settings) use (&$expectedState, &$codeVerifier): array {
+            $expectedState = $settings[self::SETTINGS_KEY_STATE] ?? null;
+            $codeVerifier = $settings[self::SETTINGS_KEY_CODE_VERIFIER] ?? null;
+
+            unset($settings[self::SETTINGS_KEY_STATE], $settings[self::SETTINGS_KEY_CODE_VERIFIER]);
+
+            return $settings;
+        });
 
         if (
             !is_string($expectedState)
@@ -239,22 +245,25 @@ abstract class AbstractOAuthClient
             'code_verifier' => $codeVerifier,
         ]);
 
-        $settings = $this->settings->read();
-        $settings[self::SETTINGS_KEY_ACCESS_TOKEN] = $token['access_token'];
-        if (isset($token['refresh_token']) && is_string($token['refresh_token'])) {
-            $settings[self::SETTINGS_KEY_REFRESH_TOKEN] = $token['refresh_token'];
-        }
-        $this->settings->write($settings);
+        $this->settings->update(static function (array $settings) use ($token): array {
+            $settings[self::SETTINGS_KEY_ACCESS_TOKEN] = $token['access_token'];
+            if (isset($token['refresh_token']) && is_string($token['refresh_token'])) {
+                $settings[self::SETTINGS_KEY_REFRESH_TOKEN] = $token['refresh_token'];
+            }
+
+            return $settings;
+        });
     }
 
     /**
      * Exchange the stored refresh token for a new access token.
      *
      * If the vendor rotates refresh tokens (MyAnimeList does, on every use),
-     * the new refresh token is written to {@see SettingsStoreInterface}
-     * *before* the new access token is added and written in a second call —
-     * so a crash between the two does not strand the plugin with a consumed
-     * refresh token and nothing to replace it.
+     * the new refresh token and the new access token are persisted to
+     * {@see SettingsStoreInterface} together, in a single `update()` call:
+     * the call is already atomic, so there is nothing a second call would
+     * add, and splitting it would only open a window where the access
+     * token is briefly missing from settings.
      *
      * @throws \LogicException             if no refresh token has been stored yet
      *                                     (the flow hasn't completed {@see self::handleCallback()})
@@ -279,18 +288,21 @@ abstract class AbstractOAuthClient
         $token = $this->requestToken($params);
 
         $newRefreshToken = $token['refresh_token'] ?? null;
+        $accessToken = $token['access_token'];
 
-        $settings = $this->settings->read();
-        if (is_string($newRefreshToken) && $newRefreshToken !== '') {
-            $settings[self::SETTINGS_KEY_REFRESH_TOKEN] = $newRefreshToken;
-        }
-        // Persist the (possibly rotated) refresh token on its own, before
-        // the new access token is even added to $settings, let alone
-        // persisted.
-        $this->settings->write($settings);
+        // update() is already atomic (single locked read-modify-write), so
+        // both fields are persisted together in one call: there is no
+        // partial-write outcome to guard against, and a single call avoids
+        // a window where the access token is briefly missing from settings.
+        $this->settings->update(static function (array $settings) use ($newRefreshToken, $accessToken): array {
+            if (is_string($newRefreshToken) && $newRefreshToken !== '') {
+                $settings[self::SETTINGS_KEY_REFRESH_TOKEN] = $newRefreshToken;
+            }
 
-        $settings[self::SETTINGS_KEY_ACCESS_TOKEN] = $token['access_token'];
-        $this->settings->write($settings);
+            $settings[self::SETTINGS_KEY_ACCESS_TOKEN] = $accessToken;
+
+            return $settings;
+        });
     }
 
     /**
