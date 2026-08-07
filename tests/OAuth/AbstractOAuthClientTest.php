@@ -210,6 +210,128 @@ class AbstractOAuthClientTest extends TestCase
         self::assertNull($client->accessToken());
     }
 
+    public function testTokenRequestHeadersDefaultsToEmpty(): void
+    {
+        $client = $this->createClient($this->createSettingsStore());
+
+        $reflection = new \ReflectionMethod($client, 'tokenRequestHeaders');
+
+        self::assertSame([], $reflection->invoke($client));
+    }
+
+    public function testHandleCallbackSendsHeadersFromTokenRequestHeadersHook(): void
+    {
+        $settings = $this->createSettingsStore([
+            'oauth_state' => 'expected-state',
+            'oauth_code_verifier' => 'expected-verifier',
+        ]);
+
+        $capturedBody = null;
+        $capturedHeaders = null;
+        [$httpClient, $requestFactory, $streamFactory] = $this->createHttpStack(
+            200,
+            ['access_token' => 'new-access'],
+            $capturedBody,
+            $capturedHeaders,
+        );
+
+        $client = $this->createClientWithHeaders(
+            ['User-Agent' => 'MyPlugin/1.0'],
+            $settings,
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+        );
+
+        $client->handleCallback('expected-state', 'the-code');
+
+        self::assertSame('MyPlugin/1.0', $capturedHeaders['User-Agent']);
+        self::assertSame('application/x-www-form-urlencoded', $capturedHeaders['Content-Type']);
+        self::assertSame('application/json', $capturedHeaders['Accept']);
+    }
+
+    public function testRefreshAccessTokenSendsHeadersFromTokenRequestHeadersHook(): void
+    {
+        $settings = $this->createSettingsStore([
+            'oauth_access_token' => 'old-access',
+            'oauth_refresh_token' => 'old-refresh',
+        ]);
+
+        $capturedBody = null;
+        $capturedHeaders = null;
+        [$httpClient, $requestFactory, $streamFactory] = $this->createHttpStack(
+            200,
+            ['access_token' => 'new-access'],
+            $capturedBody,
+            $capturedHeaders,
+        );
+
+        $client = $this->createClientWithHeaders(
+            ['User-Agent' => 'MyPlugin/1.0'],
+            $settings,
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+        );
+
+        $client->refreshAccessToken();
+
+        self::assertSame('MyPlugin/1.0', $capturedHeaders['User-Agent']);
+        self::assertSame('application/x-www-form-urlencoded', $capturedHeaders['Content-Type']);
+        self::assertSame('application/json', $capturedHeaders['Accept']);
+    }
+
+    public function testTokenRequestHeadersCannotOverrideProtocolHeaders(): void
+    {
+        $settings = $this->createSettingsStore([
+            'oauth_state' => 'expected-state',
+            'oauth_code_verifier' => 'expected-verifier',
+        ]);
+
+        $capturedBody = null;
+        $capturedHeaders = null;
+        [$httpClient, $requestFactory, $streamFactory] = $this->createHttpStack(
+            200,
+            ['access_token' => 'new-access'],
+            $capturedBody,
+            $capturedHeaders,
+        );
+
+        $client = $this->createClientWithHeaders(
+            ['Content-Type' => 'application/json', 'Accept' => 'text/plain'],
+            $settings,
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+        );
+
+        $client->handleCallback('expected-state', 'the-code');
+
+        self::assertSame('application/x-www-form-urlencoded', $capturedHeaders['Content-Type']);
+        self::assertSame('application/json', $capturedHeaders['Accept']);
+    }
+
+    public function testDisconnectRemovesAllOAuthKeysAndKeepsOtherSettings(): void
+    {
+        $settings = $this->createSettingsStore([
+            'apiKey' => 'unrelated-setting',
+            'oauth_state' => 'some-state',
+            'oauth_code_verifier' => 'some-verifier',
+            'oauth_access_token' => 'some-access',
+            'oauth_refresh_token' => 'some-refresh',
+        ]);
+        $client = $this->createClient($settings);
+
+        $client->disconnect();
+
+        self::assertSame('unrelated-setting', $settings->data['apiKey']);
+        self::assertArrayNotHasKey('oauth_state', $settings->data);
+        self::assertArrayNotHasKey('oauth_code_verifier', $settings->data);
+        self::assertArrayNotHasKey('oauth_access_token', $settings->data);
+        self::assertArrayNotHasKey('oauth_refresh_token', $settings->data);
+        self::assertNull($client->accessToken());
+    }
+
     /**
      * @param array<string, mixed> $initial
      */
@@ -244,12 +366,15 @@ class AbstractOAuthClientTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $responsePayload
+     * @param array<string, mixed>       $responsePayload
+     * @param array<string, string>|null $capturedHeaders final header name => value sent on the request
      *
      * @return array{0: ClientInterface, 1: RequestFactoryInterface, 2: StreamFactoryInterface}
      */
-    private function createHttpStack(int $statusCode, array $responsePayload, ?string &$capturedBody): array
+    private function createHttpStack(int $statusCode, array $responsePayload, ?string &$capturedBody, ?array &$capturedHeaders = null): array
     {
+        $capturedHeaders = [];
+
         $requestBodyStream = $this->createMock(StreamInterface::class);
 
         $streamFactory = $this->createMock(StreamFactoryInterface::class);
@@ -261,7 +386,12 @@ class AbstractOAuthClientTest extends TestCase
             });
 
         $request = $this->createMock(RequestInterface::class);
-        $request->method('withHeader')->willReturnSelf();
+        $request->method('withHeader')
+            ->willReturnCallback(function (string $name, string $value) use ($request, &$capturedHeaders) {
+                $capturedHeaders[$name] = $value;
+
+                return $request;
+            });
         $request->method('withBody')->willReturnSelf();
 
         $requestFactory = $this->createMock(RequestFactoryInterface::class);
@@ -324,6 +454,76 @@ class AbstractOAuthClientTest extends TestCase
             protected function callbackPath(): string
             {
                 return '/oauth/test/callback';
+            }
+        };
+    }
+
+    /**
+     * @param array<string, string> $headers
+     */
+    private function createClientWithHeaders(
+        array $headers,
+        SettingsStoreInterface $settings,
+        ?ClientInterface $httpClient = null,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
+    ): AbstractOAuthClient {
+        $httpClient ??= $this->createMock(ClientInterface::class);
+        $requestFactory ??= $this->createMock(RequestFactoryInterface::class);
+        $streamFactory ??= $this->createMock(StreamFactoryInterface::class);
+
+        return new class($httpClient, $requestFactory, $streamFactory, $settings, $headers) extends AbstractOAuthClient {
+            /**
+             * @param array<string, string> $headers
+             */
+            public function __construct(
+                ClientInterface $httpClient,
+                RequestFactoryInterface $requestFactory,
+                StreamFactoryInterface $streamFactory,
+                SettingsStoreInterface $settings,
+                private readonly array $headers,
+            ) {
+                parent::__construct($httpClient, $requestFactory, $streamFactory, $settings);
+            }
+
+            protected function authorizeEndpoint(): string
+            {
+                return 'https://vendor.example/oauth/authorize';
+            }
+
+            protected function tokenEndpoint(): string
+            {
+                return 'https://vendor.example/oauth/token';
+            }
+
+            protected function clientId(): string
+            {
+                return 'test-client-id';
+            }
+
+            protected function clientSecret(): ?string
+            {
+                return null;
+            }
+
+            protected function scopes(): array
+            {
+                return ['read', 'write'];
+            }
+
+            protected function pkceMethod(): string
+            {
+                return 'S256';
+            }
+
+            protected function callbackPath(): string
+            {
+                return '/oauth/test/callback';
+            }
+
+            protected function tokenRequestHeaders(): array
+            {
+                return $this->headers;
             }
         };
     }
