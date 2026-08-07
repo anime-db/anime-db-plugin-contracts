@@ -317,6 +317,43 @@ abstract class AbstractOAuthClient
     }
 
     /**
+     * Forget the stored OAuth session — clears the pending state/verifier and
+     * the access/refresh tokens, so {@see self::accessToken()} returns null
+     * again and the user can re-authorize from scratch.
+     *
+     * Local only: this does not call any vendor token-revocation endpoint.
+     */
+    public function disconnect(): void
+    {
+        $this->settings->update(static function (array $settings): array {
+            unset(
+                $settings[self::SETTINGS_KEY_STATE],
+                $settings[self::SETTINGS_KEY_CODE_VERIFIER],
+                $settings[self::SETTINGS_KEY_ACCESS_TOKEN],
+                $settings[self::SETTINGS_KEY_REFRESH_TOKEN],
+            );
+
+            return $settings;
+        });
+    }
+
+    /**
+     * Extra headers to send on the token and refresh requests (e.g. a
+     * vendor-required `User-Agent`). Default: none.
+     *
+     * Applied to both the authorization-code exchange and the refresh, since
+     * both go through {@see self::requestToken()}. The protocol-required
+     * `Content-Type`/`Accept` are owned by the base class and cannot be
+     * overridden here.
+     *
+     * @return array<string, string> header name => value
+     */
+    protected function tokenRequestHeaders(): array
+    {
+        return [];
+    }
+
+    /**
      * Literal `127.0.0.1` loopback origin (RFC 8252 §8.3), read verbatim
      * from the host-provided environment — never resolved from a hostname,
      * never taken from anything a plugin controls.
@@ -362,8 +399,15 @@ abstract class AbstractOAuthClient
 
         $body = $this->streamFactory->createStream(http_build_query($params));
 
-        $request = $this->requestFactory
-            ->createRequest('POST', $this->tokenEndpoint())
+        $request = $this->requestFactory->createRequest('POST', $this->tokenEndpoint());
+        foreach ($this->tokenRequestHeaders() as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
+
+        // Applied after the plugin's own headers, so a subclass cannot use
+        // tokenRequestHeaders() to override the protocol-required headers of
+        // this token request.
+        $request = $request
             ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
             ->withHeader('Accept', 'application/json')
             ->withBody($body);
