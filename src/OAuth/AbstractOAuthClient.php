@@ -97,12 +97,11 @@ use Psr\Http\Message\StreamFactoryInterface;
  *   {@see self::callbackPath()}, it does not construct or validate the
  *   origin itself.
  * - On {@see self::refreshAccessToken()}, a rotated refresh token (MyAnimeList
- *   rotates on every refresh) is persisted to {@see SettingsStoreInterface}
- *   in its own `update()` call *before* the new access token is added and
- *   persisted in a second `update()` call. If the host process crashes
- *   between the two, the new refresh token is already safe on disk; nothing
- *   is lost, unlike storing both in one call that could fail after the
- *   refresh token was already consumed by the vendor.
+ *   rotates on every refresh) and the new access token are persisted to
+ *   {@see SettingsStoreInterface} together in a single `update()` call. The
+ *   call is already atomic (locked read-modify-write), so splitting it into
+ *   two calls would add no safety margin — it would only leave a window in
+ *   which the access token is briefly absent from settings.
  */
 abstract class AbstractOAuthClient
 {
@@ -260,10 +259,11 @@ abstract class AbstractOAuthClient
      * Exchange the stored refresh token for a new access token.
      *
      * If the vendor rotates refresh tokens (MyAnimeList does, on every use),
-     * the new refresh token is written to {@see SettingsStoreInterface}
-     * *before* the new access token is added and written in a second
-     * `update()` call — so a crash between the two does not strand the
-     * plugin with a consumed refresh token and nothing to replace it.
+     * the new refresh token and the new access token are persisted to
+     * {@see SettingsStoreInterface} together, in a single `update()` call:
+     * the call is already atomic, so there is nothing a second call would
+     * add, and splitting it would only open a window where the access
+     * token is briefly missing from settings.
      *
      * @throws \LogicException             if no refresh token has been stored yet
      *                                     (the flow hasn't completed {@see self::handleCallback()})
@@ -288,20 +288,17 @@ abstract class AbstractOAuthClient
         $token = $this->requestToken($params);
 
         $newRefreshToken = $token['refresh_token'] ?? null;
+        $accessToken = $token['access_token'];
 
-        // Persist the (possibly rotated) refresh token on its own, before
-        // the new access token is even added to the settings, let alone
-        // persisted.
-        $this->settings->update(static function (array $settings) use ($newRefreshToken): array {
+        // update() is already atomic (single locked read-modify-write), so
+        // both fields are persisted together in one call: there is no
+        // partial-write outcome to guard against, and a single call avoids
+        // a window where the access token is briefly missing from settings.
+        $this->settings->update(static function (array $settings) use ($newRefreshToken, $accessToken): array {
             if (is_string($newRefreshToken) && $newRefreshToken !== '') {
                 $settings[self::SETTINGS_KEY_REFRESH_TOKEN] = $newRefreshToken;
             }
 
-            return $settings;
-        });
-
-        $accessToken = $token['access_token'];
-        $this->settings->update(static function (array $settings) use ($accessToken): array {
             $settings[self::SETTINGS_KEY_ACCESS_TOKEN] = $accessToken;
 
             return $settings;

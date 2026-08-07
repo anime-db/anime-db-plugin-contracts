@@ -163,7 +163,7 @@ class AbstractOAuthClientTest extends TestCase
         $client->handleCallback('expected-state', 'the-code');
     }
 
-    public function testRefreshAccessTokenPersistsRotatedRefreshTokenBeforeNewAccessToken(): void
+    public function testRefreshAccessTokenPersistsRotatedRefreshTokenWithNewAccessToken(): void
     {
         $settings = $this->createSettingsStore([
             'oauth_access_token' => 'old-access',
@@ -185,13 +185,11 @@ class AbstractOAuthClientTest extends TestCase
         self::assertSame('refresh_token', $sentParams['grant_type']);
         self::assertSame('old-refresh', $sentParams['refresh_token']);
 
-        self::assertCount(2, $settings->updates);
+        // The rotated refresh token and the new access token are persisted
+        // together in a single atomic update() call.
+        self::assertCount(1, $settings->updates);
         self::assertSame('new-refresh', $settings->updates[0]['oauth_refresh_token']);
-        // The rotated refresh token is safely on disk in the first update,
-        // before the second update even touches the access token.
-        self::assertSame('old-access', $settings->updates[0]['oauth_access_token']);
-        self::assertSame('new-access', $settings->updates[1]['oauth_access_token']);
-        self::assertSame('new-refresh', $settings->updates[1]['oauth_refresh_token']);
+        self::assertSame('new-access', $settings->updates[0]['oauth_access_token']);
     }
 
     public function testRefreshAccessTokenThrowsWhenNoRefreshTokenStored(): void
