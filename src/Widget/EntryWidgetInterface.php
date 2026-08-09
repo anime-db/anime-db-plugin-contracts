@@ -53,6 +53,17 @@ use AnimeDb\PluginContracts\Model\AnimeId;
 interface EntryWidgetInterface extends ExternalIdResolutionInterface
 {
     /**
+     * Widget metadata: code name, title and description.
+     *
+     * Static so the host can read {@see WidgetMetadata::$name} (for its
+     * DI tag / URL / `features` key) while compiling the container, without
+     * instantiating the widget class. Must return a literal value object
+     * with no heavy logic or side effects: it runs at container build time
+     * on plugin install/activate.
+     */
+    public static function metadata(): WidgetMetadata;
+
+    /**
      * Render the widget for a single catalog record.
      *
      * @return string rendered widget markup as a raw HTML string

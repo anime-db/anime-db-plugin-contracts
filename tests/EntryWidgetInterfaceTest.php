@@ -29,6 +29,7 @@ namespace AnimeDb\PluginContracts\Tests;
 
 use AnimeDb\PluginContracts\Model\AnimeId;
 use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
+use AnimeDb\PluginContracts\Widget\WidgetMetadata;
 use PHPUnit\Framework\TestCase;
 
 class EntryWidgetInterfaceTest extends TestCase
@@ -36,6 +37,11 @@ class EntryWidgetInterfaceTest extends TestCase
     public function testRenderReceivesAnimeId(): void
     {
         $widget = new class implements EntryWidgetInterface {
+            public static function metadata(): WidgetMetadata
+            {
+                return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
+            }
+
             public function resolveExternalId(array $urls): ?string
             {
                 return null;

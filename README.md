@@ -275,10 +275,16 @@ class MySourcePlugin implements SyncInterface
 ```php
 use AnimeDb\PluginContracts\Widget\CatalogWidgetInterface;
 use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
+use AnimeDb\PluginContracts\Widget\WidgetMetadata;
 
 // Виджет на общей странице каталога (например, "новинки") — без контекста.
 class NewReleasesWidget implements CatalogWidgetInterface
 {
+    public static function metadata(): WidgetMetadata
+    {
+        return new WidgetMetadata('new-releases', 'New releases', 'Shows recently added catalog entries.');
+    }
+
     public function resolveExternalId(array $urls): ?string
     {
         return null; // виджету не нужен свой внешний id
@@ -294,6 +300,11 @@ class NewReleasesWidget implements CatalogWidgetInterface
 // а не внешний id: сам резолвит его, если он ему вообще нужен.
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
+    public static function metadata(): WidgetMetadata
+    {
+        return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
+    }
+
     public function resolveExternalId(array $urls): ?string
     {
         // ...
@@ -320,6 +331,15 @@ id: многим виджетам он вообще не нужен (напри�
 (унаследован от `ExternalIdResolutionInterface`) по `AnimeView::$sources`,
 либо взять уже резолвнутый хостом `AnimeView::$externalId` — в обоих
 случаях данные приходят через [`CatalogReaderInterface`](#catalogreaderinterface-и-animeview).
+
+`metadata()` — статический метод, возвращающий `WidgetMetadata`: код-имя
+(`name`, шаблон `[a-z0-9-]+` — им хост ключует виджет как
+`{pluginId}:{name}` в DI-теге/URL/`features`, менять после релиза нельзя
+без миграции), человеческое `title` и `description` для страницы настроек
+хоста. Статик — чтобы хост-`TagPluginServicesPass` мог прочитать `name`
+при компиляции контейнера без инстанцирования класса виджета; `title`/
+`description` — готовые строки для отображения, не ключи перевода
+(i18n плагинного UI — отдельная задача).
 
 ### `DownloadCandidateSearchInterface`
 
@@ -468,12 +488,18 @@ use AnimeDb\PluginContracts\Catalog\AnimeView;
 use AnimeDb\PluginContracts\Catalog\CatalogReaderInterface;
 use AnimeDb\PluginContracts\Model\AnimeId;
 use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
+use AnimeDb\PluginContracts\Widget\WidgetMetadata;
 
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
     public function __construct(
         private readonly CatalogReaderInterface $catalog,
     ) {
+    }
+
+    public static function metadata(): WidgetMetadata
+    {
+        return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
     }
 
     public function resolveExternalId(array $urls): ?string
