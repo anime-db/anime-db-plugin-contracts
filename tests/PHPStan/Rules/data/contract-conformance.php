@@ -58,8 +58,9 @@ class RenamedParameterPlugin implements SyncInterface
         return [];
     }
 
-    public function push(SyncItem $syncItem): void
+    public function push(SyncItem $syncItem): SyncItem
     {
+        return $syncItem;
     }
 
     public function pull(): iterable
@@ -122,8 +123,9 @@ class WrongReturnTypePlugin implements SyncInterface
         return [];
     }
 
-    public function push(SyncItem $item): void
+    public function push(SyncItem $item): SyncItem
     {
+        return $item;
     }
 
     public function pull(): array

@@ -45,8 +45,19 @@ interface SyncInterface extends FillerInterface
 {
     /**
      * Push a local list item change to the external source.
+     *
+     * Returns the source-confirmed state of the entry after the write: the
+     * authoritative post-write value, both by content (the source may normalize the
+     * write, e.g. a lossy status mapping) and by time (the source's own
+     * {@see SyncItem::$updatedAt}). The caller (host) uses it to seed its sync
+     * snapshot precisely — otherwise the snapshot drifts from reality and produces
+     * phantom changes on the next reconciliation.
+     *
+     * If the source's API does not return the record or a timestamp on write, the
+     * plugin returns a {@see SyncItem} with what it actually sent and
+     * `updatedAt: null` — the host falls back to its own value in that case.
      */
-    public function push(SyncItem $item): void;
+    public function push(SyncItem $item): SyncItem;
 
     /**
      * Pull the user's list from the external source.

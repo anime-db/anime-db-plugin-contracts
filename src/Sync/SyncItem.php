@@ -49,6 +49,28 @@ final class SyncItem
          * Title of the anime, as known to the source.
          */
         public readonly string $title,
+        /**
+         * Time of the last change of this list entry, as reported by the source.
+         *
+         * Record-level, not per-field: sources do not report a separate timestamp
+         * for the moment the watch status or the episode count last changed, only
+         * for the record as a whole. Nullable because a source/plugin that does not
+         * expose any timestamp must not fabricate one (e.g. via `now()`) — that would
+         * re-introduce a fabricated time as if it were authoritative. A `null` value
+         * is compared by content instead and, in conflict arbitration, treated as the
+         * oldest possible value.
+         */
+        public readonly ?\DateTimeImmutable $updatedAt = null,
+        /**
+         * Number of episodes watched.
+         *
+         * Forms one reconciliation unit together with {@see self::$status}: locally
+         * the two are tightly coupled (the episode count derives the watch status
+         * and vice versa), so they are never synced independently. Nullable because
+         * movies and sources without episode-level granularity do not report it —
+         * "does not report episodes" is not the same as "0 episodes watched".
+         */
+        public readonly ?int $watchedEpisodes = null,
     ) {
     }
 }
