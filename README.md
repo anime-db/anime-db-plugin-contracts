@@ -242,9 +242,11 @@ class MySourcePlugin implements SyncInterface
 {
     // ... find(), findById(), getFillableFields() как у FillerInterface
 
-    public function push(SyncItem $item): void
+    public function push(SyncItem $item): SyncItem
     {
-        // отправить изменение статуса на внешний источник
+        // отправить изменение статуса на внешний источник и вернуть
+        // подтверждённое источником состояние записи (с его updatedAt)
+        return $item;
     }
 
     public function pull(): iterable

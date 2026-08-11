@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * AnimeDb package.
+ *
+ * @author    Peter Gribanov <info@peter-gribanov.ru>
+ * @copyright Copyright (c) 2026, Peter Gribanov
+ * @license   https://gnu.org GPL-3.0-or-later
+ */
+
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://gnu.org>.
+ */
+
+namespace AnimeDb\PluginContracts\Tests\Sync;
+
+use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Sync\SyncInterface;
+use AnimeDb\PluginContracts\Sync\SyncItem;
+use AnimeDb\PluginContracts\Sync\SyncStatus;
+use PHPUnit\Framework\TestCase;
+
+class SyncInterfaceTest extends TestCase
+{
+    public function testPushReturnsSourceConfirmedItem(): void
+    {
+        $plugin = new class implements SyncInterface {
+            public function resolveExternalId(array $urls): ?string
+            {
+                return null;
+            }
+
+            public function find(string $name, ?callable $onHeartbeat = null): array
+            {
+                return [];
+            }
+
+            public function findById(string $externalId): ?PluginAnimeData
+            {
+                return null;
+            }
+
+            public function getFillableFields(): array
+            {
+                return [];
+            }
+
+            public function push(SyncItem $item): SyncItem
+            {
+                return new SyncItem(
+                    externalId: $item->externalId,
+                    status: $item->status,
+                    title: $item->title,
+                    updatedAt: new \DateTimeImmutable('2026-08-11T12:00:00+00:00'),
+                    watchedEpisodes: $item->watchedEpisodes,
+                );
+            }
+
+            public function pull(): iterable
+            {
+                return [];
+            }
+        };
+
+        $confirmed = $plugin->push(new SyncItem(
+            externalId: '1',
+            status: SyncStatus::Watching,
+            title: 'Cowboy Bebop',
+            watchedEpisodes: 5,
+        ));
+
+        self::assertInstanceOf(SyncItem::class, $confirmed);
+        self::assertSame(5, $confirmed->watchedEpisodes);
+        self::assertNotNull($confirmed->updatedAt);
+    }
+}
