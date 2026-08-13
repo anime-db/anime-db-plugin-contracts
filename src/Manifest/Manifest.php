@@ -42,6 +42,14 @@ namespace AnimeDb\PluginContracts\Manifest;
 final class Manifest implements OwnManifestInterface
 {
     /**
+     * `name`/`description` are self-sufficient literal display strings in the plugin's own
+     * default language — NOT translation keys. The manifest is a standalone descriptor consumed
+     * catalog-free: {@see ManifestParser}/{@see ManifestValidator}, the market registry build and
+     * the pre-activation install UI all read it with no translation catalog or locale loaded, so a
+     * key here would surface verbatim in the registry and UI. Localizable strings belong to the UI
+     * class instead, resolved by the host in the plugin's `translations/` catalog (settings labels,
+     * widget {@see \AnimeDb\PluginContracts\Widget\WidgetMetadata} `titleKey`/`descriptionKey`).
+     *
      * @param array<string, bool>|null $features flat set of feature flags, only for {@see PluginType::Integration}
      * @param string[]|null            $locales  list of provided locale codes, only for {@see PluginType::Translation}
      */
