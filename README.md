@@ -284,7 +284,7 @@ class NewReleasesWidget implements CatalogWidgetInterface
 {
     public static function metadata(): WidgetMetadata
     {
-        return new WidgetMetadata('new-releases', 'New releases', 'Shows recently added catalog entries.');
+        return new WidgetMetadata('new-releases', 'widget.new-releases.title', 'widget.new-releases.description');
     }
 
     public function resolveExternalId(array $urls): ?string
@@ -304,7 +304,7 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 {
     public static function metadata(): WidgetMetadata
     {
-        return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
+        return new WidgetMetadata('related-titles', 'widget.related-titles.title', 'widget.related-titles.description');
     }
 
     public function resolveExternalId(array $urls): ?string
@@ -337,11 +337,13 @@ id: многим виджетам он вообще не нужен (напри�
 `metadata()` — статический метод, возвращающий `WidgetMetadata`: код-имя
 (`name`, шаблон `[a-z0-9-]+` — им хост ключует виджет как
 `{pluginId}:{name}` в DI-теге/URL/`features`, менять после релиза нельзя
-без миграции), человеческое `title` и `description` для страницы настроек
-хоста. Статик — чтобы хост-`TagPluginServicesPass` мог прочитать `name`
-при компиляции контейнера без инстанцирования класса виджета; `title`/
-`description` — готовые строки для отображения, не ключи перевода
-(i18n плагинного UI — отдельная задача).
+без миграции), `titleKey` и `descriptionKey` для страницы настроек хоста.
+Статик — чтобы хост-`TagPluginServicesPass` мог прочитать `name` при
+компиляции контейнера без инстанцирования класса виджета; `titleKey`/
+`descriptionKey` — ключи перевода, которые хост резолвит своим
+Translator'ом в домене перевода плагина (домен = id плагина) в текущей
+UI-локали — плагин обязан поставить строки для этих ключей в своём
+`translations/` как минимум для дефолтной локали.
 
 ### `DownloadCandidateSearchInterface`
 
@@ -501,7 +503,7 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 
     public static function metadata(): WidgetMetadata
     {
-        return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
+        return new WidgetMetadata('related-titles', 'widget.related-titles.title', 'widget.related-titles.description');
     }
 
     public function resolveExternalId(array $urls): ?string
