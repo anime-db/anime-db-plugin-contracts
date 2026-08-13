@@ -1,13 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * AnimeDb package.
  *
  * @author    Peter Gribanov <info@peter-gribanov.ru>
  * @copyright Copyright (c) 2026, Peter Gribanov
- * @license   https://gnu.org GPL-3.0-or-later
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
  */
 
 /*
@@ -22,8 +20,10 @@ declare(strict_types=1);
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://gnu.org>.
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules;
 
