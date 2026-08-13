@@ -53,7 +53,7 @@ use AnimeDb\PluginContracts\Model\AnimeId;
 interface EntryWidgetInterface extends ExternalIdResolutionInterface
 {
     /**
-     * Widget metadata: code name, title and description.
+     * Widget metadata: code name and title/description translation keys.
      *
      * Static so the host can read {@see WidgetMetadata::$name} (for its
      * DI tag / URL / `features` key) while compiling the container, without

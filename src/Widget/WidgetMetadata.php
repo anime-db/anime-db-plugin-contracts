@@ -30,9 +30,6 @@ namespace AnimeDb\PluginContracts\Widget;
 /**
  * Static description of a widget, returned by {@see CatalogWidgetInterface::metadata()}
  * and {@see EntryWidgetInterface::metadata()}.
- *
- * `title`/`description` are ready-to-display strings, not translation keys:
- * i18n of the plugin UI is a separate concern to be addressed later.
  */
 final class WidgetMetadata
 {
@@ -47,14 +44,25 @@ final class WidgetMetadata
          */
         public readonly string $name,
         /**
-         * Human-readable name shown on the host settings page instead of
-         * the machine `$name`.
+         * Translation key for the widget name shown on the host settings
+         * page instead of the machine `$name`.
+         *
+         * Resolved by the host's Translator in the translation domain equal
+         * to the plugin id, in the current UI locale. The plugin must ship
+         * strings for this key in its `translations/`, at least for the
+         * default locale.
          */
-        public readonly string $title,
+        public readonly string $titleKey,
         /**
-         * Human-readable description shown on the host settings page.
+         * Translation key for the widget description shown on the host
+         * settings page.
+         *
+         * Resolved by the host's Translator in the translation domain equal
+         * to the plugin id, in the current UI locale. The plugin must ship
+         * strings for this key in its `translations/`, at least for the
+         * default locale.
          */
-        public readonly string $description,
+        public readonly string $descriptionKey,
     ) {
     }
 }

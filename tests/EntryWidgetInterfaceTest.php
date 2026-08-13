@@ -39,7 +39,7 @@ class EntryWidgetInterfaceTest extends TestCase
         $widget = new class implements EntryWidgetInterface {
             public static function metadata(): WidgetMetadata
             {
-                return new WidgetMetadata('related-titles', 'Related titles', 'Shows related titles for the current record.');
+                return new WidgetMetadata('related-titles', 'widget.related-titles.title', 'widget.related-titles.description');
             }
 
             public function resolveExternalId(array $urls): ?string
