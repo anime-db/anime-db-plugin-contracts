@@ -1,6 +1,11 @@
 # CLAUDE.md — anime-db-plugin-contracts
 
-Entry point for Claude Code agents working in this repository.
+Entry point for Claude Code agents working in this repository. For
+non-obvious footguns and conventions not derivable from the code, see
+[`.claude-docs/`](.claude-docs/):
+
+- [.claude-docs/gotchas.md](.claude-docs/gotchas.md) — non-obvious behaviour that looks like an oversight but is intentional
+- [.claude-docs/license-header.md](.claude-docs/license-header.md) — required license header for source files, `@copyright` date range rules
 
 ## О проекте
 
@@ -188,3 +193,8 @@ anime-db-plugin-contracts/
   валидатор). Локализуемые строки — только UI-класс
   (`WidgetMetadata.titleKey`/`descriptionKey`, лейблы через `translations/`).
   См. принцип про `Manifest` выше
+- Не ужесточать `ManifestValidator` до строгой схемы (отвергать любое поле
+  манифеста вне фиксированного списка) — схема `manifest.json` намеренно
+  расширяется потребителями за пределами этого контракта (реестр маркета,
+  тулинг монорепозитория плагинов). См.
+  [.claude-docs/gotchas.md](.claude-docs/gotchas.md)
