@@ -33,8 +33,9 @@ namespace AnimeDb\PluginContracts\Manifest;
  *
  * Built by {@see ManifestParser} from already-validated data (see {@see ManifestValidator}) —
  * consumers should never work with the raw decoded JSON array directly. `features` is only
- * meaningful for {@see PluginType::Integration}, `locales` only for {@see PluginType::Translation}.
- * {@see PluginType::Local} declares neither.
+ * meaningful for {@see PluginType::Integration}. `locales` — the languages of the translation
+ * catalogs the plugin ships — is required for {@see PluginType::Translation} and optional for
+ * {@see PluginType::Integration} and {@see PluginType::Local}.
  *
  * Also implements {@see OwnManifestInterface} — the narrow read-only view of
  * this data that the host injects into the plugin itself.
@@ -51,7 +52,8 @@ final class Manifest implements OwnManifestInterface
      * widget {@see \AnimeDb\PluginContracts\Widget\WidgetMetadata} `titleKey`/`descriptionKey`).
      *
      * @param array<string, bool>|null $features flat set of feature flags, only for {@see PluginType::Integration}
-     * @param string[]|null            $locales  list of provided locale codes, only for {@see PluginType::Translation}
+     * @param string[]|null            $locales  languages of the translation catalogs the plugin ships;
+     *                                           required for {@see PluginType::Translation}, optional otherwise
      */
     public function __construct(
         public readonly string $id,

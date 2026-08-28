@@ -185,9 +185,9 @@ final class ManifestValidator
     {
         $errors = [];
         $unexpectedFields = match ($type) {
-            PluginType::Integration => ['locales'],
+            PluginType::Integration => [],
             PluginType::Translation => ['features'],
-            PluginType::Local => ['features', 'locales'],
+            PluginType::Local => ['features'],
         };
 
         foreach ($unexpectedFields as $unexpectedField) {
@@ -199,11 +199,11 @@ final class ManifestValidator
             }
         }
 
-        $errors = match ($type) {
-            PluginType::Integration => [...$errors, ...$this->validateFeatures($data)],
-            PluginType::Translation => [...$errors, ...$this->validateLocales($data)],
-            PluginType::Local => $errors,
-        };
+        if ($type === PluginType::Integration) {
+            $errors = [...$errors, ...$this->validateFeatures($data)];
+        }
+
+        $errors = [...$errors, ...$this->validateLocales($data, required: $type === PluginType::Translation)];
 
         return $errors;
     }
@@ -239,10 +239,14 @@ final class ManifestValidator
      *
      * @return ManifestValidationError[]
      */
-    private function validateLocales(array $data): array
+    private function validateLocales(array $data, bool $required): array
     {
         if (!array_key_exists('locales', $data)) {
-            return [new ManifestValidationError('locales', 'Field "locales" is required for type "translation".')];
+            if ($required) {
+                return [new ManifestValidationError('locales', 'Field "locales" is required for type "translation".')];
+            }
+
+            return [];
         }
 
         $locales = $data['locales'];

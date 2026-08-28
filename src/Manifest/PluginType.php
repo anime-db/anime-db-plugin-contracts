@@ -35,7 +35,9 @@ namespace AnimeDb\PluginContracts\Manifest;
  * locale files — and declares `locales` instead of `features`. `Local` is a code plugin
  * that reacts to catalog events and does not talk to an external source (e.g. it does
  * not implement `ExternalIdResolutionInterface`, so `resolveExternalId()` is not meaningful
- * for it); it declares neither `features` nor `locales`.
+ * for it); it does not declare `features`. `locales` — the languages of the translation
+ * catalogs a plugin ships — is required for `Translation` and optional for `Integration`
+ * and `Local`.
  */
 enum PluginType: string
 {

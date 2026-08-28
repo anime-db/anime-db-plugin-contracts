@@ -117,14 +117,14 @@ class ManifestValidatorTest extends TestCase
         self::assertContains('features', array_map(static fn ($error) => $error->field, $errors));
     }
 
-    public function testLocalesIsNotAllowedForLocalType(): void
+    public function testLocalesIsAllowedForLocalType(): void
     {
         $data = $this->validLocalManifest();
         $data['locales'] = ['ru'];
 
         $errors = (new ManifestValidator())->validate($data);
 
-        self::assertContains('locales', array_map(static fn ($error) => $error->field, $errors));
+        self::assertSame([], $errors);
     }
 
     public function testMissingRequiredFieldsAreReported(): void
@@ -159,14 +159,14 @@ class ManifestValidatorTest extends TestCase
         self::assertContains('features', array_map(static fn ($error) => $error->field, $errors));
     }
 
-    public function testLocalesIsNotAllowedForIntegrationType(): void
+    public function testLocalesIsAllowedForIntegrationType(): void
     {
         $data = $this->validIntegrationManifest();
         $data['locales'] = ['ru'];
 
         $errors = (new ManifestValidator())->validate($data);
 
-        self::assertContains('locales', array_map(static fn ($error) => $error->field, $errors));
+        self::assertSame([], $errors);
     }
 
     public function testFeaturesIsNotAllowedForTranslationType(): void
@@ -192,6 +192,16 @@ class ManifestValidatorTest extends TestCase
     public function testLocaleMustBeNonEmptyString(): void
     {
         $data = $this->validTranslationManifest();
+        $data['locales'] = ['ru', ''];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('locales.1', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testLocaleMustBeNonEmptyStringForOptionalTypes(): void
+    {
+        $data = $this->validIntegrationManifest();
         $data['locales'] = ['ru', ''];
 
         $errors = (new ManifestValidator())->validate($data);
