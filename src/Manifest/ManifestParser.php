@@ -109,7 +109,7 @@ final class ManifestParser
             description: $data['description'] ?? null,
             author: $data['author'] ?? null,
             features: $type === PluginType::Integration ? $data['features'] : null,
-            locales: $type === PluginType::Translation ? $data['locales'] : null,
+            locales: $data['locales'] ?? null,
             updateUrl: $data['update_url'] ?? null,
         );
     }

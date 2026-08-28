@@ -71,6 +71,26 @@ class ManifestParserTest extends TestCase
         self::assertSame('https://example.com/plugins/registry.json', $manifest->updateUrl);
     }
 
+    public function testParseValidIntegrationManifestWithLocales(): void
+    {
+        $json = <<<'JSON'
+            {
+                "id": "vendor-shikimori",
+                "name": "Shikimori",
+                "version": "1.0.0",
+                "type": "integration",
+                "features": {"filler": true},
+                "locales": ["ru", "uk"],
+                "require": {"core": ">=2.0.0", "php": ">=8.2"}
+            }
+            JSON;
+
+        $manifest = (new ManifestParser())->parse($json);
+
+        self::assertSame(PluginType::Integration, $manifest->type);
+        self::assertSame(['ru', 'uk'], $manifest->locales);
+    }
+
     public function testParseValidTranslationManifest(): void
     {
         $json = <<<'JSON'
