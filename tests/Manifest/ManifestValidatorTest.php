@@ -209,6 +209,57 @@ class ManifestValidatorTest extends TestCase
         self::assertContains('locales.1', array_map(static fn ($error) => $error->field, $errors));
     }
 
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function invalidLocaleCodes(): iterable
+    {
+        yield 'language and region' => ['pt-BR'];
+        yield 'language and script' => ['zh-Hans'];
+        yield 'underscore separator' => ['ru_RU'];
+        yield 'uppercase' => ['RU'];
+        yield 'single letter' => ['r'];
+        yield 'not a language code' => ['russian'];
+    }
+
+    /**
+     * @dataProvider invalidLocaleCodes
+     */
+    public function testLocaleMustBeABareLanguageSubtag(string $locale): void
+    {
+        $data = $this->validTranslationManifest();
+        $data['locales'] = [$locale];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('locales.0', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function validLocaleCodes(): iterable
+    {
+        yield 'english' => ['en'];
+        yield 'russian' => ['ru'];
+        yield 'german' => ['de'];
+        yield 'japanese' => ['ja'];
+        yield 'three-letter code' => ['fil'];
+    }
+
+    /**
+     * @dataProvider validLocaleCodes
+     */
+    public function testLocaleAcceptsBareLanguageSubtag(string $locale): void
+    {
+        $data = $this->validTranslationManifest();
+        $data['locales'] = [$locale];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertSame([], $errors);
+    }
+
     public function testVersionMustBeAValidSemverVersion(): void
     {
         $data = $this->validIntegrationManifest();

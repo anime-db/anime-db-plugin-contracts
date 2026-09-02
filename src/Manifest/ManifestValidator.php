@@ -258,6 +258,15 @@ final class ManifestValidator
         foreach ($locales as $index => $locale) {
             if (!\is_string($locale) || $locale === '') {
                 $errors[] = new ManifestValidationError(\sprintf('locales.%d', $index), 'Locale code must be a non-empty string.');
+
+                continue;
+            }
+
+            if (preg_match('/^[a-z]{2,3}$/', $locale) !== 1) {
+                $errors[] = new ManifestValidationError(
+                    \sprintf('locales.%d', $index),
+                    \sprintf('"%s" is not a valid locale code. It must be a bare language subtag: two or three lowercase letters, without region or script (e.g. "en"). Three letters are only for languages without an ISO 639-1 two-letter code; use the two-letter code when one exists.', $locale),
+                );
             }
         }
 
