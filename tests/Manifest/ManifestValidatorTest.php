@@ -244,7 +244,7 @@ class ManifestValidatorTest extends TestCase
         yield 'russian' => ['ru'];
         yield 'german' => ['de'];
         yield 'japanese' => ['ja'];
-        yield 'three-letter code' => ['kaz'];
+        yield 'three-letter code' => ['fil'];
     }
 
     /**
