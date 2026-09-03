@@ -1,3 +1,4 @@
 rules:
     - AnimeDb\PluginContracts\PHPStan\Rules\NoDangerousPrimitivesRule
     - AnimeDb\PluginContracts\PHPStan\Rules\ContractConformanceRule
+    - AnimeDb\PluginContracts\PHPStan\Rules\NoNetworkAccessInLocalPluginsRule

@@ -1,0 +1,10 @@
+{
+    "id": "acme-local",
+    "name": "Acme Local",
+    "version": "1.0.0",
+    "type": "local",
+    "require": {
+        "core": ">=2.0.0",
+        "php": ">=8.1"
+    }
+}

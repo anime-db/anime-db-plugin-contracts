@@ -1,0 +1,9 @@
+{
+    "id": "acme-broken",
+    "name": "Acme Broken",
+    "version": "1.0.0",
+    "require": {
+        "core": ">=2.0.0",
+        "php": ">=8.1"
+    }
+}
