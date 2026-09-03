@@ -54,6 +54,11 @@ class SafeUsage
     {
         require __DIR__.'/dangerous-primitives.php';
     }
+
+    public function wrapInjectedClient(\Psr\Http\Client\ClientInterface $inner): \Psr\Http\Client\ClientInterface
+    {
+        return new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\ClientDecorator($inner);
+    }
 }
 
 class DangerousUsage

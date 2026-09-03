@@ -29,6 +29,7 @@ namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
 use PhpParser\Node;
 use PHPStan\Analyser\Scope;
+use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\CallableType;
@@ -75,6 +76,13 @@ final class NoDangerousPrimitivesRule implements Rule
 {
     private const ERROR_IDENTIFIER = 'animedb.dangerousPrimitive';
 
+    private ReflectionProvider $reflectionProvider;
+
+    public function __construct(ReflectionProvider $reflectionProvider)
+    {
+        $this->reflectionProvider = $reflectionProvider;
+    }
+
     /**
      * Function names forbidden regardless of arguments.
      *
@@ -107,8 +115,9 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * Functions whose first argument is a filename that PHP's stream wrapper layer
      * also lets be a URL (`https://`, `ftp://`, …), silently turning a local file
-     * operation into a network request. Forbidden only when that argument is
-     * statically known to carry a URL scheme; a local path is a legitimate read.
+     * read or write into a network request. Forbidden only when that argument is
+     * statically known to carry a URL scheme; a local path is a legitimate read or
+     * write.
      *
      * @var string[]
      */
@@ -136,21 +145,44 @@ final class NoDangerousPrimitivesRule implements Rule
     ];
 
     /**
-     * Classes and interfaces forbidden to instantiate (as themselves, a subclass, or
-     * an implementation) regardless of constructor arguments: each is either a network
-     * client (bypassing the host's PSR-18 client) or a process launcher (bypassing
-     * DownloadServiceInterface / exec()'s ban). Matched by type (see processNew()), not
-     * by literal class name, so a subclass (`class MySoap extends SoapClient {}`) or a
-     * concrete client implementing one of the listed interfaces
-     * (`final class CurlHttpClient implements HttpClientInterface {}`) is caught too —
-     * instantiating that concrete client directly is the same bypass as calling the
-     * factory in FORBIDDEN_STATIC_CALL_CLASSES below, one line shorter.
+     * Concrete classes forbidden to instantiate (as themselves or a subclass) regardless
+     * of constructor arguments: each *is* the dangerous primitive (a process launcher or
+     * a network client with no legitimate non-dangerous use), so subclassing it doesn't
+     * introduce an abstraction boundary worth exempting — see processNew(). Matched by
+     * type, not by literal class name: instantiating the exact class named here is caught
+     * whether or not the package it ships in is installed in the analysed project (PHPStan
+     * falls back to comparing class names when a type doesn't resolve), but catching a
+     * *subclass* (`class MySoap extends SoapClient {}`) needs the named class's own
+     * ancestry to actually resolve — i.e. its package to be installed — since PHPStan
+     * can't otherwise tell whether the subclass relationship holds.
      *
      * @var string[]
      */
     private const FORBIDDEN_INSTANTIATIONS = [
         'SoapClient',
         'Symfony\\Component\\Process\\Process',
+    ];
+
+    /**
+     * Interfaces forbidden to instantiate an implementation of, regardless of
+     * constructor arguments — UNLESS the implementing class is declared in the analysed
+     * project itself (see processNew()). Each names exactly the abstraction a plugin is
+     * meant to depend on (a host-preconfigured PSR-18 client, an HTTP client
+     * abstraction), so a *host application dependency* implementing one — a concrete
+     * network client such as `final class CurlHttpClient implements HttpClientInterface {}`
+     * — is the same bypass as calling the factory in FORBIDDEN_STATIC_CALL_CLASSES below,
+     * one line shorter. A plugin's *own* class implementing the same interface (e.g. a
+     * rate-limiting decorator wrapped around an injected PSR-18 client) is not a host
+     * dependency and is exempt from this list; what that class does internally is caught
+     * by the rule's other checks. Matched by type: unlike FORBIDDEN_INSTANTIATIONS above,
+     * these entries are only ever used to catch an *implementer*, never instantiated
+     * directly by name, so the interface named here must actually resolve in the analysed
+     * project — i.e. its package (`symfony/http-client`, `psr/http-client`) must be
+     * installed — or no implementer of it is caught at all.
+     *
+     * @var string[]
+     */
+    private const FORBIDDEN_ABSTRACTION_INSTANTIATIONS = [
         'Symfony\\Contracts\\HttpClient\\HttpClientInterface',
         'Psr\\Http\\Client\\ClientInterface',
     ];
@@ -159,8 +191,11 @@ final class NoDangerousPrimitivesRule implements Rule
      * Classes forbidden to call a static method on, regardless of which method:
      * each is a factory for a network client that PHPStan can't otherwise tell
      * apart from a legitimate PSR-18 client obtained through DI. Matched by type
-     * (see processStaticCall()), so a subclass of one of these factories is caught
-     * too, not just the exact class.
+     * (see processStaticCall()): calling a static method on the exact class named
+     * here is caught whether or not its package is installed in the analysed
+     * project, but catching a *subclass* of one of these factories needs the
+     * named class's own ancestry to actually resolve — i.e. its package to be
+     * installed — same caveat as FORBIDDEN_INSTANTIATIONS above.
      *
      * @var string[]
      */
@@ -346,7 +381,40 @@ final class NoDangerousPrimitivesRule implements Rule
             }
         }
 
+        foreach (self::FORBIDDEN_ABSTRACTION_INSTANTIATIONS as $forbiddenType) {
+            if (
+                (new ObjectType($forbiddenType))->isSuperTypeOf($instantiatedType)->yes()
+                && !$this->isDeclaredInAnalysedProject($className)
+            ) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Instantiating %s is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+        }
+
         return [];
+    }
+
+    /**
+     * A plugin's own class is not a host-application dependency by definition, whatever
+     * interface it implements — see FORBIDDEN_ABSTRACTION_INSTANTIATIONS. True when
+     * $className resolves to a class declared in a file outside any vendor/ directory;
+     * false for a built-in/extension class (no file at all, e.g. SoapClient — which is
+     * matched via FORBIDDEN_INSTANTIATIONS, not this exemption, so this case doesn't
+     * normally arise here) and for a class loaded from a dependency's vendor/ directory.
+     */
+    private function isDeclaredInAnalysedProject(string $className): bool
+    {
+        if (!$this->reflectionProvider->hasClass($className)) {
+            return false;
+        }
+
+        $fileName = $this->reflectionProvider->getClass($className)->getFileName();
+
+        return $fileName !== null && !str_contains($fileName, \DIRECTORY_SEPARATOR.'vendor'.\DIRECTORY_SEPARATOR);
     }
 
     /**
