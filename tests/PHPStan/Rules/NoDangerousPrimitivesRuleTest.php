@@ -63,6 +63,17 @@ class NoDangerousPrimitivesRuleTest extends RuleTestCase
             ['Using require with a URL is forbidden, use the abstraction provided by the host application instead.', 139],
             ['Dynamic function calls through a variable are forbidden, use the abstraction provided by the host application instead.', 145],
             ['Using variable variables is forbidden, use the abstraction provided by the host application instead.', 151],
+            ['Calling simplexml_load_file() with a URL is forbidden, use the abstraction provided by the host application instead.', 156],
+            ['Calling getimagesize() with a URL is forbidden, use the abstraction provided by the host application instead.', 161],
+            ['Calling file_put_contents() with a URL is forbidden, use the abstraction provided by the host application instead.', 166],
+            ['Calling dns_get_record() directly is forbidden, use the abstraction provided by the host application instead.', 171],
+            ['Calling gethostbyname() directly is forbidden, use the abstraction provided by the host application instead.', 176],
+            ['Calling DOMDocument::load() with a URL is forbidden, use the abstraction provided by the host application instead.', 182],
+            ['Calling file_get_contents() with a URL is forbidden, use the abstraction provided by the host application instead.', 187],
+            ['Calling Symfony\Component\HttpClient\HttpClient::create() is forbidden, use the abstraction provided by the host application instead.', 192],
+            ['Calling Http\Discovery\Psr18ClientDiscovery::find() is forbidden, use the abstraction provided by the host application instead.', 197],
+            ['Instantiating Symfony\Component\Process\Process is forbidden, use the abstraction provided by the host application instead.', 202],
+            ['Instantiating SoapClient is forbidden, use the abstraction provided by the host application instead.', 208],
         ]);
     }
 }
