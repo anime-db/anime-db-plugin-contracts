@@ -1,0 +1,13 @@
+{
+    "id": "acme-integration",
+    "name": "Acme Integration",
+    "version": "1.0.0",
+    "type": "integration",
+    "features": {
+        "filler": true
+    },
+    "require": {
+        "core": ">=2.0.0",
+        "php": ">=8.1"
+    }
+}

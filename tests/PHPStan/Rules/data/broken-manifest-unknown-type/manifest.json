@@ -1,0 +1,10 @@
+{
+    "id": "acme-unknown-type",
+    "name": "Acme Unknown Type",
+    "version": "1.0.0",
+    "type": "cloud",
+    "require": {
+        "core": ">=2.0.0",
+        "php": ">=8.1"
+    }
+}
