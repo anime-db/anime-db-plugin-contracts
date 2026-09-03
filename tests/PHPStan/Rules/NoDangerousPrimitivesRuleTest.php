@@ -74,6 +74,11 @@ class NoDangerousPrimitivesRuleTest extends RuleTestCase
             ['Calling Http\Discovery\Psr18ClientDiscovery::find() is forbidden, use the abstraction provided by the host application instead.', 197],
             ['Instantiating Symfony\Component\Process\Process is forbidden, use the abstraction provided by the host application instead.', 202],
             ['Instantiating SoapClient is forbidden, use the abstraction provided by the host application instead.', 208],
+            ['Instantiating AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\SoapClientSubclass is forbidden, use the abstraction provided by the host application instead.', 213],
+            ['Instantiating AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\ProcessSubclass is forbidden, use the abstraction provided by the host application instead.', 218],
+            ['Instantiating Symfony\Component\HttpClient\CurlHttpClient is forbidden, use the abstraction provided by the host application instead.', 224],
+            ['Instantiating Symfony\Component\HttpClient\NativeHttpClient is forbidden, use the abstraction provided by the host application instead.', 229],
+            ['Instantiating Symfony\Component\HttpClient\Psr18Client is forbidden, use the abstraction provided by the host application instead.', 234],
         ]);
     }
 }

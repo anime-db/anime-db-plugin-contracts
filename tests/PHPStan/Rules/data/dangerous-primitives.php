@@ -207,4 +207,30 @@ class DangerousUsage
     {
         new \SoapClient('http://example.com/service.wsdl');
     }
+
+    public function processSoapClientSubclass(): void
+    {
+        new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\SoapClientSubclass('http://example.com/service.wsdl');
+    }
+
+    public function processSymfonyProcessSubclass(): void
+    {
+        $process = new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\ProcessSubclass(['ls', '-la']);
+        $process->run();
+    }
+
+    public function processCurlHttpClient(): void
+    {
+        new \Symfony\Component\HttpClient\CurlHttpClient();
+    }
+
+    public function processNativeHttpClient(): void
+    {
+        new \Symfony\Component\HttpClient\NativeHttpClient();
+    }
+
+    public function processPsr18Client(): void
+    {
+        new \Symfony\Component\HttpClient\Psr18Client();
+    }
 }

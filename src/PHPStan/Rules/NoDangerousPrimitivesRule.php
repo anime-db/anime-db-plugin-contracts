@@ -136,21 +136,31 @@ final class NoDangerousPrimitivesRule implements Rule
     ];
 
     /**
-     * Classes forbidden to instantiate regardless of constructor arguments: each
-     * is either a network client (bypassing the host's PSR-18 client) or a process
-     * launcher (bypassing DownloadServiceInterface / exec()'s ban).
+     * Classes and interfaces forbidden to instantiate (as themselves, a subclass, or
+     * an implementation) regardless of constructor arguments: each is either a network
+     * client (bypassing the host's PSR-18 client) or a process launcher (bypassing
+     * DownloadServiceInterface / exec()'s ban). Matched by type (see processNew()), not
+     * by literal class name, so a subclass (`class MySoap extends SoapClient {}`) or a
+     * concrete client implementing one of the listed interfaces
+     * (`final class CurlHttpClient implements HttpClientInterface {}`) is caught too —
+     * instantiating that concrete client directly is the same bypass as calling the
+     * factory in FORBIDDEN_STATIC_CALL_CLASSES below, one line shorter.
      *
      * @var string[]
      */
     private const FORBIDDEN_INSTANTIATIONS = [
         'SoapClient',
         'Symfony\\Component\\Process\\Process',
+        'Symfony\\Contracts\\HttpClient\\HttpClientInterface',
+        'Psr\\Http\\Client\\ClientInterface',
     ];
 
     /**
      * Classes forbidden to call a static method on, regardless of which method:
      * each is a factory for a network client that PHPStan can't otherwise tell
-     * apart from a legitimate PSR-18 client obtained through DI.
+     * apart from a legitimate PSR-18 client obtained through DI. Matched by type
+     * (see processStaticCall()), so a subclass of one of these factories is caught
+     * too, not just the exact class.
      *
      * @var string[]
      */
@@ -236,11 +246,11 @@ final class NoDangerousPrimitivesRule implements Rule
         }
 
         if ($node instanceof Node\Expr\New_) {
-            return $this->processNew($node);
+            return $this->processNew($node, $scope);
         }
 
         if ($node instanceof Node\Expr\StaticCall) {
-            return $this->processStaticCall($node);
+            return $this->processStaticCall($node, $scope);
         }
 
         if ($node instanceof Node\Expr\MethodCall) {
@@ -314,7 +324,7 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * @return list<\PHPStan\Rules\RuleError>
      */
-    private function processNew(Node\Expr\New_ $node): array
+    private function processNew(Node\Expr\New_ $node, Scope $scope): array
     {
         if (!$node->class instanceof Node\Name) {
             // Anonymous class or a dynamic class expression (`new $class()`) — not one
@@ -323,14 +333,17 @@ final class NoDangerousPrimitivesRule implements Rule
         }
 
         $className = ltrim($node->class->toString(), '\\');
+        $instantiatedType = $scope->resolveTypeByName($node->class);
 
-        if (in_array($className, self::FORBIDDEN_INSTANTIATIONS, true)) {
-            return [
-                RuleErrorBuilder::message(sprintf(
-                    'Instantiating %s is forbidden, use the abstraction provided by the host application instead.',
-                    $className,
-                ))->identifier(self::ERROR_IDENTIFIER)->build(),
-            ];
+        foreach (self::FORBIDDEN_INSTANTIATIONS as $forbiddenType) {
+            if ((new ObjectType($forbiddenType))->isSuperTypeOf($instantiatedType)->yes()) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Instantiating %s is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
         }
 
         return [];
@@ -339,24 +352,27 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * @return list<\PHPStan\Rules\RuleError>
      */
-    private function processStaticCall(Node\Expr\StaticCall $node): array
+    private function processStaticCall(Node\Expr\StaticCall $node, Scope $scope): array
     {
         if (!$node->class instanceof Node\Name) {
             return [];
         }
 
         $className = ltrim($node->class->toString(), '\\');
+        $classType = $scope->resolveTypeByName($node->class);
 
-        if (in_array($className, self::FORBIDDEN_STATIC_CALL_CLASSES, true)) {
-            $methodName = $node->name instanceof Node\Identifier ? $node->name->toString() : '{expr}';
+        foreach (self::FORBIDDEN_STATIC_CALL_CLASSES as $forbiddenClass) {
+            if ((new ObjectType($forbiddenClass))->isSuperTypeOf($classType)->yes()) {
+                $methodName = $node->name instanceof Node\Identifier ? $node->name->toString() : '{expr}';
 
-            return [
-                RuleErrorBuilder::message(sprintf(
-                    'Calling %s::%s() is forbidden, use the abstraction provided by the host application instead.',
-                    $className,
-                    $methodName,
-                ))->identifier(self::ERROR_IDENTIFIER)->build(),
-            ];
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Calling %s::%s() is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                        $methodName,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
         }
 
         return [];

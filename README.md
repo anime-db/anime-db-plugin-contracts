@@ -1053,10 +1053,18 @@ includes:
   `gethostbyname`, любые функции `curl_*`;
 - создание известных сетевых клиентов и процесс-лаунчеров через `new` —
   всегда, независимо от аргументов конструктора: `SoapClient`,
-  `Symfony\Component\Process\Process`;
+  `Symfony\Component\Process\Process`, а также любой класс, реализующий
+  `Symfony\Contracts\HttpClient\HttpClientInterface` или
+  `Psr\Http\Client\ClientInterface` (например, `CurlHttpClient`,
+  `NativeHttpClient` — конкретный клиент создавать самому нельзя, его
+  инжектирует хост). Проверка по типу, а не по буквальному имени класса —
+  подкласс запрещённого класса (`class MySoap extends SoapClient {}`)
+  пойман так же, как и сам класс;
 - статический вызов известных фабрик сетевых клиентов — всегда,
   независимо от метода: `Symfony\Component\HttpClient\HttpClient`,
-  `Http\Discovery\Psr18ClientDiscovery`, `Http\Discovery\HttpClientDiscovery`;
+  `Http\Discovery\Psr18ClientDiscovery`, `Http\Discovery\HttpClientDiscovery`.
+  Тоже по типу — подкласс одной из этих фабрик пойман так же, как и она
+  сама;
 - чтение/включение файла со статически известным URL (схема обёртки вида
   `https://`, `ftp://` и т.п. в первом аргументе, включая случай, когда
   URL — литеральный префикс строковой конкатенации с динамическим
