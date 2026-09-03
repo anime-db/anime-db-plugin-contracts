@@ -9,6 +9,7 @@ use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
 use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use AnimeDb\PluginContracts\Sync\SyncItem;
@@ -20,6 +21,9 @@ class ConformingFillerPlugin implements FillerInterface
         return null;
     }
 
+    /**
+     * @return list<SearchByPluginCandidate>
+     */
     public function find(string $name, ?callable $onHeartbeat = null): array
     {
         return [];
@@ -30,6 +34,9 @@ class ConformingFillerPlugin implements FillerInterface
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getFillableFields(): array
     {
         return [];
@@ -43,6 +50,9 @@ class RenamedParameterPlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<SearchByPluginCandidate>
+     */
     public function find(string $name, ?callable $onHeartbeat = null): array
     {
         return [];
@@ -53,6 +63,9 @@ class RenamedParameterPlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getFillableFields(): array
     {
         return [];
@@ -76,6 +89,9 @@ class WrongParameterTypePlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<SearchByPluginCandidate>
+     */
     public function find(string $name, ?callable $onHeartbeat = null): array
     {
         return [];
@@ -86,6 +102,9 @@ class WrongParameterTypePlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getFillableFields(): array
     {
         return [];
@@ -108,6 +127,9 @@ class WrongReturnTypePlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<SearchByPluginCandidate>
+     */
     public function find(string $name, ?callable $onHeartbeat = null): array
     {
         return [];
@@ -118,6 +140,9 @@ class WrongReturnTypePlugin implements SyncInterface
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getFillableFields(): array
     {
         return [];
