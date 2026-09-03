@@ -29,26 +29,59 @@ namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
 use PhpParser\Node;
 use PHPStan\Analyser\Scope;
+use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\CallableType;
+use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 
 /**
  * Forbids plugins from directly calling dangerous low-level primitives
  * (process execution, raw network sockets, curl, eval, URL-scoped file/include
- * operations, dynamic calls through variables) that bypass the abstractions
- * provided by the host application.
+ * operations, dynamic calls through variables, instantiation of or static
+ * calls into known network/process client classes) that bypass the
+ * abstractions provided by the host application.
+ *
+ * This is a denylist, not an allowlist: it enumerates specific functions and
+ * classes rather than restricting a plugin to a set of permitted namespaces.
+ * A denylist inherently lags behind the host application's dependency tree —
+ * a new host dependency that exposes a network/process/filesystem primitive
+ * is a potential bypass until this list is extended to cover it. There is no
+ * automation that detects this drift; when a dependency is added to (or
+ * updated in) the host application, it must be manually reviewed for such
+ * primitives and, if found, added to the relevant list below.
  *
  * This is not a defense against a deliberately obfuscated bypass: it raises
  * the bar for the typical case and acts as an automated gate before a
  * plugin is accepted into the registry.
+ *
+ * What a plugin is allowed to depend on via constructor injection (as
+ * opposed to calling directly, which is what this rule checks) is a
+ * separate concern this rule does not enforce: the boundary is "interfaces
+ * defined by this contract package, or PSR interfaces it re-exports (e.g.
+ * `Psr\Http\Client\ClientInterface` for a host-preconfigured HTTP client)"
+ * versus "concrete client classes from the host application's dependency
+ * tree" (e.g. `Symfony\Component\HttpClient\HttpClient`,
+ * `GuzzleHttp\Client`, `Symfony\Component\Process\Process`). Enforcing that
+ * boundary requires inspecting constructor/property type declarations, not
+ * expression nodes, and auditing how the host application's DI container
+ * wires plugin services — both out of scope for this rule and for a
+ * contract-only package that does not contain the host application's
+ * source.
  *
  * @implements Rule<Node\Expr>
  */
 final class NoDangerousPrimitivesRule implements Rule
 {
     private const ERROR_IDENTIFIER = 'animedb.dangerousPrimitive';
+
+    private ReflectionProvider $reflectionProvider;
+
+    public function __construct(ReflectionProvider $reflectionProvider)
+    {
+        $this->reflectionProvider = $reflectionProvider;
+    }
 
     /**
      * Function names forbidden regardless of arguments.
@@ -82,8 +115,9 @@ final class NoDangerousPrimitivesRule implements Rule
     /**
      * Functions whose first argument is a filename that PHP's stream wrapper layer
      * also lets be a URL (`https://`, `ftp://`, …), silently turning a local file
-     * operation into a network request. Forbidden only when that argument is
-     * statically known to carry a URL scheme; a local path is a legitimate read.
+     * read or write into a network request. Forbidden only when that argument is
+     * statically known to carry a URL scheme; a local path is a legitimate read or
+     * write.
      *
      * @var string[]
      */
@@ -93,6 +127,94 @@ final class NoDangerousPrimitivesRule implements Rule
         'copy',
         'file',
         'readfile',
+        'simplexml_load_file',
+        'getimagesize',
+        'file_put_contents',
+    ];
+
+    /**
+     * Functions that always perform a live DNS query — unlike URL_SCOPED_FUNCTIONS,
+     * there is no local/non-network form of these calls to allow, so they are
+     * forbidden regardless of arguments (like FORBIDDEN_FUNCTIONS).
+     *
+     * @var string[]
+     */
+    private const FORBIDDEN_DNS_FUNCTIONS = [
+        'dns_get_record',
+        'gethostbyname',
+    ];
+
+    /**
+     * Concrete classes forbidden to instantiate (as themselves or a subclass) regardless
+     * of constructor arguments: each *is* the dangerous primitive (a process launcher or
+     * a network client with no legitimate non-dangerous use), so subclassing it doesn't
+     * introduce an abstraction boundary worth exempting — see processNew(). Matched by
+     * type, not by literal class name: instantiating the exact class named here is caught
+     * whether or not the package it ships in is installed in the analysed project (PHPStan
+     * falls back to comparing class names when a type doesn't resolve), but catching a
+     * *subclass* (`class MySoap extends SoapClient {}`) needs the named class's own
+     * ancestry to actually resolve — i.e. its package to be installed — since PHPStan
+     * can't otherwise tell whether the subclass relationship holds.
+     *
+     * @var string[]
+     */
+    private const FORBIDDEN_INSTANTIATIONS = [
+        'SoapClient',
+        'Symfony\\Component\\Process\\Process',
+    ];
+
+    /**
+     * Interfaces forbidden to instantiate an implementation of, regardless of
+     * constructor arguments — UNLESS the implementing class is declared in the analysed
+     * project itself (see processNew()). Each names exactly the abstraction a plugin is
+     * meant to depend on (a host-preconfigured PSR-18 client, an HTTP client
+     * abstraction), so a *host application dependency* implementing one — a concrete
+     * network client such as `final class CurlHttpClient implements HttpClientInterface {}`
+     * — is the same bypass as calling the factory in FORBIDDEN_STATIC_CALL_CLASSES below,
+     * one line shorter. A plugin's *own* class implementing the same interface (e.g. a
+     * rate-limiting decorator wrapped around an injected PSR-18 client) is not a host
+     * dependency and is exempt from this list; what that class does internally is caught
+     * by the rule's other checks. Matched by type: unlike FORBIDDEN_INSTANTIATIONS above,
+     * these entries are only ever used to catch an *implementer*, never instantiated
+     * directly by name, so the interface named here must actually resolve in the analysed
+     * project — i.e. its package (`symfony/http-client`, `psr/http-client`) must be
+     * installed — or no implementer of it is caught at all.
+     *
+     * @var string[]
+     */
+    private const FORBIDDEN_ABSTRACTION_INSTANTIATIONS = [
+        'Symfony\\Contracts\\HttpClient\\HttpClientInterface',
+        'Psr\\Http\\Client\\ClientInterface',
+    ];
+
+    /**
+     * Classes forbidden to call a static method on, regardless of which method:
+     * each is a factory for a network client that PHPStan can't otherwise tell
+     * apart from a legitimate PSR-18 client obtained through DI. Matched by type
+     * (see processStaticCall()): calling a static method on the exact class named
+     * here is caught whether or not its package is installed in the analysed
+     * project, but catching a *subclass* of one of these factories needs the
+     * named class's own ancestry to actually resolve — i.e. its package to be
+     * installed — same caveat as FORBIDDEN_INSTANTIATIONS above.
+     *
+     * @var string[]
+     */
+    private const FORBIDDEN_STATIC_CALL_CLASSES = [
+        'Symfony\\Component\\HttpClient\\HttpClient',
+        'Http\\Discovery\\Psr18ClientDiscovery',
+        'Http\\Discovery\\HttpClientDiscovery',
+    ];
+
+    /**
+     * Method calls forbidden when the first argument is a statically known URL,
+     * keyed by the class the receiver must be an instance of. Same rationale as
+     * URL_SCOPED_FUNCTIONS, extended to instance methods that don't go through a
+     * global function.
+     *
+     * @var array<string, string[]>
+     */
+    private const URL_SCOPED_METHODS = [
+        \DOMDocument::class => ['load', 'loadHTMLFile'],
     ];
 
     /**
@@ -158,6 +280,18 @@ final class NoDangerousPrimitivesRule implements Rule
             ];
         }
 
+        if ($node instanceof Node\Expr\New_) {
+            return $this->processNew($node, $scope);
+        }
+
+        if ($node instanceof Node\Expr\StaticCall) {
+            return $this->processStaticCall($node, $scope);
+        }
+
+        if ($node instanceof Node\Expr\MethodCall) {
+            return $this->processMethodCall($node, $scope);
+        }
+
         return [];
     }
 
@@ -184,7 +318,10 @@ final class NoDangerousPrimitivesRule implements Rule
 
         $functionName = strtolower($node->name->toString());
 
-        if (in_array($functionName, self::FORBIDDEN_FUNCTIONS, true)) {
+        if (
+            in_array($functionName, self::FORBIDDEN_FUNCTIONS, true)
+            || in_array($functionName, self::FORBIDDEN_DNS_FUNCTIONS, true)
+        ) {
             return [
                 RuleErrorBuilder::message(sprintf(
                     'Calling %s() directly is forbidden, use the abstraction provided by the host application instead.',
@@ -220,6 +357,131 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
+     * @return list<\PHPStan\Rules\RuleError>
+     */
+    private function processNew(Node\Expr\New_ $node, Scope $scope): array
+    {
+        if (!$node->class instanceof Node\Name) {
+            // Anonymous class or a dynamic class expression (`new $class()`) — not one
+            // of the specific known-dangerous classes this list enumerates.
+            return [];
+        }
+
+        $className = ltrim($node->class->toString(), '\\');
+        $instantiatedType = $scope->resolveTypeByName($node->class);
+
+        foreach (self::FORBIDDEN_INSTANTIATIONS as $forbiddenType) {
+            if ((new ObjectType($forbiddenType))->isSuperTypeOf($instantiatedType)->yes()) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Instantiating %s is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+        }
+
+        foreach (self::FORBIDDEN_ABSTRACTION_INSTANTIATIONS as $forbiddenType) {
+            if (
+                (new ObjectType($forbiddenType))->isSuperTypeOf($instantiatedType)->yes()
+                && !$this->isDeclaredInAnalysedProject($className)
+            ) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Instantiating %s is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * A plugin's own class is not a host-application dependency by definition, whatever
+     * interface it implements — see FORBIDDEN_ABSTRACTION_INSTANTIATIONS. True when
+     * $className resolves to a class declared in a file outside any vendor/ directory;
+     * false for a built-in/extension class (no file at all, e.g. SoapClient — which is
+     * matched via FORBIDDEN_INSTANTIATIONS, not this exemption, so this case doesn't
+     * normally arise here) and for a class loaded from a dependency's vendor/ directory.
+     */
+    private function isDeclaredInAnalysedProject(string $className): bool
+    {
+        if (!$this->reflectionProvider->hasClass($className)) {
+            return false;
+        }
+
+        $fileName = $this->reflectionProvider->getClass($className)->getFileName();
+
+        return $fileName !== null && !str_contains($fileName, \DIRECTORY_SEPARATOR.'vendor'.\DIRECTORY_SEPARATOR);
+    }
+
+    /**
+     * @return list<\PHPStan\Rules\RuleError>
+     */
+    private function processStaticCall(Node\Expr\StaticCall $node, Scope $scope): array
+    {
+        if (!$node->class instanceof Node\Name) {
+            return [];
+        }
+
+        $className = ltrim($node->class->toString(), '\\');
+        $classType = $scope->resolveTypeByName($node->class);
+
+        foreach (self::FORBIDDEN_STATIC_CALL_CLASSES as $forbiddenClass) {
+            if ((new ObjectType($forbiddenClass))->isSuperTypeOf($classType)->yes()) {
+                $methodName = $node->name instanceof Node\Identifier ? $node->name->toString() : '{expr}';
+
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Calling %s::%s() is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                        $methodName,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @return list<\PHPStan\Rules\RuleError>
+     */
+    private function processMethodCall(Node\Expr\MethodCall $node, Scope $scope): array
+    {
+        if (!$node->name instanceof Node\Identifier) {
+            return [];
+        }
+
+        $methodName = $node->name->toString();
+
+        foreach (self::URL_SCOPED_METHODS as $className => $methods) {
+            if (!in_array($methodName, $methods, true)) {
+                continue;
+            }
+
+            if (!(new ObjectType($className))->isSuperTypeOf($scope->getType($node->var))->yes()) {
+                continue;
+            }
+
+            $args = $node->getArgs();
+            if ($args !== [] && $this->isUrlExpression($args[0]->value, $scope)) {
+                return [
+                    RuleErrorBuilder::message(sprintf(
+                        'Calling %s::%s() with a URL is forbidden, use the abstraction provided by the host application instead.',
+                        $className,
+                        $methodName,
+                    ))->identifier(self::ERROR_IDENTIFIER)->build(),
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * A string is technically callable too (PHP resolves it to a function by name at
      * call time), so `isCallable()` alone can't tell a dynamic-name dispatch apart from
      * a genuine callback. The `callable` pseudo-type, Closure/invokable objects, and
@@ -240,9 +502,20 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
-     * Only a statically known URL scheme (e.g. `https://`) counts as a URL; a plain
-     * local path, or an expression whose value can't be determined statically, is left
-     * alone since the rule only targets remote reads, not local file access.
+     * A statically known URL scheme (e.g. `https://`) counts as a URL, whether the
+     * whole expression is a constant string or only its leftmost part is — PHP
+     * concatenation is left-associative, so `'https://api.example.com/' . $id` has
+     * the literal scheme as the left operand of the outermost Concat even though
+     * the expression as a whole isn't a constant string. Recursing into the left
+     * operand catches that common "literal scheme, dynamic path" pattern.
+     *
+     * An expression with no literal scheme anywhere in it (e.g. a bare
+     * `$this->endpoint`) is deliberately left alone: telling apart "this variable
+     * holds a URL" from "this variable holds a local path" for an arbitrary
+     * dynamic expression needs value/taint tracking this rule doesn't do, and
+     * guessing from a variable or property name would be an unreliable heuristic
+     * that produces both false positives (a local path named `$url`) and false
+     * negatives (a URL held in a variable not named suggestively).
      */
     private function isUrlExpression(Node\Expr $expr, Scope $scope): bool
     {
@@ -252,6 +525,10 @@ final class NoDangerousPrimitivesRule implements Rule
             if (preg_match(self::URL_SCHEME_PATTERN, $constantString->getValue()) === 1) {
                 return true;
             }
+        }
+
+        if ($expr instanceof Node\Expr\BinaryOp\Concat) {
+            return $this->isUrlExpression($expr->left, $scope);
         }
 
         return false;

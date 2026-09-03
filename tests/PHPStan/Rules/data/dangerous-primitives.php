@@ -54,6 +54,11 @@ class SafeUsage
     {
         require __DIR__.'/dangerous-primitives.php';
     }
+
+    public function wrapInjectedClient(\Psr\Http\Client\ClientInterface $inner): \Psr\Http\Client\ClientInterface
+    {
+        return new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\ClientDecorator($inner);
+    }
 }
 
 class DangerousUsage
@@ -149,5 +154,88 @@ class DangerousUsage
     {
         $name = 'value';
         $value = ${$name};
+    }
+
+    public function processSimplexmlLoadFile(): void
+    {
+        simplexml_load_file('https://example.com/feed.xml');
+    }
+
+    public function processGetimagesize(): void
+    {
+        getimagesize('https://example.com/cover.jpg');
+    }
+
+    public function processFilePutContents(): void
+    {
+        file_put_contents('https://example.com/upload.txt', 'data');
+    }
+
+    public function processDnsGetRecord(): void
+    {
+        dns_get_record('example.com');
+    }
+
+    public function processGethostbyname(): void
+    {
+        gethostbyname('example.com');
+    }
+
+    public function processDomDocumentLoad(): void
+    {
+        $document = new \DOMDocument();
+        $document->load('https://example.com/feed.xml');
+    }
+
+    public function processConcatenatedUrl(string $id): void
+    {
+        file_get_contents('https://example.com/anime/'.$id);
+    }
+
+    public function processSymfonyHttpClientStaticCall(string $url): void
+    {
+        \Symfony\Component\HttpClient\HttpClient::create()->request('GET', $url);
+    }
+
+    public function processPsr18ClientDiscovery(): void
+    {
+        \Http\Discovery\Psr18ClientDiscovery::find();
+    }
+
+    public function processSymfonyProcess(): void
+    {
+        $process = new \Symfony\Component\Process\Process(['ls', '-la']);
+        $process->run();
+    }
+
+    public function processSoapClient(): void
+    {
+        new \SoapClient('http://example.com/service.wsdl');
+    }
+
+    public function processSoapClientSubclass(): void
+    {
+        new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\SoapClientSubclass('http://example.com/service.wsdl');
+    }
+
+    public function processSymfonyProcessSubclass(): void
+    {
+        $process = new \AnimeDb\PluginContracts\Tests\PHPStan\Rules\Fixtures\ProcessSubclass(['ls', '-la']);
+        $process->run();
+    }
+
+    public function processCurlHttpClient(): void
+    {
+        new \Symfony\Component\HttpClient\CurlHttpClient();
+    }
+
+    public function processNativeHttpClient(): void
+    {
+        new \Symfony\Component\HttpClient\NativeHttpClient();
+    }
+
+    public function processPsr18Client(): void
+    {
+        new \Symfony\Component\HttpClient\Psr18Client();
     }
 }
