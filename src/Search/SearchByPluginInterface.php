@@ -45,7 +45,7 @@ interface SearchByPluginInterface extends ExternalIdResolutionInterface
      *
      * @param callable(): void|null $onHeartbeat
      *
-     * @return SearchByPluginCandidate[]
+     * @return list<SearchByPluginCandidate>
      */
     public function find(string $name, ?callable $onHeartbeat = null): array;
 }
