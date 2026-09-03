@@ -34,15 +34,21 @@ use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
  * Capability of resolving this plugin's own external source id.
  *
  * Extended by every role interface that needs this capability
- * (SearchByPluginInterface, SyncInterface, EntryWidgetInterface,
- * CatalogWidgetInterface, and transitively FillerInterface).
- * Not a common ancestor of all plugins, and not implemented by
- * {@see DownloadCandidateSearchInterface}, whose search() takes a free-text
- * query rather than a list of urls and whose candidates carry their own
- * identity via {@see AnimeSearchResultItem::$externalId}. A plugin that
- * reacts to catalog events without talking to an external source (manifest
- * `type: local`) has no use for resolveExternalId() either. Listing
- * installed plugins is done from manifests, not from a marker interface.
+ * (SearchByPluginInterface, SyncInterface, and transitively
+ * FillerInterface). Not a common ancestor of all plugins, and not
+ * implemented by {@see DownloadCandidateSearchInterface}, whose search()
+ * takes a free-text query rather than a list of urls and whose candidates
+ * carry their own identity via {@see AnimeSearchResultItem::$externalId}.
+ * A plugin that reacts to catalog events without talking to an external
+ * source (manifest `type: local`) has no use for resolveExternalId()
+ * either. Listing installed plugins is done from manifests, not from a
+ * marker interface.
+ *
+ * Widget interfaces (`EntryWidgetInterface`, `CatalogWidgetInterface`) do
+ * not extend this: the host never calls `resolveExternalId()` on a widget,
+ * and a widget reads a record's already-resolved external id through
+ * `CatalogReaderInterface` instead. A widget that needs its own external id
+ * beyond that implements this interface additionally and explicitly.
  */
 interface ExternalIdResolutionInterface
 {

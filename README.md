@@ -52,19 +52,27 @@ composer require anime-db/plugin-contracts
 ## Что реализует плагин
 
 Интерфейсы, которые реализует сам плагин под конкретный внешний источник.
-Все они, кроме `DownloadCandidateSearchInterface` и `SettingsPageInterface`,
-наследуют базовую способность `ExternalIdResolutionInterface`.
+`SearchByPluginInterface`, `SyncInterface` и транзитивно `FillerInterface`
+наследуют базовую способность `ExternalIdResolutionInterface`;
+`CatalogWidgetInterface`, `EntryWidgetInterface`,
+`DownloadCandidateSearchInterface` и `SettingsPageInterface` — нет.
 
 ### `ExternalIdResolutionInterface`
 
 Способность резолвить собственный внешний id плагина. Единственный метод —
 `resolveExternalId()` — нужен интерфейсам, которым требуется эта способность:
-`SearchByPluginInterface`, `SyncInterface`, `EntryWidgetInterface`,
-`CatalogWidgetInterface` и транзитивно `FillerInterface`. Интерфейс называет
-способность, а не категорию плагина — по этой же причине его **не**
-реализует `DownloadCandidateSearchInterface`: `search()` принимает
-свободный текстовый запрос, а не список ссылок, а идентичность кандидата
-несёт `AnimeSearchResultItem::$externalId`.
+`SearchByPluginInterface`, `SyncInterface` и транзитивно `FillerInterface`.
+Интерфейс называет способность, а не категорию плагина — по этой же причине
+его **не** реализует `DownloadCandidateSearchInterface`: `search()`
+принимает свободный текстовый запрос, а не список ссылок, а идентичность
+кандидата несёт `AnimeSearchResultItem::$externalId`.
+
+Виджетные интерфейсы (`CatalogWidgetInterface`, `EntryWidgetInterface`) его
+тоже не наследуют: хост никогда не вызывает `resolveExternalId()` у
+виджета, а уже отрезолвленный внешний id записи виджет читает через
+[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджет,
+которому нужен собственный внешний id сверх этого, реализует интерфейс
+дополнительно и явно.
 
 Это **не** общий предок всех плагинов: плагин, который реагирует на события
 каталога и не обращается ни к какому внешнему источнику (`type: local` в
@@ -288,11 +296,6 @@ class NewReleasesWidget implements CatalogWidgetInterface
         return new WidgetMetadata('new-releases', 'widget.new-releases.title', 'widget.new-releases.description');
     }
 
-    public function resolveExternalId(array $urls): ?string
-    {
-        return null; // виджету не нужен свой внешний id
-    }
-
     public function render(): string
     {
         return '<div class="new-releases">...</div>';
@@ -300,17 +303,13 @@ class NewReleasesWidget implements CatalogWidgetInterface
 }
 
 // Виджет на странице отдельной записи каталога — получает AnimeId записи,
-// а не внешний id: сам резолвит его, если он ему вообще нужен.
+// а не внешний id: состояние записи, включая внешний id, при необходимости
+// читается через CatalogReaderInterface.
 class RelatedTitlesWidget implements EntryWidgetInterface
 {
     public static function metadata(): WidgetMetadata
     {
         return new WidgetMetadata('related-titles', 'widget.related-titles.title', 'widget.related-titles.description');
-    }
-
-    public function resolveExternalId(array $urls): ?string
-    {
-        // ...
     }
 
     public function render(AnimeId $anime): string
@@ -330,10 +329,11 @@ HTML-строка, не структурированные данные: это 
 `EntryWidgetInterface::render()` получает `AnimeId` записи, а не внешний
 id: многим виджетам он вообще не нужен (например, виджету статуса закачки
 достаточно `AnimeId`, чтобы прочитать свой срез). Виджету, которому нужен
-внешний id, доступны два пути — резолвить самому через `resolveExternalId()`
-(унаследован от `ExternalIdResolutionInterface`) по `AnimeView::$sources`,
-либо взять уже резолвнутый хостом `AnimeView::$externalId` — в обоих
-случаях данные приходят через [`CatalogReaderInterface`](#catalogreaderinterface-и-animeview).
+внешний id, доступен уже резолвнутый хостом `AnimeView::$externalId` через
+[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджет,
+которому нужен собственный внешний id сверх этого, реализует
+`ExternalIdResolutionInterface` дополнительно и явно — ни
+`CatalogWidgetInterface`, ни `EntryWidgetInterface` его не наследуют.
 
 `metadata()` — статический метод, возвращающий `WidgetMetadata`: код-имя
 (`name`, шаблон `[a-z0-9-]+` — им хост ключует виджет как
@@ -1138,8 +1138,8 @@ includes:
 
 Проверяет, что классы, объявляющие реализацию `ExternalIdResolutionInterface`
 (и всех интерфейсов, которые его расширяют: `FillerInterface`,
-`SearchByPluginInterface`, `SyncInterface`, `CatalogWidgetInterface`,
-`EntryWidgetInterface`) или `DownloadCandidateSearchInterface`, имеют
+`SearchByPluginInterface`, `SyncInterface`), либо `CatalogWidgetInterface`,
+`EntryWidgetInterface`, `DownloadCandidateSearchInterface`, имеют
 сигнатуры методов, точно совпадающие с сигнатурами из установленной
 версии этого пакета. Ловит рассинхронизацию между версией контракта, под
 которую написан плагин, и версией, реально установленной у потребителя —

@@ -44,13 +44,15 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  *
  * `render()` takes the record's {@see AnimeId}, not a pre-resolved external
  * id: many widgets don't need one at all (e.g. a download-status widget
- * reads its own slice by `AnimeId`), and a widget that does can resolve it
- * itself via `resolveExternalId()` (inherited) against
- * {@see AnimeView::$sources}, or read the already-resolved
- * {@see AnimeView::$externalId} — both reachable through
- * {@see CatalogReaderInterface} injected into the plugin.
+ * reads its own slice by `AnimeId`). The record's state — including the
+ * already-resolved {@see AnimeView::$externalId} — is read through
+ * {@see CatalogReaderInterface} injected into the plugin, not passed to
+ * `render()`. A widget that needs its own external id beyond what
+ * `CatalogReaderInterface` exposes implements
+ * {@see ExternalIdResolutionInterface} additionally and explicitly, as a
+ * declared capability rather than a side effect of inheritance.
  */
-interface EntryWidgetInterface extends ExternalIdResolutionInterface
+interface EntryWidgetInterface
 {
     /**
      * Widget metadata: code name and title/description translation keys.
