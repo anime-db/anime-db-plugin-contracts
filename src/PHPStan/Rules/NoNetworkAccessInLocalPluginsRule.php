@@ -153,19 +153,14 @@ use Psr\Http\Message\RequestFactoryInterface;
  * method parameter rather than through the constructor or a property, is not checked by
  * this rule.
  *
- * ## Why this matters despite plugin code not being analysed yet
+ * ## Why this rule is enabled by default
  *
- * This rule is added to the default rule set (no opt-in flag) even though, at the time it
- * is added, the only rule consumer analyses this contracts package's own source, which
- * contains no plugin code — {@see PluginType::Local} does not occur in this package's own
- * `manifest.json` files (it has none), so the rule is currently a correct no-op in
- * practice. It starts doing real work once a consumer runs PHPStan with this package's
- * rules over an actual plugin's source tree, which is what
- * `anime-db/anime-db-plugins#111` tracks. Leaving the rule out until that lands would only
- * repeat a mistake already made once in this package: two rules were described as an
- * "automatic gate" while nothing ever ran them against real plugin code. The honest fix for
- * that is stating the dependency plainly (see README.md), not withholding a correct rule
- * until every consumer of this package is ready to enforce it.
+ * `type: "local"` in a manifest is the plugin author's own claim that the plugin's code
+ * never talks to the network, directly or through a host-provided abstraction. Checking
+ * that claim by hand does not scale as a plugin's codebase grows. Enabling this rule by
+ * default turns the claim into something verified automatically, from constructor and
+ * property type declarations, by whatever PHPStan run a consumer points at the plugin's
+ * source tree (see README.md, "PHPStan-правила").
  *
  * @implements Rule<InClassNode>
  */
