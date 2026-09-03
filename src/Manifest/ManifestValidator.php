@@ -195,11 +195,11 @@ final class ManifestValidator
     private function validateFeaturesOrLocales(array $data, PluginType $type): array
     {
         $errors = match ($type) {
-            PluginType::Integration => $this->validateFeatures($data, required: true),
+            PluginType::Integration => $this->validateFeatures($data, $type, required: true),
             PluginType::Translation => array_key_exists('features', $data)
                 ? [new ManifestValidationError('features', \sprintf('Field "features" is not allowed for type "%s".', $type->value))]
                 : [],
-            PluginType::Local => $this->validateFeatures($data, required: false, disallowedKeys: self::LOCAL_DISALLOWED_FEATURE_KEYS),
+            PluginType::Local => $this->validateFeatures($data, $type, required: false, disallowedKeys: self::LOCAL_DISALLOWED_FEATURE_KEYS),
         };
 
         $errors = [...$errors, ...$this->validateLocales($data, required: $type === PluginType::Translation)];
@@ -214,11 +214,11 @@ final class ManifestValidator
      *
      * @return ManifestValidationError[]
      */
-    private function validateFeatures(array $data, bool $required, array $disallowedKeys = []): array
+    private function validateFeatures(array $data, PluginType $type, bool $required, array $disallowedKeys = []): array
     {
         if (!array_key_exists('features', $data)) {
             if ($required) {
-                return [new ManifestValidationError('features', 'Field "features" is required for type "integration".')];
+                return [new ManifestValidationError('features', \sprintf('Field "features" is required for type "%s".', $type->value))];
             }
 
             return [];
@@ -234,7 +234,7 @@ final class ManifestValidator
             if (\in_array($key, $disallowedKeys, true)) {
                 $errors[] = new ManifestValidationError(
                     \sprintf('features.%s', $key),
-                    \sprintf('"%s" is an integration-plugin role and is not allowed for type "local". Only widget names are allowed here.', $key),
+                    \sprintf('"%s" is an integration-plugin role and is not allowed for type "%s". Only widget names are allowed here.', $key, $type->value),
                 );
 
                 continue;
