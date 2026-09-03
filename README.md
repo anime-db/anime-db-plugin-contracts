@@ -70,7 +70,7 @@ composer require anime-db/plugin-contracts
 Виджетные интерфейсы (`CatalogWidgetInterface`, `EntryWidgetInterface`) его
 тоже не наследуют: хост никогда не вызывает `resolveExternalId()` у
 виджета, а уже отрезолвленный внешний id записи виджет читает через
-[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджету,
+[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджет,
 которому нужен собственный внешний id сверх этого, реализует интерфейс
 дополнительно и явно.
 
@@ -330,7 +330,7 @@ HTML-строка, не структурированные данные: это 
 id: многим виджетам он вообще не нужен (например, виджету статуса закачки
 достаточно `AnimeId`, чтобы прочитать свой срез). Виджету, которому нужен
 внешний id, доступен уже резолвнутый хостом `AnimeView::$externalId` через
-[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджету,
+[`CatalogReaderInterface`](#catalogreaderinterface-и-animeview). Виджет,
 которому нужен собственный внешний id сверх этого, реализует
 `ExternalIdResolutionInterface` дополнительно и явно — ни
 `CatalogWidgetInterface`, ни `EntryWidgetInterface` его не наследуют.
