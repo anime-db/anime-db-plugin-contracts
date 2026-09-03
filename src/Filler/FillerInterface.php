@@ -57,7 +57,7 @@ interface FillerInterface extends SearchByPluginInterface
      * Used by the host UI to show per-field fill-in buttons only for fields
      * the plugin supports.
      *
-     * @return string[]
+     * @return list<string>
      */
     public function getFillableFields(): array;
 }
