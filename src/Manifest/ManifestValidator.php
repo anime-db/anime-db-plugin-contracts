@@ -43,6 +43,17 @@ use Composer\Semver\VersionParser;
  */
 final class ManifestValidator
 {
+    /**
+     * `features` keys that name an integration-plugin role rather than a widget. Reserved
+     * and rejected for type "local": a plugin whose code never talks to an external source
+     * cannot fulfil the filler/sync/search role a caller would infer from these keys being
+     * present. Every other `features` key is read as a widget name, which is legal for
+     * "local" too.
+     *
+     * @var list<string>
+     */
+    private const LOCAL_DISALLOWED_FEATURE_KEYS = ['filler', 'sync', 'search'];
+
     private VersionParser $versionParser;
 
     public function __construct()
@@ -183,25 +194,13 @@ final class ManifestValidator
      */
     private function validateFeaturesOrLocales(array $data, PluginType $type): array
     {
-        $errors = [];
-        $unexpectedFields = match ($type) {
-            PluginType::Integration => [],
-            PluginType::Translation => ['features'],
-            PluginType::Local => ['features'],
+        $errors = match ($type) {
+            PluginType::Integration => $this->validateFeatures($data, required: true),
+            PluginType::Translation => array_key_exists('features', $data)
+                ? [new ManifestValidationError('features', \sprintf('Field "features" is not allowed for type "%s".', $type->value))]
+                : [],
+            PluginType::Local => $this->validateFeatures($data, required: false, disallowedKeys: self::LOCAL_DISALLOWED_FEATURE_KEYS),
         };
-
-        foreach ($unexpectedFields as $unexpectedField) {
-            if (array_key_exists($unexpectedField, $data)) {
-                $errors[] = new ManifestValidationError(
-                    $unexpectedField,
-                    \sprintf('Field "%s" is not allowed for type "%s".', $unexpectedField, $type->value),
-                );
-            }
-        }
-
-        if ($type === PluginType::Integration) {
-            $errors = [...$errors, ...$this->validateFeatures($data)];
-        }
 
         $errors = [...$errors, ...$this->validateLocales($data, required: $type === PluginType::Translation)];
 
@@ -210,13 +209,19 @@ final class ManifestValidator
 
     /**
      * @param array<string, mixed> $data
+     * @param list<string>         $disallowedKeys keys that must not appear in `features`, e.g. integration-only
+     *                                             roles for type "local"
      *
      * @return ManifestValidationError[]
      */
-    private function validateFeatures(array $data): array
+    private function validateFeatures(array $data, bool $required, array $disallowedKeys = []): array
     {
         if (!array_key_exists('features', $data)) {
-            return [new ManifestValidationError('features', 'Field "features" is required for type "integration".')];
+            if ($required) {
+                return [new ManifestValidationError('features', 'Field "features" is required for type "integration".')];
+            }
+
+            return [];
         }
 
         $features = $data['features'];
@@ -226,6 +231,15 @@ final class ManifestValidator
 
         $errors = [];
         foreach ($features as $key => $value) {
+            if (\in_array($key, $disallowedKeys, true)) {
+                $errors[] = new ManifestValidationError(
+                    \sprintf('features.%s', $key),
+                    \sprintf('"%s" is an integration-plugin role and is not allowed for type "local". Only widget names are allowed here.', $key),
+                );
+
+                continue;
+            }
+
             if (!\is_bool($value)) {
                 $errors[] = new ManifestValidationError(\sprintf('features.%s', $key), 'Feature flag must be a boolean.');
             }

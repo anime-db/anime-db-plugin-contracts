@@ -107,14 +107,40 @@ class ManifestValidatorTest extends TestCase
         self::assertSame([], $errors);
     }
 
-    public function testFeaturesIsNotAllowedForLocalType(): void
+    public function testFeaturesWithOnlyWidgetNamesIsAllowedForLocalType(): void
     {
         $data = $this->validLocalManifest();
-        $data['features'] = ['filler' => true];
+        $data['features'] = ['related' => true, 'similar' => false];
 
         $errors = (new ManifestValidator())->validate($data);
 
-        self::assertContains('features', array_map(static fn ($error) => $error->field, $errors));
+        self::assertSame([], $errors);
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function integrationRoleFeatureKeys(): iterable
+    {
+        yield 'filler' => ['filler'];
+        yield 'sync' => ['sync'];
+        yield 'search' => ['search'];
+    }
+
+    /**
+     * @dataProvider integrationRoleFeatureKeys
+     */
+    public function testIntegrationRoleFeatureKeyIsNotAllowedForLocalType(string $key): void
+    {
+        $data = $this->validLocalManifest();
+        $data['features'] = [$key => true];
+
+        $errors = (new ManifestValidator())->validate($data);
+        $error = array_values(array_filter($errors, static fn ($error) => $error->field === \sprintf('features.%s', $key)))[0] ?? null;
+
+        self::assertNotNull($error);
+        self::assertStringContainsString('integration-plugin role', $error->message);
+        self::assertStringContainsString('local', $error->message);
     }
 
     public function testLocalesIsAllowedForLocalType(): void

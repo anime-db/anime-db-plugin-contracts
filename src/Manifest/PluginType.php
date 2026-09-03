@@ -33,11 +33,13 @@ namespace AnimeDb\PluginContracts\Manifest;
  * `Integration` is a regular code plugin (any combination of filler/widget/sync/search
  * features). `Translation` is a purely declarative resource with no code — a set of
  * locale files — and declares `locales` instead of `features`. `Local` is a code plugin
- * that reacts to catalog events and does not talk to an external source (e.g. it does
- * not implement `ExternalIdResolutionInterface`, so `resolveExternalId()` is not meaningful
- * for it); it does not declare `features`. `locales` — the languages of the translation
- * catalogs a plugin ships — is required for `Translation` and optional for `Integration`
- * and `Local`.
+ * whose code never talks to an external source — neither directly nor through an
+ * abstraction the host provides; it can still declare widgets in `features` (everything
+ * but the `filler`/`sync`/`search` role keys, which name integration-only roles), ship its
+ * own translations, and react to catalog events — reacting to catalog events is one
+ * possible use, not the type's defining trait. `locales` — the languages of the
+ * translation catalogs a plugin ships — is required for `Translation` and optional for
+ * `Integration` and `Local`.
  */
 enum PluginType: string
 {
