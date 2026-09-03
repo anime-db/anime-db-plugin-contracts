@@ -42,11 +42,6 @@ class EntryWidgetInterfaceTest extends TestCase
                 return new WidgetMetadata('related-titles', 'widget.related-titles.title', 'widget.related-titles.description');
             }
 
-            public function resolveExternalId(array $urls): ?string
-            {
-                return null;
-            }
-
             public function render(AnimeId $anime): string
             {
                 return \sprintf('<div data-anime-id="%d"></div>', $anime->value);

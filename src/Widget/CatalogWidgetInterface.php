@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Widget;
 
+use AnimeDb\PluginContracts\Catalog\CatalogReaderInterface;
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 
 /**
@@ -40,11 +41,14 @@ use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
  * the common "list of records" case is a host-side optional helper, not a
  * rigid schema in this contract.
  *
- * A widget that needs its own external source id (to call its own API) can
- * use `resolveExternalId()` inherited from ExternalIdResolutionInterface: the
- * caller resolves and caches the id on its side before calling `render()`.
+ * `render()` takes no record context: for a per-record state, including the
+ * already-resolved external id, a plugin uses {@see CatalogReaderInterface}
+ * instead. A widget that needs its own external source id (to call its own
+ * API) implements {@see ExternalIdResolutionInterface} additionally and
+ * explicitly, as a declared capability rather than a side effect of
+ * inheritance.
  */
-interface CatalogWidgetInterface extends ExternalIdResolutionInterface
+interface CatalogWidgetInterface
 {
     /**
      * Widget metadata: code name and title/description translation keys.
