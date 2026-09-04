@@ -39,7 +39,6 @@ use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Node\InClassNode;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
@@ -139,7 +138,7 @@ final class ContractConformanceRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function checkMethod(
         ClassReflection $classReflection,
@@ -159,10 +158,10 @@ final class ContractConformanceRule implements Rule
 
         $classMethod = $classReflection->getNativeMethod($methodName);
 
-        $interfaceVariant = ParametersAcceptorSelector::selectSingle(
-            $interfaceReflection->getNativeMethod($methodName)->getVariants(),
-        );
-        $classVariant = ParametersAcceptorSelector::selectSingle($classMethod->getVariants());
+        // Contract methods and their implementations are ordinary declared methods, never
+        // PHP's built-in overloaded functions, so each always has exactly one variant.
+        $interfaceVariant = $interfaceReflection->getNativeMethod($methodName)->getVariants()[0];
+        $classVariant = $classMethod->getVariants()[0];
 
         $expected = $this->describeSignature($methodName, $interfaceVariant);
         $actual = $this->describeSignature($methodName, $classVariant);
