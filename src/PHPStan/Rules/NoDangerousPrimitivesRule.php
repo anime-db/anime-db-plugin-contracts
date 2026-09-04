@@ -32,7 +32,6 @@ use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
-use PHPStan\Type\CallableType;
 use PHPStan\Type\ObjectType;
 use PHPStan\Type\Type;
 
@@ -296,7 +295,7 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function processFuncCall(Node\Expr\FuncCall $node, Scope $scope): array
     {
@@ -357,7 +356,7 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function processNew(Node\Expr\New_ $node, Scope $scope): array
     {
@@ -418,7 +417,7 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function processStaticCall(Node\Expr\StaticCall $node, Scope $scope): array
     {
@@ -447,7 +446,7 @@ final class NoDangerousPrimitivesRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function processMethodCall(Node\Expr\MethodCall $node, Scope $scope): array
     {
@@ -483,22 +482,16 @@ final class NoDangerousPrimitivesRule implements Rule
 
     /**
      * A string is technically callable too (PHP resolves it to a function by name at
-     * call time), so `isCallable()` alone can't tell a dynamic-name dispatch apart from
+     * call time, and `Type::isCallable()` reports `yes` for a string naming an existing
+     * function), so `isCallable()` alone can't tell a dynamic-name dispatch apart from
      * a genuine callback. The `callable` pseudo-type, Closure/invokable objects, and
      * array callables (`[$this, 'method']`, `[Foo::class, 'method']`) are treated as
-     * safe; strings (including constant ones) are always forbidden.
+     * safe by excluding strings explicitly; strings (including constant ones) are
+     * always forbidden.
      */
     private function isSafeCallableReference(Type $type): bool
     {
-        if ($type instanceof CallableType) {
-            return true;
-        }
-
-        if ($type->isObject()->yes() && $type->isCallable()->yes()) {
-            return true;
-        }
-
-        return $type->isArray()->yes() && $type->isCallable()->yes();
+        return !$type->isString()->yes() && $type->isCallable()->yes();
     }
 
     /**

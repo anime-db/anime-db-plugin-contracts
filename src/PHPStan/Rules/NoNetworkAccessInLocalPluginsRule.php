@@ -40,7 +40,6 @@ use PhpParser\Node;
 use PHPStan\Analyser\Scope;
 use PHPStan\Node\InClassNode;
 use PHPStan\Reflection\ClassReflection;
-use PHPStan\Reflection\ParametersAcceptorSelector;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 use PHPStan\Type\ObjectType;
@@ -301,7 +300,7 @@ final class NoNetworkAccessInLocalPluginsRule implements Rule
     }
 
     /**
-     * @return list<\PHPStan\Rules\RuleError>
+     * @return list<\PHPStan\Rules\IdentifierRuleError>
      */
     private function checkNetworkTypes(Node\Stmt\Class_ $classNode, ClassReflection $classReflection): array
     {
@@ -334,7 +333,9 @@ final class NoNetworkAccessInLocalPluginsRule implements Rule
             // A constructor inherited from a parent class is not declared in this class's
             // own source; it is checked when the file declaring it is analysed instead.
             if ($constructor->getDeclaringClass()->getName() === $classReflection->getName()) {
-                $variant = ParametersAcceptorSelector::selectSingle($constructor->getVariants());
+                // A declared constructor is an ordinary method, never one of PHP's built-in
+                // overloaded functions, so it always has exactly one variant.
+                $variant = $constructor->getVariants()[0];
 
                 foreach ($variant->getParameters() as $parameter) {
                     if (!$this->typeContainsNetworkType($parameter->getType())) {
