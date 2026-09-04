@@ -15,7 +15,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           coverage: none
           tools: composer:v2
 
@@ -31,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           coverage: none
           tools: composer:v2
 
@@ -57,7 +57,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           coverage: none
           tools: composer:v2
 
@@ -74,13 +74,18 @@ jobs:
       - name: Check code style
         run: composer cs-check
 
+  # Одна версия PHP, а не матрица: с issue #79 dev-зависимости пакета (symfony/http-client,
+  # symfony/process для фикстур правил) стоят на 8.1.*, а те требуют php >= 8.4.1. Матрица
+  # 8.1/8.2/8.3 проверяла совместимость, которой никто не пользуется: плагин никогда не
+  # исполняется на своей PHP — он исполняется внутри хоста, который требует >=8.5 и везёт
+  # собственный PHP 8.5.8 в поставке FrankenPHP. require.php пакета приведён к той же версии.
   phpunit:
     name: PHPUnit (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1', '8.2', '8.3']
+        php: ['8.5']
     steps:
       - uses: actions/checkout@v5
 
