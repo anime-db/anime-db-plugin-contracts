@@ -513,14 +513,27 @@ class ManifestValidatorTest extends TestCase
         self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
     }
 
-    public function testUiEmptyObjectIsRejected(): void
+    public function testUiEmptyObjectRequiresAtLeastOneFile(): void
     {
         $data = $this->validIntegrationManifest();
         $data['ui'] = [];
 
         $errors = (new ManifestValidator())->validate($data);
 
-        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+        $uiErrors = array_values(array_filter($errors, static fn ($error) => $error->field === 'ui'));
+        self::assertCount(1, $uiErrors);
+        self::assertStringContainsString('must declare at least one file', $uiErrors[0]->message);
+    }
+
+    public function testUiScalarCssDoesNotAlsoReportMissingFiles(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => 'assets/a.css'];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        $uiErrors = array_values(array_filter($errors, static fn ($error) => $error->field === 'ui'));
+        self::assertSame([], $uiErrors, 'A structural error in "ui.css" must not also trigger the "at least one file" error on "ui".');
     }
 
     public function testUiCssMustBeAListOfStrings(): void
@@ -544,31 +557,35 @@ class ManifestValidatorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{0: string}>
+     * @return iterable<string, array{0: string, 1: string}>
      */
     public static function invalidUiCssPaths(): iterable
     {
-        yield 'missing assets prefix' => ['/etc/passwd'];
-        yield 'windows drive letter' => ['C:\\x.css'];
-        yield 'directory traversal' => ['assets/../../../etc/passwd'];
-        yield 'uppercase extension' => ['assets/style.CSS'];
-        yield 'wrong extension' => ['assets/settings.js'];
-        yield 'empty string' => [''];
-        yield 'nul byte' => ["assets/x.css\0.png"];
-        yield 'backslash' => ['assets\\style.css'];
+        yield 'missing assets prefix' => ['/etc/passwd', 'must be a path under "assets/"'];
+        yield 'windows drive letter under assets' => ['assets/C:\\x.css', 'must be a relative path without'];
+        yield 'directory traversal' => ['assets/../../../etc/passwd', 'must be a relative path without'];
+        yield 'dot segment' => ['assets/./a.css', 'must be a relative path without'];
+        yield 'empty segment' => ['assets//a.css', 'must be a relative path without'];
+        yield 'uppercase extension' => ['assets/style.CSS', 'must end with ".css"'];
+        yield 'wrong extension' => ['assets/settings.js', 'must end with ".css"'];
+        yield 'empty string' => ['', 'without a NUL byte'];
+        yield 'nul byte' => ["assets/x.css\0.png", 'without a NUL byte'];
+        yield 'backslash under assets' => ['assets/sub\\style.css', 'must be a relative path without'];
     }
 
     /**
      * @dataProvider invalidUiCssPaths
      */
-    public function testUiCssRejectsInvalidPath(string $path): void
+    public function testUiCssRejectsInvalidPath(string $path, string $expectedMessageFragment): void
     {
         $data = $this->validIntegrationManifest();
         $data['ui'] = ['css' => [$path]];
 
         $errors = (new ManifestValidator())->validate($data);
 
-        self::assertContains('ui.css', array_map(static fn ($error) => $error->field, $errors));
+        $cssErrors = array_values(array_filter($errors, static fn ($error) => $error->field === 'ui.css'));
+        self::assertNotEmpty($cssErrors, 'Expected an error on field "ui.css".');
+        self::assertStringContainsString($expectedMessageFragment, $cssErrors[0]->message);
     }
 
     public function testUiJsRejectsNulByteInPath(): void

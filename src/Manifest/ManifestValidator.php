@@ -308,7 +308,7 @@ final class ManifestValidator
         }
 
         $ui = $data['ui'];
-        if (!\is_array($ui) || array_is_list($ui)) {
+        if (!\is_array($ui) || ($ui !== [] && array_is_list($ui))) {
             return [new ManifestValidationError('ui', 'Field "ui" must be an object with "css" and/or "js" keys.')];
         }
 
@@ -320,14 +320,16 @@ final class ManifestValidator
             )];
         }
 
-        $errors = [];
-        $errors = [...$errors, ...$this->validateUiFileList($ui, 'css')];
-        $errors = [...$errors, ...$this->validateUiFileList($ui, 'js')];
+        $cssErrors = $this->validateUiFileList($ui, 'css');
+        $jsErrors = $this->validateUiFileList($ui, 'js');
+        $errors = [...$cssErrors, ...$jsErrors];
 
-        $css = \is_array($ui['css'] ?? null) ? $ui['css'] : [];
-        $js = \is_array($ui['js'] ?? null) ? $ui['js'] : [];
-        if ($css === [] && $js === []) {
-            $errors[] = new ManifestValidationError('ui', 'Field "ui" must declare at least one file in "css" or "js".');
+        if ($cssErrors === [] && $jsErrors === []) {
+            $css = \is_array($ui['css'] ?? null) ? $ui['css'] : [];
+            $js = \is_array($ui['js'] ?? null) ? $ui['js'] : [];
+            if ($css === [] && $js === []) {
+                $errors[] = new ManifestValidationError('ui', 'Field "ui" must declare at least one file in "css" or "js".');
+            }
         }
 
         return $errors;
@@ -366,8 +368,11 @@ final class ManifestValidator
                 continue;
             }
 
-            if (str_starts_with($path, '/') || str_contains($path, '\\') || str_contains($path, ':') || \in_array('..', explode('/', $path), true)) {
-                $errors[] = new ManifestValidationError($field, \sprintf('"%s" must be a relative path without "..", "\\" or ":".', $path));
+            $segments = explode('/', $path);
+            if (str_starts_with($path, '/') || str_contains($path, '\\') || str_contains($path, ':')
+                || \in_array('..', $segments, true) || \in_array('.', $segments, true) || \in_array('', $segments, true)
+            ) {
+                $errors[] = new ManifestValidationError($field, \sprintf('"%s" must be a relative path without "..", ".", empty segments, "\\" or ":".', $path));
 
                 continue;
             }
