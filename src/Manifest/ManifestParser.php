@@ -111,6 +111,10 @@ final class ManifestParser
             features: $type === PluginType::Integration ? $data['features'] : null,
             locales: $data['locales'] ?? null,
             updateUrl: $data['update_url'] ?? null,
+            ui: isset($data['ui']) ? new PluginUi(
+                css: $data['ui']['css'] ?? [],
+                js: $data['ui']['js'] ?? [],
+            ) : null,
         );
     }
 }

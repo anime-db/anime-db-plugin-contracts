@@ -453,6 +453,144 @@ class ManifestValidatorTest extends TestCase
         self::assertSame([], $errors);
     }
 
+    public function testValidUiIsAllowedForIntegrationType(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => ['assets/carousel.css'], 'js' => ['assets/settings.js']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertSame([], $errors);
+    }
+
+    public function testValidUiIsAllowedForLocalType(): void
+    {
+        $data = $this->validLocalManifest();
+        $data['ui'] = ['css' => ['assets/style.css']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertSame([], $errors);
+    }
+
+    public function testUiIsNotAllowedForTranslationType(): void
+    {
+        $data = $this->validTranslationManifest();
+        $data['ui'] = ['css' => ['assets/style.css']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiMustBeAnObject(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['assets/style.css'];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiRejectsUnknownKey(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['styles' => ['assets/style.css']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiRequiresAtLeastOneNonEmptyList(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => [], 'js' => []];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiEmptyObjectIsRejected(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = [];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiCssMustBeAListOfStrings(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => 'assets/style.css'];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui.css', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiJsMustBeAListOfStrings(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['js' => [42]];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui.js', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    /**
+     * @return iterable<string, array{0: string}>
+     */
+    public static function invalidUiCssPaths(): iterable
+    {
+        yield 'missing assets prefix' => ['/etc/passwd'];
+        yield 'windows drive letter' => ['C:\\x.css'];
+        yield 'directory traversal' => ['assets/../../../etc/passwd'];
+        yield 'uppercase extension' => ['assets/style.CSS'];
+        yield 'wrong extension' => ['assets/settings.js'];
+        yield 'empty string' => [''];
+        yield 'nul byte' => ["assets/x.css\0.png"];
+        yield 'backslash' => ['assets\\style.css'];
+    }
+
+    /**
+     * @dataProvider invalidUiCssPaths
+     */
+    public function testUiCssRejectsInvalidPath(string $path): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => [$path]];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui.css', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiJsRejectsNulByteInPath(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['js' => ['assets/x.js'.\chr(0).'.png']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui.js', array_map(static fn ($error) => $error->field, $errors));
+    }
+
+    public function testUiCssRejectsDuplicatePaths(): void
+    {
+        $data = $this->validIntegrationManifest();
+        $data['ui'] = ['css' => ['assets/style.css', 'assets/style.css']];
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertContains('ui.css', array_map(static fn ($error) => $error->field, $errors));
+    }
+
     public function testErrorContainsFieldAndMessage(): void
     {
         $errors = (new ManifestValidator())->validate([]);

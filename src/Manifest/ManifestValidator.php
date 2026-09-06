@@ -78,6 +78,7 @@ final class ManifestValidator
         $type = \is_string($data['type'] ?? null) ? PluginType::tryFrom($data['type']) : null;
         if ($type !== null) {
             $errors = [...$errors, ...$this->validateFeaturesOrLocales($data, $type)];
+            $errors = [...$errors, ...$this->validateUi($data, $type)];
         }
 
         $errors = [...$errors, ...$this->validateRequire($data)];
@@ -282,6 +283,108 @@ final class ManifestValidator
                     \sprintf('"%s" is not a valid locale code. It must be a bare language subtag: two or three lowercase letters, without region or script (e.g. "en"). Three letters are only for languages without an ISO 639-1 two-letter code; use the two-letter code when one exists.', $locale),
                 );
             }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * `ui` declares files the host itself inserts into the page shell when rendering this
+     * plugin's UI — not allowed for {@see PluginType::Translation}, which ships no code and
+     * renders no UI of its own.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return ManifestValidationError[]
+     */
+    private function validateUi(array $data, PluginType $type): array
+    {
+        if (!array_key_exists('ui', $data)) {
+            return [];
+        }
+
+        if ($type === PluginType::Translation) {
+            return [new ManifestValidationError('ui', \sprintf('Field "ui" is not allowed for type "%s".', $type->value))];
+        }
+
+        $ui = $data['ui'];
+        if (!\is_array($ui) || array_is_list($ui)) {
+            return [new ManifestValidationError('ui', 'Field "ui" must be an object with "css" and/or "js" keys.')];
+        }
+
+        $unknownKeys = array_diff(array_keys($ui), ['css', 'js']);
+        if ($unknownKeys !== []) {
+            return [new ManifestValidationError(
+                'ui',
+                \sprintf('Field "ui" has unknown key(s): "%s". Only "css" and "js" are allowed.', implode('", "', array_map('strval', $unknownKeys))),
+            )];
+        }
+
+        $errors = [];
+        $errors = [...$errors, ...$this->validateUiFileList($ui, 'css')];
+        $errors = [...$errors, ...$this->validateUiFileList($ui, 'js')];
+
+        $css = \is_array($ui['css'] ?? null) ? $ui['css'] : [];
+        $js = \is_array($ui['js'] ?? null) ? $ui['js'] : [];
+        if ($css === [] && $js === []) {
+            $errors[] = new ManifestValidationError('ui', 'Field "ui" must declare at least one file in "css" or "js".');
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, mixed> $ui
+     *
+     * @return ManifestValidationError[]
+     */
+    private function validateUiFileList(array $ui, string $key): array
+    {
+        if (!array_key_exists($key, $ui)) {
+            return [];
+        }
+
+        $list = $ui[$key];
+        if (!\is_array($list) || !array_is_list($list)) {
+            return [new ManifestValidationError(\sprintf('ui.%s', $key), \sprintf('Field "ui.%s" must be a list of strings.', $key))];
+        }
+
+        $field = \sprintf('ui.%s', $key);
+        $extension = '.'.$key;
+        $errors = [];
+        $seen = [];
+        foreach ($list as $path) {
+            if (!\is_string($path) || $path === '' || str_contains($path, "\0")) {
+                $errors[] = new ManifestValidationError($field, \sprintf('Entries of "%s" must be non-empty strings without a NUL byte.', $field));
+
+                continue;
+            }
+
+            if (!str_starts_with($path, 'assets/')) {
+                $errors[] = new ManifestValidationError($field, \sprintf('"%s" must be a path under "assets/".', $path));
+
+                continue;
+            }
+
+            if (str_starts_with($path, '/') || str_contains($path, '\\') || str_contains($path, ':') || \in_array('..', explode('/', $path), true)) {
+                $errors[] = new ManifestValidationError($field, \sprintf('"%s" must be a relative path without "..", "\\" or ":".', $path));
+
+                continue;
+            }
+
+            if (!str_ends_with($path, $extension)) {
+                $errors[] = new ManifestValidationError($field, \sprintf('"%s" must end with "%s".', $path, $extension));
+
+                continue;
+            }
+
+            if (\in_array($path, $seen, true)) {
+                $errors[] = new ManifestValidationError($field, \sprintf('"%s" is listed more than once in "%s".', $path, $field));
+
+                continue;
+            }
+
+            $seen[] = $path;
         }
 
         return $errors;
