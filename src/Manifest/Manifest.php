@@ -35,7 +35,8 @@ namespace AnimeDb\PluginContracts\Manifest;
  * consumers should never work with the raw decoded JSON array directly. `features` is only
  * meaningful for {@see PluginType::Integration}. `locales` — the languages of the translation
  * catalogs the plugin ships — is required for {@see PluginType::Translation} and optional for
- * {@see PluginType::Integration} and {@see PluginType::Local}.
+ * {@see PluginType::Integration} and {@see PluginType::Local}. `ui` — see {@see PluginUi} — is
+ * not allowed for {@see PluginType::Translation}.
  *
  * Also implements {@see OwnManifestInterface} — the narrow read-only view of
  * this data that the host injects into the plugin itself.
@@ -66,6 +67,7 @@ final class Manifest implements OwnManifestInterface
         public readonly ?array $features = null,
         public readonly ?array $locales = null,
         public readonly ?string $updateUrl = null,
+        public readonly ?PluginUi $ui = null,
     ) {
     }
 

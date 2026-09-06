@@ -71,6 +71,27 @@ class ManifestParserTest extends TestCase
         self::assertSame('https://example.com/plugins/registry.json', $manifest->updateUrl);
     }
 
+    public function testParseValidIntegrationManifestWithUi(): void
+    {
+        $json = <<<'JSON'
+            {
+                "id": "vendor-shikimori",
+                "name": "Shikimori",
+                "version": "1.0.0",
+                "type": "integration",
+                "features": {"filler": true},
+                "ui": {"css": ["assets/carousel.css"], "js": ["assets/settings.js"]},
+                "require": {"core": ">=2.0.0", "php": ">=8.2"}
+            }
+            JSON;
+
+        $manifest = (new ManifestParser())->parse($json);
+
+        self::assertNotNull($manifest->ui);
+        self::assertSame(['assets/carousel.css'], $manifest->ui->css);
+        self::assertSame(['assets/settings.js'], $manifest->ui->js);
+    }
+
     public function testParseValidIntegrationManifestWithLocales(): void
     {
         $json = <<<'JSON'
@@ -132,6 +153,23 @@ class ManifestParserTest extends TestCase
         self::assertSame(PluginType::Local, $manifest->type);
         self::assertNull($manifest->features);
         self::assertNull($manifest->locales);
+    }
+
+    public function testParseManifestWithoutUiLeavesUiNull(): void
+    {
+        $json = <<<'JSON'
+            {
+                "id": "vendor-auto-tagger",
+                "name": "Auto Tagger",
+                "version": "1.0.0",
+                "type": "local",
+                "require": {"core": ">=2.0.0", "php": ">=8.2"}
+            }
+            JSON;
+
+        $manifest = (new ManifestParser())->parse($json);
+
+        self::assertNull($manifest->ui);
     }
 
     public function testParseThrowsOnMalformedJson(): void
