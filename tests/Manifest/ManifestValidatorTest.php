@@ -562,6 +562,8 @@ class ManifestValidatorTest extends TestCase
     public static function invalidUiCssPaths(): iterable
     {
         yield 'missing assets prefix' => ['/etc/passwd', 'must be a path under "assets/"'];
+        yield 'windows drive letter' => ['C:\\x.css', 'must be a path under "assets/"'];
+        yield 'backslash' => ['assets\\style.css', 'must be a path under "assets/"'];
         yield 'windows drive letter under assets' => ['assets/C:\\x.css', 'must be a relative path without'];
         yield 'directory traversal' => ['assets/../../../etc/passwd', 'must be a relative path without'];
         yield 'dot segment' => ['assets/./a.css', 'must be a relative path without'];
