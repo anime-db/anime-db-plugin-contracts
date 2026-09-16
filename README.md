@@ -1,5 +1,8 @@
 # anime-db/plugin-contracts
 
+[![Latest Stable Version](https://img.shields.io/packagist/v/anime-db/plugin-contracts.svg?maxAge=3600&label=stable)](https://packagist.org/packages/anime-db/plugin-contracts)
+[![License](https://img.shields.io/packagist/l/anime-db/plugin-contracts.svg?maxAge=3600)](LICENSE)
+
 Контракты плагинов (интерфейсы и DTO) для плагинов AnimeDB v2.
 
 Этот пакет определяет только контракт между хост-приложением AnimeDB и его
@@ -10,20 +13,6 @@
 
 ```bash
 composer require anime-db/plugin-contracts
-```
-
-Пакет пока не опубликован на Packagist — до публикации добавьте в свой
-`composer.json` VCS-репозиторий:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/anime-db/anime-db-plugin-contracts.git"
-        }
-    ]
-}
 ```
 
 ## Оглавление
