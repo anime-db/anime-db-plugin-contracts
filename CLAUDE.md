@@ -204,3 +204,10 @@ anime-db-plugin-contracts/
   расширяется потребителями за пределами этого контракта (реестр маркета,
   тулинг монорепозитория плагинов). См.
   [.claude-docs/gotchas.md](.claude-docs/gotchas.md)
+
+## Ревью PR
+
+- Автоматическое ИИ-ревью каждого PR — `.github/workflows/claude-review.yml`
+  (авторизация через секрет репозитория `CLAUDE_CODE_OAUTH_TOKEN` из подписки Max).
+  Черновики не ревьюются: прогон стартует на `ready_for_review`, на `opened` не-черновика
+  и на `reopened`; повторное ревью — через reopen/ready, а не новым коммитом.
