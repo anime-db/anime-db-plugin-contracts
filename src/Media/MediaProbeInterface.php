@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * AnimeDb package.
+ *
+ * @author    Peter Gribanov <info@peter-gribanov.ru>
+ * @copyright Copyright (c) 2026, Peter Gribanov
+ * @license   https://www.gnu.org/licenses/gpl-3.0.html GPL-3.0-or-later
+ */
+
+/*
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+declare(strict_types=1);
+
+namespace AnimeDb\PluginContracts\Media;
+
+/**
+ * Core-provided access to the technical characteristics of files listed by
+ * {@see MediaLibraryInterface::listFiles()}.
+ *
+ * A plugin obtains this service via constructor injection, type-hinting
+ * this interface, the same way it obtains {@see MediaLibraryInterface}.
+ * Only a {@see MediaFile} produced by `listFiles()` can be probed — there is
+ * no way through this contract to probe an arbitrary path.
+ *
+ * There is deliberately no `isAvailable()`/`capabilities()` pair: a plugin
+ * cannot reach a prober any other way (executing external processes itself
+ * is forbidden), so the only path to a prober is this service, and the
+ * only failure mode worth having is an exception — a separate availability
+ * check would only add a check-then-use race without removing the need for
+ * that exception.
+ */
+interface MediaProbeInterface
+{
+    /**
+     * Probe a single file's technical characteristics.
+     *
+     * @throws MediaProbeUnavailableException if no prober is available at all — disabled
+     *                                        in the host application's settings, or not installed
+     * @throws MediaProbeFailedException      if this specific file could not be parsed — a
+     *                                        timeout, a corrupt or zero-byte file, or a file that is
+     *                                        still being written and only partially readable
+     */
+    public function probe(MediaFile $file): MediaInfo;
+
+    /**
+     * Probe several files in one call.
+     *
+     * Exists so an implementation has room to batch or hold a worker pool
+     * instead of being forced to handle N independent, uncoordinated calls
+     * when {@see probe()} is called once per file: probing a folder of 26
+     * files can be seconds in a single call, minutes across 200 separate
+     * ones.
+     *
+     * @param MediaFile[] $files
+     *
+     * @return MediaInfo[] results in the same relative order as $files, but a file that
+     *                     could not be parsed is simply absent from the result rather than
+     *                     represented as an error entry — the returned array is not
+     *                     index-aligned with $files whenever fewer than all of them succeeded
+     *
+     * @throws MediaProbeUnavailableException if no prober is available at all
+     * @throws MediaProbeFailedException      only if none of the given files could be
+     *                                        parsed; if at least one succeeded, this returns
+     *                                        whatever did succeed instead of throwing — a single
+     *                                        damaged file must not destroy the data probed for
+     *                                        every other file in the same call
+     */
+    public function probeAll(array $files): array;
+
+    /**
+     * A cheap, disk-free readout of the prober's current identity.
+     *
+     * A plugin compares this value against the one stored in its own cached
+     * payload (see {@see MediaInfo::$probeIdentity}) to decide whether that
+     * cache needs to be refreshed, without having to probe a file just to
+     * find out. This call must not touch the disk or the probed files
+     * themselves — if finding out the current identity required probing,
+     * the plugin would already have fresh data and the cache check would be
+     * pointless.
+     *
+     * What exactly goes into the string is an implementation decision, but
+     * this contract requires one property of it: the value must change if
+     * and only if the prober's observable output would change. Too coarse a
+     * value (e.g. the upstream prober's version string) fails to invalidate
+     * a cache when the set of supported codecs changes without a version
+     * bump; too fine a value (e.g. a hash of the prober binary) invalidates
+     * the entire cache on every unrelated application update.
+     */
+    public function probeIdentity(): string;
+}
