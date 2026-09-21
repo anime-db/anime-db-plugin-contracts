@@ -35,9 +35,10 @@ namespace AnimeDb\PluginContracts\Media;
  *
  * From {@see MediaProbeInterface::probeAll()}, this is only thrown when
  * none of the given files could be parsed; a partial failure among several
- * files does not throw this — the files that failed are simply absent from
- * the returned result. A single damaged file in a folder must not destroy
- * the data probed for every other file in the same call.
+ * files does not throw this — the failed file's
+ * {@see MediaFile::$relativePath} is simply absent as a key in the returned
+ * result. A single damaged file in a folder must not destroy the data
+ * probed for every other file in the same call.
  *
  * Deliberately distinct from {@see MediaProbeUnavailableException}: this
  * one means the capability exists but this file defeated it, that one means

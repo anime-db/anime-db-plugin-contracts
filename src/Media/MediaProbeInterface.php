@@ -71,10 +71,12 @@ interface MediaProbeInterface
      *
      * @param MediaFile[] $files
      *
-     * @return MediaInfo[] results in the same relative order as $files, but a file that
-     *                     could not be parsed is simply absent from the result rather than
-     *                     represented as an error entry — the returned array is not
-     *                     index-aligned with $files whenever fewer than all of them succeeded
+     * @return array<string, MediaInfo> results keyed by the matching input file's
+     *                                  {@see MediaFile::$relativePath} — a file that could
+     *                                  not be parsed is simply absent from the result rather
+     *                                  than represented as an error entry, so the caller
+     *                                  tells success from failure by checking whether a
+     *                                  given file's key is present, not by comparing lengths
      *
      * @throws MediaProbeUnavailableException if no prober is available at all
      * @throws MediaProbeFailedException      only if none of the given files could be

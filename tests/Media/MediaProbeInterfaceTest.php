@@ -62,14 +62,26 @@ class MediaProbeInterfaceTest extends TestCase
         $probe->probe($this->createFile('corrupt.mkv'));
     }
 
-    public function testProbeAllReturnsSuccessfullyParsedFilesOnlyOnPartialFailure(): void
+    public function testProbeAllReturnsSuccessfullyParsedFilesKeyedByRelativePathOnPartialFailure(): void
     {
         $info = $this->createInfo('ffmpeg-6.1');
         $probe = $this->createProbe(['01.mkv' => $info], 'ffmpeg-6.1');
 
         $result = $probe->probeAll([$this->createFile('01.mkv'), $this->createFile('corrupt.mkv')]);
 
-        self::assertSame([$info], $result);
+        self::assertSame(['01.mkv' => $info], $result);
+        self::assertArrayNotHasKey('corrupt.mkv', $result);
+    }
+
+    public function testProbeAllReturnsAllResultsKeyedByRelativePathOnFullSuccess(): void
+    {
+        $info1 = $this->createInfo('ffmpeg-6.1');
+        $info2 = $this->createInfo('ffmpeg-6.1');
+        $probe = $this->createProbe(['01.mkv' => $info1, '02.mkv' => $info2], 'ffmpeg-6.1');
+
+        $result = $probe->probeAll([$this->createFile('01.mkv'), $this->createFile('02.mkv')]);
+
+        self::assertSame(['01.mkv' => $info1, '02.mkv' => $info2], $result);
     }
 
     public function testProbeAllThrowsOnlyWhenEveryFileFailed(): void
@@ -132,7 +144,7 @@ class MediaProbeInterfaceTest extends TestCase
                 $results = [];
                 foreach ($files as $file) {
                     if (isset($this->resultsByFileName[$file->name])) {
-                        $results[] = $this->resultsByFileName[$file->name];
+                        $results[$file->relativePath] = $this->resultsByFileName[$file->name];
                     }
                 }
 
