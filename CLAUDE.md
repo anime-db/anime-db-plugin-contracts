@@ -60,7 +60,8 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskQueueInterface.php    # сервис ядра: постановка отложенной задачи плагина
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
-│   └── Manifest/                           # парсинг и валидация manifest.json плагина
+│   ├── Manifest/                           # парсинг и валидация manifest.json плагина
+│   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта
 ├── composer.json
 └── LICENSE

@@ -29,13 +29,17 @@ namespace AnimeDb\PluginContracts\Catalog;
 
 use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
 use AnimeDb\PluginContracts\Llm\LlmServiceInterface;
+use AnimeDb\PluginContracts\Media\MediaLibraryInterface;
 use AnimeDb\PluginContracts\Model\AnimeId;
 
 /**
  * Core-provided read-only access to a catalog record's current state, for
- * plugins that need shared fields beyond their own slice — a widget
- * rendering a record's card, or post-download enrichment reading the
- * episode/file list.
+ * plugins that need shared fields beyond their own slice — e.g. a widget
+ * rendering a record's card.
+ *
+ * For the files a record currently has on disk, see
+ * {@see MediaLibraryInterface} instead — a separate core-provided service,
+ * not exposed through this interface or through {@see AnimeView}.
  *
  * A plugin obtains this service the same way it obtains
  * {@see LlmServiceInterface} or {@see DownloadServiceInterface}: via

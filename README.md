@@ -28,6 +28,7 @@ composer require anime-db/plugin-contracts
   - [`BackgroundTaskHandlerInterface`](#backgroundtaskhandlerinterface)
 - [Что предоставляет ядро](#что-предоставляет-ядро)
   - [`CatalogReaderInterface` и `AnimeView`](#catalogreaderinterface-и-animeview)
+  - [`Media\MediaLibraryInterface` и `Media\MediaProbeInterface`](#mediamedialibraryinterface-и-mediamediaprobeinterface)
   - [`LlmServiceInterface`](#llmserviceinterface)
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
   - [`SettingsStoreInterface`](#settingsstoreinterface)
@@ -581,6 +582,28 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 «на чтение» уже смёрженного состояния каталога. Только чтение: в этом
 интерфейсе нет и не будет метода записи — мутации своего среза плагина и
 мутации записи целиком остаются задачей других частей контракта, не этой.
+
+### `Media\MediaLibraryInterface` и `Media\MediaProbeInterface`
+
+Сервисы ядра для списка файлов записи и их технических характеристик —
+доступны плагину через DI так же, как `CatalogReaderInterface`. Namespace
+`AnimeDb\PluginContracts\Media`.
+
+- **`MediaLibraryInterface::listFiles(AnimeId $anime): MediaFile[]`** —
+  список файлов, которые сейчас есть в папке записи на диске.
+- **`MediaFile`** — иммутабельный хэндл файла: `name`, `relativePath`,
+  `sizeBytes`, `modifiedAt`. Абсолютного пути нет.
+- **`MediaProbeInterface::probe()`/`probeAll()`/`probeIdentity()`** —
+  технические характеристики файла(ов) и дешёвая (без обращения к диску)
+  идентичность текущего пробера для инвалидации кеша.
+- **`MediaInfo`** — результат разбора одного файла: контейнер,
+  длительность, битрейт, счётчик потоков и четыре списка потоков
+  (`video`, `audio`, `subtitles`, `otherTracks`).
+- **`VideoTrack`**, **`AudioTrack`**, **`SubtitleTrack`**, **`OtherTrack`** —
+  потоки внутри `MediaInfo`.
+- **`StorageUnavailableException`**, **`MediaProbeUnavailableException`**,
+  **`MediaProbeFailedException`** — три независимых режима отказа, каждый
+  наследует `\RuntimeException` напрямую.
 
 ### `LlmServiceInterface`
 
