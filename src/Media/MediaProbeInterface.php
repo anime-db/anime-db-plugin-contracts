@@ -33,8 +33,12 @@ namespace AnimeDb\PluginContracts\Media;
  *
  * A plugin obtains this service via constructor injection, type-hinting
  * this interface, the same way it obtains {@see MediaLibraryInterface}.
- * Only a {@see MediaFile} produced by `listFiles()` can be probed — there is
- * no way through this contract to probe an arbitrary path.
+ * A well-behaved plugin only ever probes a {@see MediaFile} produced by
+ * `listFiles()`, but `MediaFile` is a plain, publicly constructible DTO —
+ * this contract does not by itself stop a caller from fabricating one
+ * with an arbitrary path and passing it here. See the {@see MediaFile}
+ * docblock for what an implementation of this interface must do about
+ * that.
  *
  * There is deliberately no `isAvailable()`/`capabilities()` pair: a plugin
  * cannot reach a prober any other way (executing external processes itself

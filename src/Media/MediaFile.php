@@ -34,9 +34,17 @@ namespace AnimeDb\PluginContracts\Media;
  *
  * Carries no absolute filesystem path: the storage location is an
  * implementation detail of the host application, not something this
- * contract exposes. A plugin can only probe a file it obtained from
- * `listFiles()` — there is no way through this contract to point at an
- * arbitrary path outside the record's storage folder.
+ * contract exposes. `listFiles()` only ever returns instances whose
+ * `$relativePath` stays inside the record's storage folder, but this is a
+ * plain, publicly constructible DTO — nothing in the type system stops a
+ * caller from building one with an arbitrary `$relativePath` (e.g.
+ * `'../../../etc/passwd'`) and passing it to `probe()`/`probeAll()`. An
+ * implementation of {@see MediaLibraryInterface} and
+ * {@see MediaProbeInterface} MUST treat an incoming `$relativePath` as
+ * untrusted and keep it confined to the record's storage folder — reject
+ * `..` segments and absolute paths, and canonicalize before checking the
+ * result is still inside that folder — rather than concatenating it into
+ * a filesystem path unchecked.
  *
  * `$relativePath` is the stable identifier for matching a file against
  * a plugin's own cached payload across calls, since the host does not
