@@ -25,28 +25,35 @@
 
 declare(strict_types=1);
 
-namespace AnimeDb\PluginContracts\Download;
+namespace AnimeDb\PluginContracts\Tests;
 
-use AnimeDb\PluginContracts\Background\BackgroundTaskQueueInterface;
+use AnimeDb\PluginContracts\Background\BackgroundTask;
 use AnimeDb\PluginContracts\Model\AnimeId;
+use PHPUnit\Framework\TestCase;
 
-/**
- * Dispatched by the core when a task queued through {@see DownloadServiceInterface::enqueue()}
- * finishes.
- *
- * A plain event object, not tied to any particular Symfony event base class — the
- * event dispatcher only needs the class name to route it to subscribers. A plugin
- * subscribes to it with a regular Symfony `EventSubscriberInterface`, matches
- * {@see self::$task} against the {@see DownloadTaskId} it persisted when it called
- * `enqueue()`, and reacts only if it recognizes the task as its own — e.g. by handing
- * heavy card-filling work off to {@see BackgroundTaskQueueInterface::submit()} instead
- * of doing it inline in the subscriber.
- */
-final class DownloadCompletedEvent
+class BackgroundTaskTest extends TestCase
 {
-    public function __construct(
-        public readonly AnimeId $anime,
-        public readonly DownloadTaskId $task,
-    ) {
+    public function testNameIsTheOnlyRequiredArgument(): void
+    {
+        $task = new BackgroundTask('fill-card');
+
+        self::assertSame('fill-card', $task->name);
+        self::assertNull($task->anime);
+        self::assertSame([], $task->payload);
+    }
+
+    public function testCarriesAnimeIdAndPayload(): void
+    {
+        $anime = new AnimeId(42);
+
+        $task = new BackgroundTask(
+            name: 'fill-card',
+            anime: $anime,
+            payload: ['episode' => 12, 'path' => '/downloads/12.mkv'],
+        );
+
+        self::assertSame('fill-card', $task->name);
+        self::assertSame($anime, $task->anime);
+        self::assertSame(['episode' => 12, 'path' => '/downloads/12.mkv'], $task->payload);
     }
 }

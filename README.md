@@ -25,12 +25,15 @@ composer require anime-db/plugin-contracts
   - [`CatalogWidgetInterface` и `EntryWidgetInterface`](#catalogwidgetinterface-и-entrywidgetinterface)
   - [`DownloadCandidateSearchInterface`](#downloadcandidatesearchinterface)
   - [`SettingsPageInterface`](#settingspageinterface)
+  - [`BackgroundTaskHandlerInterface`](#backgroundtaskhandlerinterface)
 - [Что предоставляет ядро](#что-предоставляет-ядро)
   - [`CatalogReaderInterface` и `AnimeView`](#catalogreaderinterface-и-animeview)
   - [`LlmServiceInterface`](#llmserviceinterface)
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
   - [`SettingsStoreInterface`](#settingsstoreinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
+  - [`BackgroundTaskQueueInterface`](#backgroundtaskqueueinterface)
+  - [`AnimeFilesChangedEvent` и `FilesChangeReason`](#animefileschangedevent-и-fileschangereason)
   - [PSR-18 HTTP-клиент](#psr-18-http-клиент)
   - [`OAuth\AbstractOAuthClient`](#oauthabstractoauthclient)
 - [Общие примитивы](#общие-примитивы)
@@ -464,6 +467,53 @@ class MySourceSettingsPage implements SettingsPageInterface
 try/catch, чтобы одна сломанная страница не роняла всю settings-область.
 Ровно одна страница настроек на плагин.
 
+### `BackgroundTaskHandlerInterface`
+
+Роль плагина: выполняет задачу, ранее поставленную через
+`BackgroundTaskQueueInterface::submit()` (см. ниже). В отличие от
+core-provided сервисов этого раздела, реализация здесь — на стороне
+плагина, а вызывает её ядро, в фоновом процессе. Один обработчик на
+плагин покрывает все виды его задач — они различаются через
+`BackgroundTask::$name`, а не через несколько классов-обработчиков.
+
+```php
+use AnimeDb\PluginContracts\Background\BackgroundTask;
+use AnimeDb\PluginContracts\Background\BackgroundTaskHandlerInterface;
+use AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface;
+
+class MyFillerBackgroundHandler implements BackgroundTaskHandlerInterface
+{
+    public function __construct(
+        private readonly PluginDataStoreInterface $store,
+    ) {
+    }
+
+    public function handle(BackgroundTask $task): void
+    {
+        if ($task->name !== 'fill-card' || $task->anime === null) {
+            return;
+        }
+
+        $known = $this->store->read($task->anime);
+        if (isset($known['filledAt'])) {
+            // работа уже выполнена предыдущим прогоном той же задачи —
+            // handle() может быть вызван больше одного раза.
+            return;
+        }
+
+        // ... тяжёлая работа: разбор файлов, обращение к внешнему источнику
+
+        $this->store->write($task->anime, [...$known, 'filledAt' => time()]);
+    }
+}
+```
+
+`submit()` не дедуплицирует и не гарантирует порядок — `handle()` обязан
+быть идемпотентным и обязан начинать с проверки «нужна ли ещё эта
+работа»: знать это может только сам обработчик, к моменту выполнения
+состояние (состав файлов, собственные сохранённые данные, доступность
+внешнего инструмента) могло измениться.
+
 ## Что предоставляет ядро
 
 Сервисы, которые хост-приложение инжектирует в конструктор плагина
@@ -755,6 +805,86 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 на которое плагин подписывается штатным Symfony `EventSubscriberInterface`:
 это обычный класс, без привязки к базовому классу события Symfony —
 диспетчеру достаточно имени класса, чтобы разослать событие подписчикам.
+
+### `BackgroundTaskQueueInterface`
+
+Сервис ядра для того, чтобы отложить работу плагина в фоновый процесс —
+вместо того, чтобы выполнять её прямо в том запросе/подписчике, который
+её породил. `submit()` кладёт задачу; выполняет её позже собственный
+`BackgroundTaskHandlerInterface` плагина (см. выше). Как и
+`PluginDataStoreInterface`, экземпляр, который плагин получает через DI,
+скоупнут на сам плагин — id плагина не в сигнатуре.
+
+```php
+use AnimeDb\PluginContracts\Background\BackgroundTask;
+use AnimeDb\PluginContracts\Background\BackgroundTaskQueueInterface;
+use AnimeDb\PluginContracts\Catalog\AnimeFilesChangedEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+
+class MyFillerFilesSubscriber implements EventSubscriberInterface
+{
+    public function __construct(
+        private readonly BackgroundTaskQueueInterface $tasks,
+    ) {
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        return [AnimeFilesChangedEvent::class => 'onFilesChanged'];
+    }
+
+    public function onFilesChanged(AnimeFilesChangedEvent $event): void
+    {
+        // подписчик не делает ничего, кроме submit() — тяжёлая работа в handle()
+        $this->tasks->submit(new BackgroundTask('fill-card', $event->anime));
+    }
+}
+```
+
+`submit()` **может** поставить задачу, идентичную уже стоящей в очереди —
+дедупликация не входит в контракт очереди. Порядок выполнения задач не
+гарантирован, и одна и та же задача **может быть выполнена больше одного
+раза** (например, после ретрая) — оба следствия ложатся на
+`BackgroundTaskHandlerInterface::handle()`, не на очередь: знать, нужна
+ли ещё работа, к моменту выполнения может только сам обработчик (см.
+пример выше).
+
+`BackgroundTask::$name` задаёт сам плагин, чтобы различать свои задачи в
+`handle()` — ядро это значение никак не интерпретирует. `$payload`
+обязан быть JSON-сериализуемым массивом: задача может пережить
+перезапуск процесса хоста между `submit()` и `handle()`, а объекты,
+ресурсы и замыкания через такой перезапуск не проходят.
+
+В контракте нет метода узнать, стоит ли задача в очереди (`isPending()`
+и подобных): это была бы половина связки «проверил → положил», а раз
+дедупликация — забота обработчика, а не очереди, такой связки не
+существует. Расписаний, задержек «через N секунд» и приоритетов задач в
+контракте тоже нет — задачу кладут, её когда-то выполнят.
+
+### `AnimeFilesChangedEvent` и `FilesChangeReason`
+
+Событие ядра: состав или расположение файлов записи на диске изменилось.
+Диспатчится **после** того, как изменение уже сохранено, и подписчик
+вызывается **синхронно** — как и `DownloadCompletedEvent`. Одно событие
+на четыре причины (`FilesChangeReason`), а не четыре события: во всех
+четырёх случаях подписчику нужно сделать одно и то же, а пятая причина
+добавляется новым значением enum без правки уже написанных плагинов.
+
+- `FilesChangeReason::Created` — запись создана вместе с первыми файлами.
+- `FilesChangeReason::FilesAdded` — к уже существующей записи добавлены файлы.
+- `FilesChangeReason::PathChanged` — файлы записи перемещены/переименованы.
+- `FilesChangeReason::DownloadFinished` — файлы появились в результате
+  завершённой закачки.
+
+Событие не несёт список файлов — он не пережил бы передачу в
+`BackgroundTaskQueueInterface::submit()` для отложенной обработки, и
+подписчику, которому список нужен, приходится прочитать его отдельно.
+Рекомендуемый паттерн — тот же, что и для `DownloadCompletedEvent`:
+подписчик не делает ничего, кроме `submit()`, тяжёлая работа уходит в
+`BackgroundTaskHandlerInterface::handle()` (см. пример выше). Контракт
+это не проверяет — подписчик, который всё же делает тяжёлую работу
+инлайн, отработает синхронно внутри того же запроса/транзакции, что
+породили событие.
 
 ### PSR-18 HTTP-клиент
 
@@ -1226,9 +1356,12 @@ includes:
 Проверяет, что классы, объявляющие реализацию `ExternalIdResolutionInterface`
 (и всех интерфейсов, которые его расширяют: `FillerInterface`,
 `SearchByPluginInterface`, `SyncInterface`), либо `CatalogWidgetInterface`,
-`EntryWidgetInterface`, `DownloadCandidateSearchInterface`, имеют
+`EntryWidgetInterface`, `DownloadCandidateSearchInterface`,
+`SettingsPageInterface`, `BackgroundTaskHandlerInterface`, имеют
 сигнатуры методов, точно совпадающие с сигнатурами из установленной
-версии этого пакета. Ловит рассинхронизацию между версией контракта, под
+версии этого пакета. `BackgroundTaskQueueInterface` в этот список не
+входит: это core-provided сервис, который реализует хост-приложение, а
+не роль, которую реализует плагин. Ловит рассинхронизацию между версией контракта, под
 которую написан плагин, и версией, реально установленной у потребителя —
 то, что одна успешная компиляция DI-контейнера может не заметить.
 
@@ -1315,7 +1448,10 @@ includes:
   интерфейса как раз в том, чтобы быть доступным без подключения к сети —
   ровно то, что обещает вызывающей стороне сам тип `local`. Объявить
   `ClientInterface` напрямую всё равно запрещено — освобождена только эта
-  узкая, более конкретная абстракция.
+  узкая, более конкретная абстракция;
+- `BackgroundTaskQueueInterface` — `submit()` кладёт задачу в локальную
+  очередь для собственного обработчика плагина; постановка задачи в
+  очередь сама по себе ни к какому внешнему источнику не обращается.
 
 `OAuth\AbstractOAuthClient` не входит ни в один из списков: это абстрактный
 **класс**, предназначенный для наследования (`extends`) собственным
