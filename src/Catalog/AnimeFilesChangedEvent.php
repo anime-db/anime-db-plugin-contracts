@@ -33,19 +33,19 @@ use AnimeDb\PluginContracts\Model\AnimeId;
 
 /**
  * Dispatched by the core after the set or location of an entry's files on disk has
- * changed and that change has already been persisted — never before. This event does
+ * changed and that change has already been committed — never before. This event does
  * not carry the file list itself: a subscriber that needs it reads the current state
  * separately, because a list attached to the event object would not survive being
  * handed off to {@see BackgroundTaskQueueInterface::submit()} for later processing.
  *
- * A subscriber is called synchronously, on the same request/process that persisted
+ * A subscriber is called synchronously, on the same request/process that committed
  * the change, exactly like {@see \AnimeDb\PluginContracts\Download\DownloadCompletedEvent}.
  * The recommended pattern is for a subscriber to do nothing beyond calling
  * {@see BackgroundTaskQueueInterface::submit()}, and to leave any actual work — reading
  * files, filling a card, talking to an external source — to
  * {@see BackgroundTaskHandlerInterface::handle()}. Nothing enforces this: a subscriber
- * that does heavy work inline still runs, synchronously, inside whatever transaction
- * or request triggered the change.
+ * that does heavy work inline still runs, synchronously, inside whatever request
+ * or process triggered the change.
  */
 final class AnimeFilesChangedEvent
 {
