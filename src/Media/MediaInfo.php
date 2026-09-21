@@ -55,7 +55,9 @@ namespace AnimeDb\PluginContracts\Media;
  *
  * Silently losing a stream so that this sum falls short of `$trackCount`
  * is not acceptable — a user seeing "7 streams" against 5 actually listed
- * is exactly the failure this invariant rules out.
+ * is exactly the failure this invariant rules out. The constructor
+ * enforces it directly: constructing a `MediaInfo` where the four lists
+ * do not add up to `$trackCount` throws `\InvalidArgumentException`.
  *
  * ## `$probeIdentity`
  *
@@ -97,5 +99,9 @@ final class MediaInfo
         public readonly array $otherTracks,
         public readonly string $probeIdentity,
     ) {
+        $countedTracks = \count($video) + \count($audio) + \count($subtitles) + \count($otherTracks);
+        if ($countedTracks !== $trackCount) {
+            throw new \InvalidArgumentException(\sprintf('trackCount (%d) does not match the number of tracks across $video, $audio, $subtitles and $otherTracks (%d).', $trackCount, $countedTracks));
+        }
     }
 }

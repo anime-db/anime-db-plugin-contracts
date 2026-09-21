@@ -118,7 +118,7 @@ class MediaInfoTest extends TestCase
      *
      * @dataProvider trackLists
      */
-    public function testTrackCountEqualsSumOfAllFourTrackLists(
+    public function testConstructorAcceptsTrackCountMatchingAllFourTrackLists(
         array $video,
         array $audio,
         array $subtitles,
@@ -139,9 +139,24 @@ class MediaInfoTest extends TestCase
             probeIdentity: 'ffmpeg-6.1',
         );
 
-        self::assertSame(
-            $info->trackCount,
-            \count($info->video) + \count($info->audio) + \count($info->subtitles) + \count($info->otherTracks),
+        self::assertSame($trackCount, $info->trackCount);
+    }
+
+    public function testConstructorRejectsTrackCountNotMatchingAllFourTrackLists(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new MediaInfo(
+            containerFormat: 'matroska,webm',
+            durationSeconds: 1440.5,
+            sizeBytes: 734003200,
+            bitRate: 4700000,
+            trackCount: 7,
+            video: [new VideoTrack(0, 'h264', null, 1920, 1080, null, null, null)],
+            audio: [],
+            subtitles: [],
+            otherTracks: [],
+            probeIdentity: 'ffmpeg-6.1',
         );
     }
 }
