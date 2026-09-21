@@ -103,6 +103,10 @@ use Psr\Http\Message\RequestFactoryInterface;
  * - {@see \AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface} and
  *   {@see \AnimeDb\PluginContracts\Settings\SettingsStoreInterface} — local read/write
  *   stores keyed by plugin id, no external source involved.
+ * - {@see \AnimeDb\PluginContracts\Media\MediaLibraryInterface} and
+ *   {@see \AnimeDb\PluginContracts\Media\MediaProbeInterface} — list and read the
+ *   technical characteristics of files already present in a record's local storage
+ *   folder; neither touches an external source.
  * - {@see \AnimeDb\PluginContracts\Llm\LlmServiceInterface} — gives access to the host's
  *   *local* LLM. Its implementation happens to go over a PSR-18 client (documented in
  *   README.md), but that client talks to the local model the host runs, not to the

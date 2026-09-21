@@ -55,7 +55,8 @@ anime-db-plugin-contracts/
 │   ├── DownloadCompletedEvent.php          # событие завершения закачки
 │   ├── PluginAnimeData.php                 # DTO заполненных данных тайтла (не сущность хоста)
 │   ├── SyncItem.php                        # DTO элемента списка синхронизации
-│   └── Manifest/                           # парсинг и валидация manifest.json плагина
+│   ├── Manifest/                           # парсинг и валидация manifest.json плагина
+│   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта
 ├── composer.json
 └── LICENSE
