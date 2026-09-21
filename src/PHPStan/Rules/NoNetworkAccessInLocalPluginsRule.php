@@ -113,6 +113,9 @@ use Psr\Http\Message\RequestFactoryInterface;
  *   internet; the interface's whole point is to be usable without connectivity, which is
  *   exactly what `type: "local"` promises to its own caller. Declaring `ClientInterface`
  *   directly is still forbidden — only this specific, narrower abstraction is exempt.
+ * - {@see \AnimeDb\PluginContracts\Background\BackgroundTaskQueueInterface} — `submit()`
+ *   places a task on a local queue for the plugin's own handler to pick up later; nothing
+ *   about queuing a task talks to an external source.
  *
  * {@see \AnimeDb\PluginContracts\OAuth\AbstractOAuthClient} is not in either list: it is an
  * abstract *class*, meant to be extended by a plugin's own OAuth client, not declared as a
