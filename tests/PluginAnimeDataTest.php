@@ -28,9 +28,11 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Tests;
 
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Model\AnimeName;
 use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Model\Demographic;
 use AnimeDb\PluginContracts\Model\GenreCode;
+use AnimeDb\PluginContracts\Model\NameRole;
 use AnimeDb\PluginContracts\Model\ThemeCode;
 use PHPUnit\Framework\TestCase;
 
@@ -62,9 +64,14 @@ class PluginAnimeDataTest extends TestCase
         $datePremiere = new \DateTimeImmutable('1998-04-03');
         $dateEnd = new \DateTimeImmutable('1999-04-24');
 
+        $alternativeNames = [
+            new AnimeName('Kaubōi Bibappu', 'ja', NameRole::Official),
+            new AnimeName('Cowboy Bebop', 'en', NameRole::Synonym),
+        ];
+
         $data = new PluginAnimeData(
             title: 'Cowboy Bebop',
-            alternativeNames: ['Kaubōi Bibappu'],
+            alternativeNames: $alternativeNames,
             descriptions: ['en' => 'A bounty hunting crew chases criminals across space.'],
             genres: [GenreCode::Action, GenreCode::SciFi],
             themes: [ThemeCode::Space, ThemeCode::AdultCast],
@@ -81,7 +88,7 @@ class PluginAnimeDataTest extends TestCase
         );
 
         self::assertSame('Cowboy Bebop', $data->title);
-        self::assertSame(['Kaubōi Bibappu'], $data->alternativeNames);
+        self::assertSame($alternativeNames, $data->alternativeNames);
         self::assertSame(['en' => 'A bounty hunting crew chases criminals across space.'], $data->descriptions);
         self::assertSame([GenreCode::Action, GenreCode::SciFi], $data->genres);
         self::assertSame([ThemeCode::Space, ThemeCode::AdultCast], $data->themes);

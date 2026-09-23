@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Filler;
 
+use AnimeDb\PluginContracts\Model\AnimeName;
 use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Model\Demographic;
 use AnimeDb\PluginContracts\Model\GenreCode;
@@ -43,12 +44,14 @@ use AnimeDb\PluginContracts\Model\ThemeCode;
  * {@see AnimeType}) rather than plain strings — decoupling from the host
  * application's internal enums does not require giving up type safety.
  * `descriptions` is a locale-keyed map, not a list — e.g.
- * `['en' => '...', 'ru' => '...']`.
+ * `['en' => '...', 'ru' => '...']`. `alternativeNames` carries language and
+ * role ({@see \AnimeDb\PluginContracts\Model\NameRole}) as two independent
+ * axes per {@see AnimeName}, rather than flattening both into one string.
  */
 class PluginAnimeData
 {
     /**
-     * @param string[]|null              $alternativeNames
+     * @param AnimeName[]|null           $alternativeNames order of elements is not part of the contract
      * @param array<string, string>|null $descriptions     locale => description text
      * @param GenreCode[]|null           $genres
      * @param ThemeCode[]|null           $themes

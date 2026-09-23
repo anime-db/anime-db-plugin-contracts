@@ -28,8 +28,10 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Tests;
 
 use AnimeDb\PluginContracts\Catalog\AnimeView;
+use AnimeDb\PluginContracts\Model\AnimeName;
 use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Model\GenreCode;
+use AnimeDb\PluginContracts\Model\NameRole;
 use AnimeDb\PluginContracts\Model\ThemeCode;
 use PHPUnit\Framework\TestCase;
 
@@ -37,9 +39,11 @@ class AnimeViewTest extends TestCase
 {
     public function testPropertiesReturnConstructorValues(): void
     {
+        $alternativeNames = [new AnimeName('Kaubōi Bibappu', 'ja', NameRole::Official)];
+
         $view = new AnimeView(
             title: 'Cowboy Bebop',
-            alternativeNames: ['Kaubōi Bibappu'],
+            alternativeNames: $alternativeNames,
             type: AnimeType::Tv,
             genres: [GenreCode::Action, GenreCode::SciFi],
             themes: [ThemeCode::Space, ThemeCode::AdultCast],
@@ -49,7 +53,7 @@ class AnimeViewTest extends TestCase
         );
 
         self::assertSame('Cowboy Bebop', $view->title);
-        self::assertSame(['Kaubōi Bibappu'], $view->alternativeNames);
+        self::assertSame($alternativeNames, $view->alternativeNames);
         self::assertSame(AnimeType::Tv, $view->type);
         self::assertSame([GenreCode::Action, GenreCode::SciFi], $view->genres);
         self::assertSame([ThemeCode::Space, ThemeCode::AdultCast], $view->themes);
