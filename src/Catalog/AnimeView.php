@@ -29,6 +29,7 @@ namespace AnimeDb\PluginContracts\Catalog;
 
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Model\AnimeName;
 use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Model\GenreCode;
 use AnimeDb\PluginContracts\Model\ThemeCode;
@@ -58,7 +59,7 @@ use AnimeDb\PluginContracts\Model\ThemeCode;
 final class AnimeView
 {
     /**
-     * @param string[]    $alternativeNames
+     * @param AnimeName[] $alternativeNames order of elements is not part of the contract
      * @param GenreCode[] $genres
      * @param ThemeCode[] $themes
      * @param string[]    $sources          external source URLs already attached to the record

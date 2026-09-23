@@ -30,6 +30,8 @@ namespace AnimeDb\PluginContracts\Tests;
 use AnimeDb\PluginContracts\Catalog\AnimeView;
 use AnimeDb\PluginContracts\Catalog\CatalogReaderInterface;
 use AnimeDb\PluginContracts\Model\AnimeId;
+use AnimeDb\PluginContracts\Model\AnimeName;
+use AnimeDb\PluginContracts\Model\NameRole;
 use PHPUnit\Framework\TestCase;
 
 class CatalogReaderInterfaceTest extends TestCase
@@ -38,7 +40,7 @@ class CatalogReaderInterfaceTest extends TestCase
     {
         $view = new AnimeView(
             title: 'Cowboy Bebop',
-            alternativeNames: [],
+            alternativeNames: [new AnimeName('Kaubōi Bibappu', 'ja', NameRole::Official)],
             type: null,
             genres: [],
             themes: [],

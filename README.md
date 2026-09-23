@@ -215,7 +215,11 @@ class MySourcePlugin implements FillerInterface
 (жанр, тема, демография, тип) — контрактные enum'ы (`GenreCode`,
 `ThemeCode`, `Demographic`, `AnimeType`, см. [«Общие примитивы»](#общие-примитивы)),
 а не произвольные строки, чтобы не терять типобезопасность при развязке с
-внутренними enum'ами хост-приложения.
+внутренними enum'ами хост-приложения. `alternativeNames` — список
+`AnimeName` (`name`, `locale`, `role: NameRole`, см.
+[«Общие примитивы»](#общие-примитивы)), а не плоский `string[]`: язык и роль
+названия — независимые оси, порядок элементов списка частью контракта не
+является.
 
 Поля: `title`, `alternativeNames`, `descriptions`, `genres`, `themes`,
 `demographic`, `studios`, `type`, `datePremiere`, `dateEnd`,
@@ -568,12 +572,14 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 }
 ```
 
-`AnimeView` — плоский иммутабельный DTO: `title`, `alternativeNames`,
-`type`, `genres`, `themes`, `episodesCount`, `sources` (внешние ссылки,
-уже привязанные к записи) и `externalId` — собственный внешний id
-вызывающего плагина, дешёво резолвнутый хостом заранее (lookup по
-таблице external_id, а не парсинг `sources` на каждый вызов). В отличие
-от списочных полей `PluginAnimeData`, где `null` означает «плагин-источник
+`AnimeView` — плоский иммутабельный DTO: `title`, `alternativeNames`
+(список `AnimeName`, см. [«Общие примитивы»](#общие-примитивы); порядок
+элементов частью контракта не является), `type`, `genres`, `themes`,
+`episodesCount`, `sources` (внешние ссылки, уже привязанные к записи) и
+`externalId` — собственный внешний id вызывающего плагина, дешёво
+резолвнутый хостом заранее (lookup по таблице external_id, а не парсинг
+`sources` на каждый вызов). В отличие от списочных полей `PluginAnimeData`,
+где `null` означает «плагин-источник
 это поле не заполнил», списочные поля `AnimeView` не бывают `null` —
 только пустой массив, если ничего не известно: это уже смёрженное
 текущее состояние, а не вклад одного источника.
@@ -1047,6 +1053,16 @@ MyAnimeList; пакет не зависит от внутренних enum'ов 
 - **`Demographic`** — демографическая ось MAL: `Shounen`, `Shoujo`, `Seinen`, `Josei`, `Kids`.
 - **`GenreCode`** — ось жанров MAL (18 значений, например `Action`, `Comedy`, `Fantasy`, `SliceOfLife`) — список может расширяться минорными версиями.
 - **`ThemeCode`** — ось тем MAL (51 значение, например `Isekai`, `Mecha`, `School`, `TimeTravel`) — список может расширяться минорными версиями.
+- **`NameRole`** — роль названия: `Official`, `Synonym`, `Short`. Ось не
+  включает главное название — оно живёт в отдельном скалярном поле
+  `PluginAnimeData::$title`, не в коллекции имён.
+
+`AnimeName` — DTO одного названия тайтла: `name`, `locale` (свободная
+строка, nullable — язык названия, та же форма, что и у ключей
+`PluginAnimeData::$descriptions`) и `role: NameRole`. Язык и роль —
+независимые оси по образцу AniDB: у одного и того же языка может быть и
+официальное название, и синоним. Используется в `PluginAnimeData::$alternativeNames`
+и `AnimeView::$alternativeNames` вместо плоского `string[]`.
 
 ## Манифест плагина (`manifest.json`)
 
