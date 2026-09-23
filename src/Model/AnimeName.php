@@ -35,9 +35,20 @@ namespace AnimeDb\PluginContracts\Model;
  * sources disagree on how they express language (e.g. `russian`/`english`,
  * `Japanese`/`German`, or values that are not language codes at all), and a
  * closed dictionary here would need a minor release, with every plugin
- * reissued, each time an unseen value shows up. The same shape is already
- * used for {@see \AnimeDb\PluginContracts\Filler\PluginAnimeData::$descriptions}
+ * reissued, each time an unseen value shows up. The list above describes the
+ * raw shapes a source may hand the plugin, not accepted values of this
+ * field — the plugin is responsible for normalizing them before assigning
+ * `locale`. The same shape is already used for
+ * {@see \AnimeDb\PluginContracts\Filler\PluginAnimeData::$descriptions}
  * locale keys.
+ *
+ * Expected form: the primary ISO 639-1 subtag, lowercase — `ja`, `ru`, `en`,
+ * `ko`. `null` means the source did not declare a language at all (e.g. for
+ * an untyped list of synonyms) — a normal value, not an error marker. The
+ * host lowercases the value and strips any regional subtag (`ru-RU` becomes
+ * `ru`), and discards anything it does not recognize as a language subtag to
+ * `null` — so raw source labels such as `russian` or `Japanese` will not
+ * survive unchanged.
  */
 final class AnimeName
 {
