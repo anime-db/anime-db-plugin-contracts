@@ -36,9 +36,9 @@ namespace AnimeDb\PluginContracts\Media;
  * A well-behaved plugin only ever probes a {@see MediaFile} produced by
  * `listFiles()`, but `MediaFile` is a plain, publicly constructible DTO —
  * this contract does not by itself stop a caller from fabricating one
- * with an arbitrary path and passing it here. See the {@see MediaFile}
- * docblock for what an implementation of this interface must do about
- * that.
+ * with an arbitrary path and passing it here. An implementation accepts
+ * only handles it issued itself; see the {@see MediaFile} docblock for
+ * the provenance rule and what it means for background task handlers.
  *
  * There is deliberately no `isAvailable()`/`capabilities()` pair: a plugin
  * cannot reach a prober any other way (executing external processes itself
@@ -56,7 +56,9 @@ interface MediaProbeInterface
      *                                        in the host application's settings, or not installed
      * @throws MediaProbeFailedException      if this specific file could not be parsed — a
      *                                        timeout, a corrupt or zero-byte file, or a file that is
-     *                                        still being written and only partially readable
+     *                                        still being written and only partially readable — or
+     *                                        if the handle was not issued by this implementation
+     *                                        (see {@see MediaFile})
      */
     public function probe(MediaFile $file): MediaInfo;
 
@@ -68,6 +70,10 @@ interface MediaProbeInterface
      * when {@see probe()} is called once per file: probing a folder of 26
      * files can be seconds in a single call, minutes across 200 separate
      * ones.
+     *
+     * All files of one call MUST belong to the same catalog record: the
+     * result is keyed by {@see MediaFile::$relativePath}, and files of two
+     * records with equal relative paths would collapse into one key.
      *
      * @param MediaFile[] $files
      *
@@ -83,28 +89,35 @@ interface MediaProbeInterface
      *                                        parsed; if at least one succeeded, this returns
      *                                        whatever did succeed instead of throwing — a single
      *                                        damaged file must not destroy the data probed for
-     *                                        every other file in the same call
+     *                                        every other file in the same call; also thrown if
+     *                                        a handle was not issued by this implementation
+     *                                        (see {@see MediaFile})
      */
     public function probeAll(array $files): array;
 
     /**
-     * A cheap, disk-free readout of the prober's current identity.
+     * A cheap readout of the prober's current identity.
      *
      * A plugin compares this value against the one stored in its own cached
      * payload (see {@see MediaInfo::$probeIdentity}) to decide whether that
      * cache needs to be refreshed, without having to probe a file just to
-     * find out. This call must not touch the disk or the probed files
-     * themselves — if finding out the current identity required probing,
-     * the plugin would already have fresh data and the cache check would be
-     * pointless.
+     * find out. "Cheap" means the call neither runs the prober nor reads
+     * the probed files — if finding out the current identity required
+     * probing, the plugin would already have fresh data and the cache check
+     * would be pointless. It does not mean the disk is never touched: an
+     * implementation may read the prober file itself (e.g. to notice the
+     * user replaced it), and should memoize that read.
      *
      * What exactly goes into the string is an implementation decision, but
      * this contract requires one property of it: the value must change if
      * and only if the prober's observable output would change. Too coarse a
      * value (e.g. the upstream prober's version string) fails to invalidate
      * a cache when the set of supported codecs changes without a version
-     * bump; too fine a value (e.g. a hash of the prober binary) invalidates
-     * the entire cache on every unrelated application update.
+     * bump; too fine a value (e.g. the modification time or size of the
+     * prober file) invalidates the entire cache on an application
+     * reinstall even though the prober's output has not changed. A hash of
+     * the prober file's content is stable across reinstalls and restoring a
+     * backup on another machine.
      */
     public function probeIdentity(): string;
 }

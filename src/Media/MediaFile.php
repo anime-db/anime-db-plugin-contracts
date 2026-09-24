@@ -38,13 +38,23 @@ namespace AnimeDb\PluginContracts\Media;
  * `$relativePath` stays inside the record's storage folder, but this is a
  * plain, publicly constructible DTO — nothing in the type system stops a
  * caller from building one with an arbitrary `$relativePath` (e.g.
- * `'../../../etc/passwd'`) and passing it to `probe()`/`probeAll()`. An
- * implementation of {@see MediaLibraryInterface} and
- * {@see MediaProbeInterface} MUST treat an incoming `$relativePath` as
- * untrusted and keep it confined to the record's storage folder — reject
- * `..` segments and absolute paths, and canonicalize before checking the
- * result is still inside that folder — rather than concatenating it into
- * a filesystem path unchecked.
+ * `'../../../etc/passwd'`) and passing it to `probe()`/`probeAll()`.
+ *
+ * An implementation of {@see MediaProbeInterface} does not try to validate
+ * the path: `probe()` receives no record id, so it has nothing to
+ * canonicalize the path against. Instead it relies on provenance — it
+ * accepts only handles that it issued itself from `listFiles()`, in the
+ * same process and within the same call chain. A handle it did not issue
+ * is rejected with {@see MediaProbeFailedException} before any disk
+ * access, so a crafted `$relativePath` never becomes a filesystem path.
+ *
+ * This is the contract's behaviour, not a defect of the host: a
+ * `MediaFile` fabricated by a plugin, or rebuilt by a plugin from its own
+ * cache or from a background task payload, is rejected even if its
+ * `$relativePath` is correct. The widget and the background task run in
+ * different processes, and handles issued in one are not valid in the
+ * other; therefore a background task handler MUST call `listFiles()`
+ * itself before `probe()`/`probeAll()` and use the handles it got back.
  *
  * `$relativePath` is the stable identifier for matching a file against
  * a plugin's own cached payload across calls, since the host does not
