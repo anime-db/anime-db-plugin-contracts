@@ -40,6 +40,14 @@ namespace AnimeDb\PluginContracts\Media;
  * caller from building one with an arbitrary `$relativePath` (e.g.
  * `'../../../etc/passwd'`) and passing it to `probe()`/`probeAll()`.
  *
+ * An implementation of {@see MediaLibraryInterface} MUST treat the
+ * record's stored relative path as untrusted (it reaches the database,
+ * among other ways, from a record-creation form without normalization) and
+ * keep every returned `$relativePath` confined to the record's storage
+ * folder — reject `..` segments and absolute paths, and canonicalize
+ * before checking the result is still inside that folder — rather than
+ * concatenating it into a filesystem path unchecked.
+ *
  * An implementation of {@see MediaProbeInterface} does not try to validate
  * the path: `probe()` receives no record id, so it has nothing to
  * canonicalize the path against. Instead it relies on provenance, defined
@@ -60,11 +68,9 @@ namespace AnimeDb\PluginContracts\Media;
  *   after serialization, or when rebuilt from cached data.
  *
  * A handle that fails this check is rejected with
- * {@see ForeignMediaFileException} before any disk access, so a crafted
- * `$relativePath` never becomes a filesystem path. This is a programmer
- * error, deliberately distinct from {@see MediaProbeFailedException}
- * ("this file could not be parsed"), so a plugin does not cache a healthy
- * file as corrupt or retry forever.
+ * {@see MediaProbeFailedException} before any disk access, so a crafted
+ * `$relativePath` never becomes a filesystem path. A plugin must treat
+ * this as "could not be probed right now", not as "the file is corrupt".
  *
  * This is the contract's behaviour, not a defect of the host: a
  * `MediaFile` fabricated by a plugin, or rebuilt by a plugin from its own
@@ -73,9 +79,8 @@ namespace AnimeDb\PluginContracts\Media;
  * different processes, and handles issued in one are not valid in the
  * other; therefore a background task handler MUST call `listFiles()`
  * itself before `probe()`/`probeAll()` and use the handles it got back
- * (migration: in `handle()`, call `listFiles($anime)` first, then probe
- * the returned handles, matching them to cached data by
- * `$relativePath`).
+ * (in `handle()`, call `listFiles($anime)` first, then probe the returned
+ * handles, matching them to cached data by `$relativePath`).
  *
  * `$relativePath` is the stable identifier for matching a file against
  * a plugin's own cached payload across calls, since the host does not

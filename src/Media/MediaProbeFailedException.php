@@ -40,10 +40,12 @@ namespace AnimeDb\PluginContracts\Media;
  * result. A single damaged file in a folder must not destroy the data
  * probed for every other file in the same call.
  *
- * Not thrown for a handle the implementation did not issue or for a call
- * mixing handles of different records: that is a programmer error reported
- * with {@see ForeignMediaFileException}, so it cannot be mistaken for a
- * damaged file.
+ * Also thrown for a handle the implementation did not issue and for a call
+ * mixing handles of different records (see {@see MediaFile}). The
+ * exception means "could not be probed right now", not "the file is
+ * corrupt for good": a handle also becomes foreign merely because the
+ * process changed between listing and probing. A plugin must not, on this
+ * basis alone, irreversibly mark a file as broken.
  *
  * Deliberately distinct from {@see MediaProbeUnavailableException}: this
  * one means the capability exists but this file defeated it, that one means

@@ -56,10 +56,9 @@ interface MediaProbeInterface
      *                                        in the host application's settings, or not installed
      * @throws MediaProbeFailedException      if this specific file could not be parsed — a
      *                                        timeout, a corrupt or zero-byte file, or a file that is
-     *                                        still being written and only partially readable
-     * @throws ForeignMediaFileException      if the handle was not issued by this
-     *                                        implementation (see {@see MediaFile}) — a
-     *                                        programmer error, checked before any disk access
+     *                                        still being written and only partially readable — or
+     *                                        if the handle was not issued by this implementation
+     *                                        (see {@see MediaFile}), checked before any disk access
      */
     public function probe(MediaFile $file): MediaInfo;
 
@@ -77,7 +76,7 @@ interface MediaProbeInterface
      * records with equal relative paths would collapse into one key. The
      * implementation knows the record of every issued handle and enforces
      * this: a call mixing records is rejected as a whole with
-     * {@see ForeignMediaFileException}, before any disk access.
+     * {@see MediaProbeFailedException}, before any disk access.
      *
      * @param MediaFile[] $files
      *
@@ -93,13 +92,11 @@ interface MediaProbeInterface
      *                                        parsed; if at least one succeeded, this returns
      *                                        whatever did succeed instead of throwing — a single
      *                                        damaged file must not destroy the data probed for
-     *                                        every other file in the same call
-     * @throws ForeignMediaFileException      if any handle was not issued by this
-     *                                        implementation (see {@see MediaFile}) or the
-     *                                        handles belong to different records: the whole
-     *                                        call is rejected before any disk access and no
-     *                                        partial result is returned, even if other
-     *                                        handles are valid
+     *                                        every other file in the same call; also thrown, for
+     *                                        the whole call and with no partial result, if any
+     *                                        handle was not issued by this implementation (see
+     *                                        {@see MediaFile}) or the handles belong to
+     *                                        different records — checked before any disk access
      */
     public function probeAll(array $files): array;
 
