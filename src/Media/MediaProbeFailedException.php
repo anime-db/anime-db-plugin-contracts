@@ -40,6 +40,11 @@ namespace AnimeDb\PluginContracts\Media;
  * result. A single damaged file in a folder must not destroy the data
  * probed for every other file in the same call.
  *
+ * Not thrown for a handle the implementation did not issue or for a call
+ * mixing handles of different records: that is a programmer error reported
+ * with {@see ForeignMediaFileException}, so it cannot be mistaken for a
+ * damaged file.
+ *
  * Deliberately distinct from {@see MediaProbeUnavailableException}: this
  * one means the capability exists but this file defeated it, that one means
  * the capability itself is absent. Deliberately has no base class in common

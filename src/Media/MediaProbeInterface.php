@@ -56,9 +56,10 @@ interface MediaProbeInterface
      *                                        in the host application's settings, or not installed
      * @throws MediaProbeFailedException      if this specific file could not be parsed — a
      *                                        timeout, a corrupt or zero-byte file, or a file that is
-     *                                        still being written and only partially readable — or
-     *                                        if the handle was not issued by this implementation
-     *                                        (see {@see MediaFile})
+     *                                        still being written and only partially readable
+     * @throws ForeignMediaFileException      if the handle was not issued by this
+     *                                        implementation (see {@see MediaFile}) — a
+     *                                        programmer error, checked before any disk access
      */
     public function probe(MediaFile $file): MediaInfo;
 
@@ -73,7 +74,10 @@ interface MediaProbeInterface
      *
      * All files of one call MUST belong to the same catalog record: the
      * result is keyed by {@see MediaFile::$relativePath}, and files of two
-     * records with equal relative paths would collapse into one key.
+     * records with equal relative paths would collapse into one key. The
+     * implementation knows the record of every issued handle and enforces
+     * this: a call mixing records is rejected as a whole with
+     * {@see ForeignMediaFileException}, before any disk access.
      *
      * @param MediaFile[] $files
      *
@@ -89,9 +93,13 @@ interface MediaProbeInterface
      *                                        parsed; if at least one succeeded, this returns
      *                                        whatever did succeed instead of throwing — a single
      *                                        damaged file must not destroy the data probed for
-     *                                        every other file in the same call; also thrown if
-     *                                        a handle was not issued by this implementation
-     *                                        (see {@see MediaFile})
+     *                                        every other file in the same call
+     * @throws ForeignMediaFileException      if any handle was not issued by this
+     *                                        implementation (see {@see MediaFile}) or the
+     *                                        handles belong to different records: the whole
+     *                                        call is rejected before any disk access and no
+     *                                        partial result is returned, even if other
+     *                                        handles are valid
      */
     public function probeAll(array $files): array;
 
@@ -106,7 +114,10 @@ interface MediaProbeInterface
      * probing, the plugin would already have fresh data and the cache check
      * would be pointless. It does not mean the disk is never touched: an
      * implementation may read the prober file itself (e.g. to notice the
-     * user replaced it), and should memoize that read.
+     * user replaced it). Such a read may be memoized only keyed by the
+     * prober file's (path, mtime, size) and recomputed when any of them
+     * changes, so a long-lived process (a background worker) still notices
+     * a replaced prober.
      *
      * What exactly goes into the string is an implementation decision, but
      * this contract requires one property of it: the value must change if
@@ -114,10 +125,13 @@ interface MediaProbeInterface
      * value (e.g. the upstream prober's version string) fails to invalidate
      * a cache when the set of supported codecs changes without a version
      * bump; too fine a value (e.g. the modification time or size of the
-     * prober file) invalidates the entire cache on an application
+     * prober file alone) invalidates the entire cache on an application
      * reinstall even though the prober's output has not changed. A hash of
-     * the prober file's content is stable across reinstalls and restoring a
-     * backup on another machine.
+     * the prober file's content is closer to the right granularity: it is
+     * stable across reinstalls and restoring a backup on another machine,
+     * though it is still only an approximation (it changes on a rebuild
+     * that does not alter the output and does not see codecs or libraries
+     * living outside that file).
      */
     public function probeIdentity(): string;
 }

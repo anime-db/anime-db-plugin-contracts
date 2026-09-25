@@ -42,11 +42,29 @@ namespace AnimeDb\PluginContracts\Media;
  *
  * An implementation of {@see MediaProbeInterface} does not try to validate
  * the path: `probe()` receives no record id, so it has nothing to
- * canonicalize the path against. Instead it relies on provenance — it
- * accepts only handles that it issued itself from `listFiles()`, in the
- * same process and within the same call chain. A handle it did not issue
- * is rejected with {@see MediaProbeFailedException} before any disk
- * access, so a crafted `$relativePath` never becomes a filesystem path.
+ * canonicalize the path against. Instead it relies on provenance, defined
+ * as follows:
+ *
+ * - Issuer. Handles are issued by {@see MediaLibraryInterface::listFiles()},
+ *   not by the prober. The host MUST therefore implement both services on
+ *   top of one shared registry of issued handles (typically one object);
+ *   two independent implementations that do not share it would reject
+ *   every handle.
+ * - Identity. A handle is recognised by object identity of the instance
+ *   `listFiles()` returned (e.g. a `\WeakMap`/`\SplObjectStorage`), never
+ *   by comparing field values: a fabricated `new MediaFile(...)` with
+ *   identical fields is NOT the issued handle and is rejected. The registry
+ *   also remembers which record each handle was issued for.
+ * - Lifetime. A handle is valid within the PHP process that issued it and
+ *   only while that instance is alive. It is not valid in another process,
+ *   after serialization, or when rebuilt from cached data.
+ *
+ * A handle that fails this check is rejected with
+ * {@see ForeignMediaFileException} before any disk access, so a crafted
+ * `$relativePath` never becomes a filesystem path. This is a programmer
+ * error, deliberately distinct from {@see MediaProbeFailedException}
+ * ("this file could not be parsed"), so a plugin does not cache a healthy
+ * file as corrupt or retry forever.
  *
  * This is the contract's behaviour, not a defect of the host: a
  * `MediaFile` fabricated by a plugin, or rebuilt by a plugin from its own
@@ -54,7 +72,10 @@ namespace AnimeDb\PluginContracts\Media;
  * `$relativePath` is correct. The widget and the background task run in
  * different processes, and handles issued in one are not valid in the
  * other; therefore a background task handler MUST call `listFiles()`
- * itself before `probe()`/`probeAll()` and use the handles it got back.
+ * itself before `probe()`/`probeAll()` and use the handles it got back
+ * (migration: in `handle()`, call `listFiles($anime)` first, then probe
+ * the returned handles, matching them to cached data by
+ * `$relativePath`).
  *
  * `$relativePath` is the stable identifier for matching a file against
  * a plugin's own cached payload across calls, since the host does not

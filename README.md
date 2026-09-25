@@ -600,8 +600,13 @@ class RelatedTitlesWidget implements EntryWidgetInterface
 - **`MediaFile`** — иммутабельный хэндл файла: `name`, `relativePath`,
   `sizeBytes`, `modifiedAt`. Абсолютного пути нет.
 - **`MediaProbeInterface::probe()`/`probeAll()`/`probeIdentity()`** —
-  технические характеристики файла(ов) и дешёвая (без обращения к диску)
-  идентичность текущего пробера для инвалидации кеша.
+  технические характеристики файла(ов) и дешёвая (не запускает пробер и не
+  читает пробуемые файлы) идентичность текущего пробера для инвалидации
+  кеша. Принимаются только хэндлы, выданные `listFiles()` в этом же
+  процессе (проверка по идентичности объекта, `MediaLibraryInterface` и
+  `MediaProbeInterface` делят реестр выданных хэндлов); чужой хэндл — это
+  `ForeignMediaFileException`. Обработчик фоновой задачи обязан сначала
+  вызвать `listFiles()`, а не пересобирать `MediaFile` из payload/кеша.
 - **`MediaInfo`** — результат разбора одного файла: контейнер,
   длительность, битрейт, счётчик потоков и четыре списка потоков
   (`video`, `audio`, `subtitles`, `otherTracks`).
@@ -609,7 +614,9 @@ class RelatedTitlesWidget implements EntryWidgetInterface
   потоки внутри `MediaInfo`.
 - **`StorageUnavailableException`**, **`MediaProbeUnavailableException`**,
   **`MediaProbeFailedException`** — три независимых режима отказа, каждый
-  наследует `\RuntimeException` напрямую.
+  наследует `\RuntimeException` напрямую. **`ForeignMediaFileException`**
+  (`\LogicException`) — ошибка программиста: хэндл не выдавался этой
+  реализацией либо `probeAll()` смешал хэндлы разных записей.
 
 ### `LlmServiceInterface`
 
