@@ -64,6 +64,25 @@ interface CatalogWidgetInterface
     /**
      * Render the widget without any single-record context.
      *
+     * Pending update: a widget that has nothing to show yet returns its HTML
+     * prefixed with {@see WidgetPendingUpdate::MARKER} (or built with
+     * {@see WidgetPendingUpdate::mark()}).
+     *
+     * - The marker must be the very first bytes of the returned string:
+     *   nothing before it, no whitespace, line break or BOM. The prefix
+     *   check is byte-for-byte.
+     * - The host strips the marker before sanitizing; it never reaches the
+     *   response body.
+     * - A marked response is served without `max-age`; an unmarked response
+     *   is cached as before.
+     * - Dropping the cache does not mean the host re-requests the widget: it
+     *   polls nothing itself. A marked response is simply not served stale
+     *   from the browser cache on the next request of the slot (page reload
+     *   or navigating back to the page). A widget that needs to refresh
+     *   itself must arrange that on its own.
+     * - The marker changes nothing except caching: status code, sanitizing
+     *   and exception handling are the same.
+     *
      * @return string rendered widget markup as a raw HTML string
      */
     public function render(): string;
