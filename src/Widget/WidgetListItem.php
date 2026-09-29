@@ -29,22 +29,24 @@ namespace AnimeDb\PluginContracts\Widget;
 
 /**
  * The single definition of the shape a widget passes, one instance per list
- * entry, to the host's core `plugin/_widget_list.html.twig` partial. That
- * partial's own docblock currently describes this shape in prose; it should
- * be replaced with a reference to this class instead of restating the fields.
+ * entry, to the host's public `plugin/_widget_list.html.twig` partial — the
+ * core extension point a widget includes in its own template to render a
+ * list of anime entries.
  *
  * Only the shape is defined here: no filesystem or other I/O, and no
- * validation of field content (URL well-formedness, HTML escaping) — that
- * stays with the host, in `PluginHtmlSanitizer` and the Twig template
- * itself, the same division of responsibility as {@see \AnimeDb\PluginContracts\Manifest\PluginUi}.
+ * validation of field content (URL well-formedness, HTML escaping) — the
+ * host validates and escapes field content at render time, the same
+ * division of responsibility as {@see \AnimeDb\PluginContracts\Manifest\PluginUi}.
  */
 final class WidgetListItem
 {
     public function __construct(
         /**
-         * Absolute URL or `app-media://` URL of the item's thumbnail image.
-         *
-         * `null` (or empty) makes the host render a placeholder instead.
+         * Absolute `http(s)://` URL or `app-media://` URL of the item's
+         * thumbnail image, or `null` when the item has no thumbnail — the
+         * host then renders a placeholder. Absence is always `null`; an
+         * empty string is not a distinct value and is not guaranteed to be
+         * treated as absence.
          */
         public readonly ?string $thumbnail,
         /**
@@ -57,7 +59,11 @@ final class WidgetListItem
          */
         public readonly ?string $subtitle,
         /**
-         * Link target for the whole card.
+         * Link target for the whole card: either an absolute `http(s)://`
+         * URL or a path relative to the host's own site root (e.g.
+         * `/anime/1`). Schemes other than `http`/`https` (e.g.
+         * `javascript:`, `data:`) are outside this contract; the host is
+         * free to reject the value or drop the link in that case.
          */
         public readonly string $url,
     ) {
