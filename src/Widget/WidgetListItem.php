@@ -43,10 +43,8 @@ final class WidgetListItem
     public function __construct(
         /**
          * Absolute `http(s)://` URL or `app-media://` URL of the item's
-         * thumbnail image, or `null` when the item has no thumbnail — the
-         * host then renders a placeholder. Absence is always `null`; an
-         * empty string is not a distinct value and is not guaranteed to be
-         * treated as absence.
+         * thumbnail image, or `null`/an empty string when the item has no
+         * thumbnail — the host then renders a placeholder.
          */
         public readonly ?string $thumbnail,
         /**
@@ -59,11 +57,14 @@ final class WidgetListItem
          */
         public readonly ?string $subtitle,
         /**
-         * Link target for the whole card: either an absolute `http(s)://`
-         * URL or a path relative to the host's own site root (e.g.
-         * `/anime/1`). Schemes other than `http`/`https` (e.g.
-         * `javascript:`, `data:`) are outside this contract; the host is
-         * free to reject the value or drop the link in that case.
+         * Link target for the whole card, opened in the system browser:
+         * an absolute `http(s)://` URL of the plugin's own external page
+         * for the record. A path relative to the host's own site root is
+         * not a valid value here — the host resolves such a link back to
+         * itself and refuses to open it, so the card would appear
+         * clickable but do nothing. Schemes other than `http`/`https`
+         * (e.g. `javascript:`, `data:`) are outside this contract; the
+         * host is free to reject the value or drop the link in that case.
          */
         public readonly string $url,
     ) {

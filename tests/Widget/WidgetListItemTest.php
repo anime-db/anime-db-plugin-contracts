@@ -38,13 +38,13 @@ class WidgetListItemTest extends TestCase
             thumbnail: 'app-media://thumbnails/1.jpg',
             title: 'Title',
             subtitle: 'Subtitle',
-            url: '/anime/1',
+            url: 'https://example.com/anime/1',
         );
 
         self::assertSame('app-media://thumbnails/1.jpg', $item->thumbnail);
         self::assertSame('Title', $item->title);
         self::assertSame('Subtitle', $item->subtitle);
-        self::assertSame('/anime/1', $item->url);
+        self::assertSame('https://example.com/anime/1', $item->url);
     }
 
     public function testConstructWithOptionalFieldsNull(): void
@@ -53,12 +53,12 @@ class WidgetListItemTest extends TestCase
             thumbnail: null,
             title: 'Title',
             subtitle: null,
-            url: '/anime/1',
+            url: 'https://example.com/anime/1',
         );
 
         self::assertNull($item->thumbnail);
         self::assertSame('Title', $item->title);
         self::assertNull($item->subtitle);
-        self::assertSame('/anime/1', $item->url);
+        self::assertSame('https://example.com/anime/1', $item->url);
     }
 }
