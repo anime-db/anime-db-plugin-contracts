@@ -43,6 +43,9 @@ interface DownloadServiceInterface
 {
     /**
      * Queue a download task for the given source, attached to the given anime.
+     *
+     * @throws DownloadAlreadyLinkedToAnotherAnimeException if the source is already attached
+     *                                                      to a different anime — one torrent can only ever be linked to one catalog entry
      */
     public function enqueue(DownloadSource $source, AnimeId $anime): DownloadTaskId;
 }

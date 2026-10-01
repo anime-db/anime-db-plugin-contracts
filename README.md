@@ -399,6 +399,8 @@ class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
     public function runAction(string $actionId, string $meta, AnimeId $anime): void
     {
         if ($actionId === 'download') {
+            // DownloadAlreadyLinkedToAnotherAnimeException from enqueue() is not caught here —
+            // the core handles it on its own, by offering the user a re-link dialog.
             $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
         }
     }
@@ -840,6 +842,15 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 Обе выбрасывают `\InvalidArgumentException` при некорректном значении.
 Набор расширяемый — например, `::url()` в будущем — без изменения уже
 написанных плагинов.
+
+#### `DownloadAlreadyLinkedToAnotherAnimeException`
+
+`enqueue()` бросает это исключение, если переданный источник уже привязан
+к другой записи каталога — один торрент может быть привязан только к
+одной записи. `infoHash` и `occupyingAnimeId` называют источник и запись,
+к которой он уже привязан. Ядро обрабатывает исключение само (предлагает
+пользователю перепривязку), поэтому плагин не должен его перехватывать
+или оборачивать — см. пример `runAction()` выше.
 
 #### `DownloadTaskId` / `DownloadCompletedEvent`
 
