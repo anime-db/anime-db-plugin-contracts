@@ -839,6 +839,10 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 - `DownloadSource::torrentFile(string $path): self` — валидирует, что
   путь оканчивается на `.torrent`.
 
+Обе выбрасывают `\InvalidArgumentException` при некорректном значении.
+Набор расширяемый — например, `::url()` в будущем — без изменения уже
+написанных плагинов.
+
 #### `DownloadAlreadyLinkedToAnotherAnimeException`
 
 `enqueue()` бросает это исключение, если переданный источник уже привязан
@@ -847,10 +851,6 @@ class ExampleDownloadPlugin implements EventSubscriberInterface
 к которой он уже привязан. Ядро обрабатывает исключение само (предлагает
 пользователю перепривязку), поэтому плагин не должен его перехватывать
 или оборачивать — см. пример `runAction()` выше.
-
-Обе выбрасывают `\InvalidArgumentException` при некорректном значении.
-Набор расширяемый — например, `::url()` в будущем — без изменения уже
-написанных плагинов.
 
 #### `DownloadTaskId` / `DownloadCompletedEvent`
 
