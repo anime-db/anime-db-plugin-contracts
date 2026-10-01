@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\CandidateSearch;
 
+use AnimeDb\PluginContracts\Download\DownloadAlreadyLinkedToAnotherAnimeException;
 use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 use AnimeDb\PluginContracts\Model\AnimeId;
@@ -69,6 +70,10 @@ interface DownloadCandidateSearchInterface
      * core from the calling context or, if none existed yet, created from the
      * item's {@see AnimeSearchResultItem::$externalId} — the plugin passes it
      * straight through to {@see DownloadServiceInterface::enqueue()}.
+     *
+     * A {@see DownloadAlreadyLinkedToAnotherAnimeException} thrown by
+     * {@see DownloadServiceInterface::enqueue()} must not be caught or wrapped here: the
+     * core handles it on its own, by offering the user a re-link dialog.
      */
     public function runAction(string $actionId, string $meta, AnimeId $anime): void;
 }
