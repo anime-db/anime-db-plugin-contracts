@@ -39,11 +39,24 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  */
 final class DownloadAlreadyLinkedToAnotherAnimeException extends \RuntimeException
 {
+    /**
+     * Canonical form, enforced by the constructor: a lowercase 40-character hex BitTorrent v1
+     * infohash. The core resolves any input representation (hex or base32 magnet, a `.torrent`
+     * file carrying a v1 infohash) to this form before raising the exception; a plugin comparing
+     * it with its own magnet must normalize the same way.
+     */
     public readonly string $infoHash;
     public readonly AnimeId $occupyingAnimeId;
 
+    /**
+     * @throws \InvalidArgumentException if `$infoHash` is not a lowercase 40-character hex string
+     */
     public function __construct(string $infoHash, AnimeId $occupyingAnimeId)
     {
+        if (preg_match('/^[0-9a-f]{40}$/', $infoHash) !== 1) {
+            throw new \InvalidArgumentException(\sprintf('"%s" is not a valid lowercase 40-character hex BitTorrent v1 infohash.', $infoHash));
+        }
+
         parent::__construct(\sprintf('Torrent "%s" is already linked to anime #%d.', $infoHash, $occupyingAnimeId->value));
 
         $this->infoHash = $infoHash;
