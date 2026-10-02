@@ -53,7 +53,7 @@ final class DownloadAlreadyLinkedToAnotherAnimeException extends \RuntimeExcepti
      */
     public function __construct(string $infoHash, AnimeId $occupyingAnimeId)
     {
-        if (preg_match('/^[0-9a-f]{40}$/', $infoHash) !== 1) {
+        if (preg_match('/^[0-9a-f]{40}\z/', $infoHash) !== 1) {
             throw new \InvalidArgumentException(\sprintf('"%s" is not a valid lowercase 40-character hex BitTorrent v1 infohash.', $infoHash));
         }
 

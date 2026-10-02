@@ -50,6 +50,8 @@ class DownloadSourceTest extends TestCase
         yield 'wrong urn namespace' => ['magnet:?xt=urn:sha1:c12fe1c06bba254a9dc9f519b335aa7c1367a88a'];
         yield 'hash too short' => ['magnet:?xt=urn:btih:c12fe1c'];
         yield 'not a magnet uri at all' => ['https://example.com/file.torrent'];
+        yield 'trailing newline' => ["magnet:?xt=urn:btih:c12fe1c06bba254a9dc9f519b335aa7c1367a88a\n"];
+        yield 'trailing newline after query string' => ["magnet:?xt=urn:btih:c12fe1c06bba254a9dc9f519b335aa7c1367a88a&dn=example\n"];
     }
 
     /**

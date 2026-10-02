@@ -51,7 +51,7 @@ final class DownloadSource
      */
     public static function magnet(string $uri): self
     {
-        if (preg_match('/^magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}(&.*)?$/', $uri) !== 1) {
+        if (preg_match('/^magnet:\?xt=urn:btih:[a-zA-Z0-9]{32,40}(&.*)?\z/', $uri) !== 1) {
             throw new \InvalidArgumentException(\sprintf('"%s" is not a valid "magnet:?xt=urn:btih:..." URI.', $uri));
         }
 

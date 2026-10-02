@@ -246,6 +246,7 @@ class ManifestValidatorTest extends TestCase
         yield 'uppercase' => ['RU'];
         yield 'single letter' => ['r'];
         yield 'not a language code' => ['russian'];
+        yield 'trailing newline' => ["en\n"];
     }
 
     /**
@@ -416,6 +417,7 @@ class ManifestValidatorTest extends TestCase
         yield 'leading hyphen' => ['-acme-demo'];
         yield 'trailing hyphen' => ['acme-demo-'];
         yield 'double hyphen' => ['acme--demo'];
+        yield 'trailing newline' => ["vendor-name\n"];
     }
 
     /**

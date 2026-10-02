@@ -76,5 +76,6 @@ class DownloadAlreadyLinkedToAnotherAnimeExceptionTest extends TestCase
         yield 'uppercase hex' => ['C12FE1C06BBA254A9DC9F519B335AA7C1367A88A'];
         yield 'base32' => ['YEX6DQDLXISUVHOJPGKVWYNQ7YNOVSMK'];
         yield 'sha256 hex (64 chars)' => ['c12fe1c06bba254a9dc9f519b335aa7c1367a88ac12fe1c06bba254a9dc9f519'];
+        yield 'trailing newline' => ["c12fe1c06bba254a9dc9f519b335aa7c1367a88a\n"];
     }
 }
