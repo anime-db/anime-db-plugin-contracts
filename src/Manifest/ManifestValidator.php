@@ -119,7 +119,7 @@ final class ManifestValidator
             return $errors;
         }
 
-        if (preg_match('/^[a-z0-9]+(-[a-z0-9]+)+$/', $data['id']) !== 1) {
+        if (preg_match('/^[a-z0-9]+(-[a-z0-9]+)+\z/', $data['id']) !== 1) {
             return [new ManifestValidationError(
                 'id',
                 \sprintf('"%s" is not a valid id. It must be a "vendor-name" slug: lowercase letters, digits and hyphen-separated segments (e.g. "vendor-name").', $data['id']),
@@ -277,7 +277,7 @@ final class ManifestValidator
                 continue;
             }
 
-            if (preg_match('/^[a-z]{2,3}$/', $locale) !== 1) {
+            if (preg_match('/^[a-z]{2,3}\z/', $locale) !== 1) {
                 $errors[] = new ManifestValidationError(
                     \sprintf('locales.%d', $index),
                     \sprintf('"%s" is not a valid locale code. It must be a bare language subtag: two or three lowercase letters, without region or script (e.g. "en"). Three letters are only for languages without an ISO 639-1 two-letter code; use the two-letter code when one exists.', $locale),
