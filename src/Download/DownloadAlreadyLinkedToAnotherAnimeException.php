@@ -39,6 +39,11 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  */
 final class DownloadAlreadyLinkedToAnotherAnimeException extends \RuntimeException
 {
+    /**
+     * Canonical form: a lowercase 40-character hex BitTorrent v1 infohash, as normalized by
+     * the core regardless of how the source was given (hex or base32 magnet, `.torrent` file).
+     * A plugin comparing it with its own magnet must normalize the same way.
+     */
     public readonly string $infoHash;
     public readonly AnimeId $occupyingAnimeId;
 
