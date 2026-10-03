@@ -69,9 +69,9 @@ interface CandidateSearchInterface
      * core from the calling context or, if none existed yet, created from the
      * item's {@see AnimeSearchResultItem::$externalId}.
      *
-     * Exceptions thrown by core-provided services (e.g. {@see DownloadAlreadyLinkedToAnotherAnimeException}
-     * from {@see DownloadServiceInterface::enqueue()}) must not be caught or wrapped here: the
-     * core handles them itself.
+     * If an action enqueues a download, a {@see DownloadAlreadyLinkedToAnotherAnimeException}
+     * thrown by {@see DownloadServiceInterface::enqueue()} must not be caught or wrapped here: the
+     * core handles it on its own, by offering the user a re-link dialog.
      */
     public function runAction(string $actionId, string $meta, AnimeId $anime): void;
 }
