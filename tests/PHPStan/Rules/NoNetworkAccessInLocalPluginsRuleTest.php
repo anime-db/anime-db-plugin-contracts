@@ -49,7 +49,7 @@ class NoNetworkAccessInLocalPluginsRuleTest extends RuleTestCase
                 17,
             ],
             [
-                'Constructor parameter $downloadSearch of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface|null), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
+                'Constructor parameter $candidateSearch of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface|null), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
                 18,
             ],
             [

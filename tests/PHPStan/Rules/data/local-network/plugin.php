@@ -15,7 +15,7 @@ final class NetworkInjectingPlugin
 
     public function __construct(
         private readonly ClientInterface $client,
-        ?CandidateSearchInterface $downloadSearch,
+        ?CandidateSearchInterface $candidateSearch,
         private readonly SettingsStoreInterface $settings,
         RequestFactoryInterface $requestFactory,
     ) {
