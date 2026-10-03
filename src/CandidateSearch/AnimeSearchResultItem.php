@@ -48,7 +48,7 @@ final class AnimeSearchResultItem
         public readonly string $title,
         /**
          * Id of this candidate on the source, used by the core to match it to an
-         * existing catalog record or create a new one when a download is enqueued
+         * existing catalog record or create a new one when an action is run
          * for it. When the source has no canonical id for the candidate, the
          * plugin falls back to a stable hash of the underlying download reference
          * / source-specific identifier, so the same candidate always resolves to
@@ -64,7 +64,7 @@ final class AnimeSearchResultItem
         public readonly array $actions,
         /**
          * Opaque to the core: carried as-is to the client and back to
-         * {@see DownloadCandidateSearchInterface::runAction()} unchanged. Only the
+         * {@see CandidateSearchInterface::runAction()} unchanged. Only the
          * plugin that produced this item knows how to interpret it.
          *
          * The core wraps this value in a signed envelope (HMAC over an

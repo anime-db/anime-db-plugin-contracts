@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Manifest\InvalidManifestException;
@@ -76,7 +76,7 @@ use Psr\Http\Message\RequestFactoryInterface;
  *   instead of relying on a reader to trace the inheritance chain.
  * - {@see SyncInterface} (extends `FillerInterface`) — `push()`/`pull()` synchronise state
  *   with an external source.
- * - {@see DownloadCandidateSearchInterface} — `search()` is an interactive user search
+ * - {@see CandidateSearchInterface} — `search()` is an interactive user search
  *   against an external source, by the same definition as `SearchByPluginInterface`'s
  *   `find()`.
  * - {@see DownloadServiceInterface} — `enqueue()` starts a download from an external
@@ -184,7 +184,7 @@ final class NoNetworkAccessInLocalPluginsRule implements Rule
         SearchByPluginInterface::class,
         FillerInterface::class,
         SyncInterface::class,
-        DownloadCandidateSearchInterface::class,
+        CandidateSearchInterface::class,
         DownloadServiceInterface::class,
     ];
 

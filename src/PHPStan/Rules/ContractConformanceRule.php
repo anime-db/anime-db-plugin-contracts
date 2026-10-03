@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\PHPStan\Rules;
 
 use AnimeDb\PluginContracts\Background\BackgroundTaskHandlerInterface;
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 use AnimeDb\PluginContracts\ExternalIdResolutionInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
@@ -77,7 +77,7 @@ final class ContractConformanceRule implements Rule
         SyncInterface::class,
         CatalogWidgetInterface::class,
         EntryWidgetInterface::class,
-        DownloadCandidateSearchInterface::class,
+        CandidateSearchInterface::class,
         SettingsPageInterface::class,
         BackgroundTaskHandlerInterface::class,
     ];

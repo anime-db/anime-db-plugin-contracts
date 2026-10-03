@@ -38,8 +38,8 @@ anime-db-plugin-contracts/
 │   ├── SyncInterface.php                   # синхронизация пользовательских списков
 │   ├── SearchByPluginInterface.php         # лёгкое распознавание тайтла при сканировании
 │   ├── SearchByPluginCandidate.php         # DTO кандидата распознавания
-│   ├── DownloadCandidateSearchInterface.php # интерактивный пользовательский поиск скачиваемых кандидатов
-│   ├── AnimeSearchResult.php               # DTO результата DownloadCandidateSearchInterface::search()
+│   ├── CandidateSearchInterface.php        # интерактивный пользовательский поиск по источнику плагина с действиями над результатами
+│   ├── AnimeSearchResult.php               # DTO результата CandidateSearchInterface::search()
 │   ├── AnimeSearchResultItem.php           # DTO элемента результата поиска
 │   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
 │   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
@@ -82,7 +82,7 @@ anime-db-plugin-contracts/
   источники). Его наследуют интерфейсы, которым нужна эта способность
   (`FillerInterface`/`SearchByPluginInterface`/`SyncInterface`/
   `EntryWidgetInterface`/`CatalogWidgetInterface`) — по ISP. Не наследует
-  `DownloadCandidateSearchInterface`: его `search()` принимает свободный
+  `CandidateSearchInterface`: его `search()` принимает свободный
   текстовый запрос, а не список ссылок, а идентичность кандидата несёт
   `AnimeSearchResultItem::$externalId`. Плагин с манифестным `type: local`
   (реагирует на события каталога, реализует Symfony
@@ -228,7 +228,7 @@ anime-db-plugin-contracts/
   sync/search) — у каждой фичи свой отдельный интерфейс; общая
   способность резолвить внешний id вынесена в отдельный
   `ExternalIdResolutionInterface`, и то не у всех типов плагинов (у
-  `local` и у `DownloadCandidateSearchInterface` — нет и его)
+  `local` и у `CandidateSearchInterface` — нет и его)
 - Не превращать manifest `name`/`description` в ключи перевода — манифест
   самодостаточен и читается каталог-агностично (реестр маркета, UI установки,
   валидатор). Локализуемые строки — только UI-класс

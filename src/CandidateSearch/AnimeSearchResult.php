@@ -29,7 +29,7 @@ namespace AnimeDb\PluginContracts\CandidateSearch;
 
 /**
  * Result of an interactive user search performed by a
- * {@see DownloadCandidateSearchInterface}.
+ * {@see CandidateSearchInterface}.
  */
 final class AnimeSearchResult
 {

@@ -29,8 +29,8 @@ namespace AnimeDb\PluginContracts\CandidateSearch;
 
 /**
  * A single action offered by the plugin for an {@see AnimeSearchResultItem}
- * (e.g. "download"), shown to the user and, once picked, passed back to
- * {@see DownloadCandidateSearchInterface::runAction()} by `id`.
+ * (e.g. "enqueue"), shown to the user and, once picked, passed back to
+ * {@see CandidateSearchInterface::runAction()} by `id`.
  */
 final class AnimeSearchResultAction
 {
