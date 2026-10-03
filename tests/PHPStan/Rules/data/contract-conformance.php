@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data;
 
 use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResult;
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
 use AnimeDb\PluginContracts\Model\AnimeId;
@@ -167,7 +167,7 @@ abstract class AbstractSyncPlugin implements SyncInterface
     }
 }
 
-class ConformingDownloadCandidateSearchPlugin implements DownloadCandidateSearchInterface
+class ConformingCandidateSearchPlugin implements CandidateSearchInterface
 {
     public function search(string $query): AnimeSearchResult
     {

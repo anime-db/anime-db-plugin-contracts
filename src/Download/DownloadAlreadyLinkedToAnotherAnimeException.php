@@ -35,7 +35,7 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  *
  * The core raises this and also handles it — by offering the user a re-link dialog — so a
  * plugin only needs to recognize the class well enough to let it propagate unmodified. See
- * {@see \AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface::runAction()}.
+ * {@see \AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface::runAction()}.
  */
 final class DownloadAlreadyLinkedToAnotherAnimeException extends \RuntimeException
 {

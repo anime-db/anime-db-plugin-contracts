@@ -35,14 +35,13 @@ use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
 
 /**
- * Interactive user search for downloadable candidates on an external source.
+ * Interactive user search on a plugin's source; returned items carry plugin-defined actions.
  *
  * Distinct from {@see SearchByPluginInterface}: that one recognizes a title while
  * scanning thousands of local folders and returns a lightweight
  * {@see SearchByPluginCandidate}. This one is triggered by the user explicitly
  * searching a source and returns rich, user-facing items with actions attached
- * (typically including "download", implemented by the plugin via
- * {@see DownloadServiceInterface}).
+ * — an action may, for example, queue a download via {@see DownloadServiceInterface}.
  *
  * Source-specific implementations of this interface live in their own plugins;
  * this package only defines the interface and its DTOs.
@@ -51,7 +50,7 @@ use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
  * rather than a list of urls, and a candidate's identity is carried by
  * {@see AnimeSearchResultItem::$externalId} instead.
  */
-interface DownloadCandidateSearchInterface
+interface CandidateSearchInterface
 {
     /**
      * Search the external source for the given free-text query.
@@ -66,14 +65,13 @@ interface DownloadCandidateSearchInterface
      * through the client unmodified. The plugin alone knows how to interpret
      * $actionId together with $meta.
      *
-     * $anime is the catalog record this download is attached to, resolved by the
+     * $anime is the catalog record the action applies to, resolved by the
      * core from the calling context or, if none existed yet, created from the
-     * item's {@see AnimeSearchResultItem::$externalId} — the plugin passes it
-     * straight through to {@see DownloadServiceInterface::enqueue()}.
+     * item's {@see AnimeSearchResultItem::$externalId}.
      *
-     * A {@see DownloadAlreadyLinkedToAnotherAnimeException} thrown by
-     * {@see DownloadServiceInterface::enqueue()} must not be caught or wrapped here: the
-     * core handles it on its own, by offering the user a re-link dialog.
+     * Exceptions thrown by core-provided services (e.g. {@see DownloadAlreadyLinkedToAnotherAnimeException}
+     * from {@see DownloadServiceInterface::enqueue()}) must not be caught or wrapped here: the
+     * core handles them itself.
      */
     public function runAction(string $actionId, string $meta, AnimeId $anime): void;
 }

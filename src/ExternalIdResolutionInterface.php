@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts;
 
 use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultItem;
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 
 /**
  * Capability of resolving this plugin's own external source id.
@@ -36,7 +36,7 @@ use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
  * Extended by every role interface that needs this capability
  * (SearchByPluginInterface, SyncInterface, and transitively
  * FillerInterface). Not a common ancestor of all plugins, and not
- * implemented by {@see DownloadCandidateSearchInterface}, whose search()
+ * implemented by {@see CandidateSearchInterface}, whose search()
  * takes a free-text query rather than a list of urls and whose candidates
  * carry their own identity via {@see AnimeSearchResultItem::$externalId}.
  * A plugin that reacts to catalog events without talking to an external

@@ -23,7 +23,7 @@ composer require anime-db/plugin-contracts
   - [`FillerInterface`](#fillerinterface)
   - [`SyncInterface`](#syncinterface)
   - [`CatalogWidgetInterface` и `EntryWidgetInterface`](#catalogwidgetinterface-и-entrywidgetinterface)
-  - [`DownloadCandidateSearchInterface`](#downloadcandidatesearchinterface)
+  - [`CandidateSearchInterface`](#candidatesearchinterface)
   - [`SettingsPageInterface`](#settingspageinterface)
   - [`BackgroundTaskHandlerInterface`](#backgroundtaskhandlerinterface)
 - [Что предоставляет ядро](#что-предоставляет-ядро)
@@ -49,7 +49,7 @@ composer require anime-db/plugin-contracts
 `SearchByPluginInterface`, `SyncInterface` и транзитивно `FillerInterface`
 наследуют базовую способность `ExternalIdResolutionInterface`;
 `CatalogWidgetInterface`, `EntryWidgetInterface`,
-`DownloadCandidateSearchInterface` и `SettingsPageInterface` — нет.
+`CandidateSearchInterface` и `SettingsPageInterface` — нет.
 
 ### `ExternalIdResolutionInterface`
 
@@ -57,7 +57,7 @@ composer require anime-db/plugin-contracts
 `resolveExternalId()` — нужен интерфейсам, которым требуется эта способность:
 `SearchByPluginInterface`, `SyncInterface` и транзитивно `FillerInterface`.
 Интерфейс называет способность, а не категорию плагина — по этой же причине
-его **не** реализует `DownloadCandidateSearchInterface`: `search()`
+его **не** реализует `CandidateSearchInterface`: `search()`
 принимает свободный текстовый запрос, а не список ссылок, а идентичность
 кандидата несёт `AnimeSearchResultItem::$externalId`.
 
@@ -352,26 +352,26 @@ Translator'ом в домене перевода плагина (домен = id
 UI-локали — плагин обязан поставить строки для этих ключей в своём
 `translations/` как минимум для дефолтной локали.
 
-### `DownloadCandidateSearchInterface`
+### `CandidateSearchInterface`
 
-Интерактивный пользовательский поиск скачиваемых кандидатов по внешнему
-источнику — отдельная функция от `SearchByPluginInterface`. Разница:
+Интерактивный пользовательский поиск по источнику плагина с действиями над
+результатами — отдельная функция от `SearchByPluginInterface`. Разница:
 `SearchByPluginInterface` — лёгкое распознавание тайтла при сканировании
 тысяч папок (`SearchByPluginCandidate`: id плагина + название + внешний
-id). `DownloadCandidateSearchInterface` — по явному запросу пользователя,
+id). `CandidateSearchInterface` — по явному запросу пользователя,
 возвращает богатые элементы для показа в UI и постановки действий над
-ними (в т.ч. «скачать»).
+ними, которые определяет сам плагин.
 
 ```php
 use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResult;
 use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultAction;
 use AnimeDb\PluginContracts\CandidateSearch\AnimeSearchResultItem;
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 use AnimeDb\PluginContracts\Download\DownloadServiceInterface;
 use AnimeDb\PluginContracts\Download\DownloadSource;
 use AnimeDb\PluginContracts\Model\AnimeId;
 
-class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
+class ExampleCandidateSearchPlugin implements CandidateSearchInterface
 {
     public function __construct(
         private readonly DownloadServiceInterface $downloads,
@@ -388,7 +388,7 @@ class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
                 externalId: $candidate->id, // сводит кандидата к записи каталога
                 image: $candidate->coverBase64, // плагин сам фетчит и уменьшает превью
                 fields: ['quality' => $candidate->quality, 'size' => $candidate->size],
-                actions: [new AnimeSearchResultAction('download', 'Скачать')],
+                actions: [new AnimeSearchResultAction('enqueue', 'Добавить загрузку')],
                 meta: $candidate->source, // непрозрачно для ядра, вернётся как есть в runAction()
             );
         }
@@ -398,7 +398,7 @@ class ExampleDownloadSearchPlugin implements DownloadCandidateSearchInterface
 
     public function runAction(string $actionId, string $meta, AnimeId $anime): void
     {
-        if ($actionId === 'download') {
+        if ($actionId === 'enqueue') {
             // DownloadAlreadyLinkedToAnotherAnimeException from enqueue() is not caught here —
             // the core handles it on its own, by offering the user a re-link dialog.
             $this->downloads->enqueue(DownloadSource::magnet($meta), $anime);
@@ -1433,7 +1433,7 @@ includes:
 Проверяет, что классы, объявляющие реализацию `ExternalIdResolutionInterface`
 (и всех интерфейсов, которые его расширяют: `FillerInterface`,
 `SearchByPluginInterface`, `SyncInterface`), либо `CatalogWidgetInterface`,
-`EntryWidgetInterface`, `DownloadCandidateSearchInterface`,
+`EntryWidgetInterface`, `CandidateSearchInterface`,
 `SettingsPageInterface`, `BackgroundTaskHandlerInterface`, имеют
 сигнатуры методов, точно совпадающие с сигнатурами из установленной
 версии этого пакета. `BackgroundTaskQueueInterface` в этот список не
@@ -1493,7 +1493,7 @@ includes:
   видно сразу, а не выводилось из цепочки наследования;
 - `SyncInterface` (расширяет `FillerInterface`) — `push()`/`pull()`
   синхронизируют состояние с внешним источником;
-- `DownloadCandidateSearchInterface` — `search()` — тот же интерактивный
+- `CandidateSearchInterface` — `search()` — тот же интерактивный
   поиск по внешнему источнику, что и `find()` у `SearchByPluginInterface`;
 - `DownloadServiceInterface` — `enqueue()` запускает скачивание с внешнего
   сетевого источника (magnet-ссылка или torrent-файл) — собственный пример

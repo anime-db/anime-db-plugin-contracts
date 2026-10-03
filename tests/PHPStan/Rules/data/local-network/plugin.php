@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork;
 
-use AnimeDb\PluginContracts\CandidateSearch\DownloadCandidateSearchInterface;
+use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
 use AnimeDb\PluginContracts\Settings\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -15,7 +15,7 @@ final class NetworkInjectingPlugin
 
     public function __construct(
         private readonly ClientInterface $client,
-        ?DownloadCandidateSearchInterface $downloadSearch,
+        ?CandidateSearchInterface $candidateSearch,
         private readonly SettingsStoreInterface $settings,
         RequestFactoryInterface $requestFactory,
     ) {
