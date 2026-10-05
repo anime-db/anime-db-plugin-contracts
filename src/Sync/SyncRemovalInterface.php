@@ -27,10 +27,6 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Sync;
 
-declare(strict_types=1);
-
-namespace AnimeDb\PluginContracts\Sync;
-
 /**
  * Optional capability of a sync plugin: remove an item from the user's list on the source.
  *
