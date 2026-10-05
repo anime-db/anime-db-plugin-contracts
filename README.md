@@ -22,6 +22,7 @@ composer require anime-db/plugin-contracts
   - [`SearchByPluginInterface`](#searchbyplugininterface)
   - [`FillerInterface`](#fillerinterface)
   - [`SyncInterface`](#syncinterface)
+    - [Удаление элемента списка: `SyncRemovalInterface`](#удаление-элемента-списка-syncremovalinterface)
   - [`CatalogWidgetInterface` и `EntryWidgetInterface`](#catalogwidgetinterface-и-entrywidgetinterface)
   - [`CandidateSearchInterface`](#candidatesearchinterface)
   - [`SettingsPageInterface`](#settingspageinterface)
@@ -275,6 +276,22 @@ class MySourcePlugin implements SyncInterface
 (например, `"watching"`/`"completed"` MAL) в этот enum один раз, в своём
 адаптере; хост-приложение затем сопоставляет его со своим внутренним
 представлением статуса.
+
+#### Удаление элемента списка: `SyncRemovalInterface`
+
+Необязательное расширение роли: `SyncRemovalInterface extends SyncInterface`
+с единственным методом `remove(string $externalId): void`. Sync-плагин
+реализует его дополнительно, если источник умеет удалять элементы списка;
+хост проверяет возможность через `instanceof`. `SyncInterface` при этом не
+меняется.
+
+Удаляется только элемент списка пользователя на источнике (`$externalId` —
+тот же id, что в `SyncItem::$externalId`), сам тайтл не затрагивается, как и
+остальные элементы списка. Вызов идемпотентен: если тайтла в списке нет,
+метод штатно возвращается. Без авторизации бросается
+`ReauthRequiredException`, как у `push()`/`pull()`; любой другой сбой (сеть,
+5xx) — исключение, ретраи при этом — забота хоста. Хост вызывает `remove()`
+только по явному действию пользователя.
 
 ### `CatalogWidgetInterface` и `EntryWidgetInterface`
 

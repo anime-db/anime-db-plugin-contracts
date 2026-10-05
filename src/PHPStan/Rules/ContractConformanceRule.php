@@ -34,6 +34,7 @@ use AnimeDb\PluginContracts\Filler\FillerInterface;
 use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
 use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
+use AnimeDb\PluginContracts\Sync\SyncRemovalInterface;
 use AnimeDb\PluginContracts\Widget\CatalogWidgetInterface;
 use AnimeDb\PluginContracts\Widget\EntryWidgetInterface;
 use PhpParser\Node;
@@ -75,6 +76,7 @@ final class ContractConformanceRule implements Rule
         FillerInterface::class,
         SearchByPluginInterface::class,
         SyncInterface::class,
+        SyncRemovalInterface::class,
         CatalogWidgetInterface::class,
         EntryWidgetInterface::class,
         CandidateSearchInterface::class,

@@ -13,6 +13,7 @@ use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\Settings\SettingsPageInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use AnimeDb\PluginContracts\Sync\SyncItem;
+use AnimeDb\PluginContracts\Sync\SyncRemovalInterface;
 
 class ConformingFillerPlugin implements FillerInterface
 {
@@ -184,5 +185,39 @@ class ConformingSettingsPagePlugin implements SettingsPageInterface
     public function render(): string
     {
         return '';
+    }
+}
+
+class ConformingSyncRemovalPlugin extends ConformingFillerPlugin implements SyncRemovalInterface
+{
+    public function push(SyncItem $item): SyncItem
+    {
+        return $item;
+    }
+
+    public function pull(): iterable
+    {
+        return [];
+    }
+
+    public function remove(string $externalId): void
+    {
+    }
+}
+
+class WrongRemoveParameterTypePlugin extends ConformingFillerPlugin implements SyncRemovalInterface
+{
+    public function push(SyncItem $item): SyncItem
+    {
+        return $item;
+    }
+
+    public function pull(): iterable
+    {
+        return [];
+    }
+
+    public function remove(?string $externalId): void
+    {
     }
 }
