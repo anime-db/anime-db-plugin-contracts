@@ -37,6 +37,28 @@ namespace AnimeDb\PluginContracts\Model;
  * the host maps this enum to its internal one instead of sharing it. MAL's
  * genre list is periodically extended, so adding a new case here is a minor
  * (not breaking) version bump.
+ *
+ * Origin of the dictionary: a mirror of the Genres section of the MyAnimeList
+ * taxonomy (https://myanimelist.net/anime.php). The 18 values match that section
+ * name for name. The axis is MAL, not Shikimori: Shikimori inherited the MAL
+ * taxonomy but diverged from it (`Award Winning` is a theme there, while in MAL
+ * and in this contract it is a genre; it also keeps the legacy `Yaoi` and `Yuri`
+ * apart from `Boys Love` and `Girls Love`).
+ *
+ * The fourth MAL section, Explicit Genres (`Ecchi`, `Erotica`, `Hentai`), is
+ * excluded on purpose: this is a decision, not a gap in the dictionary.
+ *
+ * The values of {@see GenreCode}, {@see ThemeCode} and {@see Demographic} do not
+ * overlap. A plugin maps a source term by normalizing its English name, calling
+ * `tryFrom()` on all three enums, routing by the match, and dropping the term
+ * (with a log entry) when none of them matches.
+ *
+ * The dictionaries reflect MAL after its 2022 reorganization. A source that
+ * speaks the pre-reorganization vocabulary cannot be resolved by direct name
+ * matching: `Thriller` became `Suspense`, `Shoujo-ai` became `Girls Love`,
+ * `Shounen-ai` became `Boys Love`, `Dementia` became `Avant Garde`, and `Magic`
+ * was removed altogether. A plugin for such a source needs its own table of
+ * exceptions.
  */
 enum GenreCode: string
 {
