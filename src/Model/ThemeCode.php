@@ -37,6 +37,15 @@ namespace AnimeDb\PluginContracts\Model;
  * the host maps this enum to its internal one instead of sharing it. MAL's
  * theme list is periodically extended, so adding a new case here is a minor
  * (not breaking) version bump.
+ *
+ * Origin of the dictionary: a mirror of the Themes section of the MyAnimeList
+ * taxonomy (https://myanimelist.net/anime.php). The 52 values match that section
+ * by name (the case values are lowercase slugs of the MAL names, see {@see GenreCode}
+ * for the mapping rule).
+ *
+ * The rest of the origin rules (MAL axis vs. Shikimori, excluded Explicit Genres, the
+ * mapping rule and the 2022 reorganization) are common to all three dictionaries and
+ * are described in {@see GenreCode}.
  */
 enum ThemeCode: string
 {

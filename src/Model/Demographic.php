@@ -34,6 +34,15 @@ namespace AnimeDb\PluginContracts\Model;
  * rather than a plain string: values are kept 1:1 with the host
  * application's own demographic enum, but this package does not depend on
  * it, so the host maps this enum to its internal one instead of sharing it.
+ *
+ * Origin of the dictionary: a mirror of the Demographics section of the MyAnimeList
+ * taxonomy (https://myanimelist.net/anime.php). The 5 values match that section
+ * by name (the case values are lowercase slugs of the MAL names, see {@see GenreCode}
+ * for the mapping rule).
+ *
+ * The rest of the origin rules (MAL axis vs. Shikimori, excluded Explicit Genres, the
+ * mapping rule and the 2022 reorganization) are common to all three dictionaries and
+ * are described in {@see GenreCode}.
  */
 enum Demographic: string
 {
