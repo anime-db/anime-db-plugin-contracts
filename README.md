@@ -241,6 +241,7 @@ class MySourcePlugin implements FillerInterface
 
 ```php
 use AnimeDb\PluginContracts\Filler\PluginAnimeData;
+use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Search\SearchByPluginCandidate;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use AnimeDb\PluginContracts\Sync\SyncItem;
@@ -264,6 +265,7 @@ class MySourcePlugin implements SyncInterface
                 externalId: $entry->id,
                 status: SyncStatus::Watching, // нормализовано из словаря источника
                 title: $entry->title,
+                type: AnimeType::Tv, // или null, если источник тип не сообщает
             );
         }
     }
@@ -276,6 +278,16 @@ class MySourcePlugin implements SyncInterface
 (например, `"watching"`/`"completed"` MAL) в этот enum один раз, в своём
 адаптере; хост-приложение затем сопоставляет его со своим внутренним
 представлением статуса.
+
+`SyncItem::$type` (`?AnimeType`, четвёртый аргумент конструктора, после
+`title`) — тип тайтла на источнике; ядро по нему замечает расхождение с
+типом записи в каталоге. Аргумент обязательный, без значения по умолчанию,
+но допускает `null`: плагин в каждом вызове явно указывает, что передаёт.
+`null` значит «источник тип не сообщает или его значение не отображается в
+`AnimeType`» (MAL `unknown`, `pv`, `cm`; Shikimori `pv`, `cm`) — тип
+выдумывать нельзя. В `push()` тип `null` в обе стороны: ядро передаёт
+`null`, плагин возвращает в подтверждающем `SyncItem` `null`, а не эхо
+входного значения, потому что тип на источник не пишется.
 
 #### Удаление элемента списка: `SyncRemovalInterface`
 

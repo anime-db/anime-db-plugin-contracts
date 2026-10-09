@@ -27,12 +27,21 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Sync;
 
+use AnimeDb\PluginContracts\Model\AnimeType;
+
 /**
  * A single user list entry synced between the host application and an external source.
  *
  * Plain DTO used by {@see SyncInterface}, not a host application entity. Minimal field
  * set for a pilot integration; expect it to grow once the first real sync plugin
  * (e.g. Shikimori) is implemented.
+ *
+ * `$type` is a required argument (no default) that accepts `null`: every plugin states
+ * explicitly what it passes. `null` means the source does not report a type or its value
+ * has no counterpart in {@see AnimeType} (e.g. MAL `unknown`, `pv`, `cm`; Shikimori `pv`,
+ * `cm`); a type must never be invented. In {@see SyncInterface::push()} the type is `null`
+ * both ways: the host passes `null`, and the plugin returns `null` in the confirming item
+ * rather than echoing the input, since the type is not written to the source.
  */
 final class SyncItem
 {
@@ -49,6 +58,11 @@ final class SyncItem
          * Title of the anime, as known to the source.
          */
         public readonly string $title,
+        /**
+         * Type of the title on the source, or `null` if the source does not report it
+         * or its value does not map to {@see AnimeType}. Always `null` in `push()`.
+         */
+        public readonly ?AnimeType $type,
         /**
          * Time of the last change of this list entry, as reported by the source.
          *

@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace AnimeDb\PluginContracts\Tests\Sync;
 
+use AnimeDb\PluginContracts\Model\AnimeType;
 use AnimeDb\PluginContracts\Sync\SyncItem;
 use AnimeDb\PluginContracts\Sync\SyncStatus;
 use PHPUnit\Framework\TestCase;
@@ -39,6 +40,7 @@ class SyncItemTest extends TestCase
             externalId: '1',
             status: SyncStatus::Watching,
             title: 'Cowboy Bebop',
+            type: null,
         );
 
         self::assertNull($item->updatedAt);
@@ -53,6 +55,7 @@ class SyncItemTest extends TestCase
             externalId: '1',
             status: SyncStatus::Watching,
             title: 'Cowboy Bebop',
+            type: AnimeType::Tv,
             updatedAt: $updatedAt,
             watchedEpisodes: 12,
         );
@@ -60,7 +63,38 @@ class SyncItemTest extends TestCase
         self::assertSame('1', $item->externalId);
         self::assertSame(SyncStatus::Watching, $item->status);
         self::assertSame('Cowboy Bebop', $item->title);
+        self::assertSame(AnimeType::Tv, $item->type);
         self::assertSame($updatedAt, $item->updatedAt);
         self::assertSame(12, $item->watchedEpisodes);
+    }
+
+    public function testTypeIsAvailable(): void
+    {
+        $item = new SyncItem('1', SyncStatus::Plan, 'Akira', AnimeType::Movie);
+
+        self::assertSame(AnimeType::Movie, $item->type);
+    }
+
+    public function testTypeMayBeNull(): void
+    {
+        $item = new SyncItem('1', SyncStatus::Plan, 'Akira', null);
+
+        self::assertNull($item->type);
+    }
+
+    public function testTypeIsRequired(): void
+    {
+        $this->expectException(\ArgumentCountError::class);
+
+        // @phpstan-ignore-next-line arguments.count
+        new SyncItem('1', SyncStatus::Plan, 'Akira');
+    }
+
+    public function testTypeIsFourthPositionalArgument(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        // @phpstan-ignore-next-line argument.type
+        new SyncItem('1', SyncStatus::Plan, 'Akira', new \DateTimeImmutable());
     }
 }
