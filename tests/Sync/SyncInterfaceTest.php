@@ -64,6 +64,7 @@ class SyncInterfaceTest extends TestCase
                     externalId: $item->externalId,
                     status: $item->status,
                     title: $item->title,
+                    type: null,
                     updatedAt: new \DateTimeImmutable('2026-08-11T12:00:00+00:00'),
                     watchedEpisodes: $item->watchedEpisodes,
                 );
@@ -79,6 +80,7 @@ class SyncInterfaceTest extends TestCase
             externalId: '1',
             status: SyncStatus::Watching,
             title: 'Cowboy Bebop',
+            type: null,
             watchedEpisodes: 5,
         ));
 
