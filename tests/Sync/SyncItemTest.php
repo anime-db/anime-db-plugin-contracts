@@ -82,6 +82,14 @@ class SyncItemTest extends TestCase
         self::assertNull($item->type);
     }
 
+    public function testTypeIsRequired(): void
+    {
+        $this->expectException(\ArgumentCountError::class);
+
+        // @phpstan-ignore-next-line arguments.count
+        new SyncItem('1', SyncStatus::Plan, 'Akira');
+    }
+
     public function testTypeIsFourthPositionalArgument(): void
     {
         $this->expectException(\TypeError::class);
