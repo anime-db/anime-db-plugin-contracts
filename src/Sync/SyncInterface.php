@@ -56,6 +56,11 @@ interface SyncInterface extends FillerInterface
      * If the source's API does not return the record or a timestamp on write, the
      * plugin returns a {@see SyncItem} with what it actually sent and
      * `updatedAt: null` — the host falls back to its own value in that case.
+     *
+     * The one exception is {@see SyncItem::$type}: in the confirming item it is always
+     * `null`, even if the input item carried a type. Echoing the input type is forbidden:
+     * the title type is not written to the source, so the echo would pass off the host's
+     * type as the source's.
      */
     public function push(SyncItem $item): SyncItem;
 
