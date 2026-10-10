@@ -7,8 +7,8 @@
   network. Additive optional extension, released as a patch; plugins that use it require
   `^0.26.1`.
 - Documented the new service in the README, classified it as non-network in
-  `NoNetworkAccessInLocalPluginsRule`, and documented in `Settings\SettingsStoreInterface` that
-  settings survive plugin uninstall.
+  `NoNetworkAccessInLocalPluginsRule`, and documented that durable plugin state belongs in
+  `SettingsStoreInterface`.
 
 ## 0.26.0
 

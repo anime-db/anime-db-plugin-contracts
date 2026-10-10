@@ -33,12 +33,6 @@ namespace AnimeDb\PluginContracts\Settings;
  * durable plugin state that cannot be restored by a request (attempt
  * timestamps, "banned until" marks, the time of the last download).
  *
- * Settings survive uninstalling the plugin: the host must not delete them
- * when the plugin is uninstalled, so a reinstalled plugin finds its stored
- * state intact. (Contrast with
- * {@see \AnimeDb\PluginContracts\Cache\PluginCacheDirectoryInterface}, whose
- * directory is deleted on uninstall.)
- *
  * The host application provides this service; a plugin only ever consumes
  * it via constructor injection, type-hinting this interface, the same way it
  * obtains {@see \AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface}.

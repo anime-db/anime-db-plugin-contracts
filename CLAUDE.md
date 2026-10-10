@@ -46,7 +46,6 @@ anime-db-plugin-contracts/
 │   ├── LlmDisabledException.php            # LLM выключен в настройках хоста — плагин деградирует без падения
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
 │   ├── PluginDataStoreInterface.php        # сервис ядра: read/write собственного payload плагина по AnimeId (без flush)
-│   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
 │   ├── CatalogReaderInterface.php          # сервис ядра: read-only проекция текущего состояния записи по AnimeId
 │   ├── AnimeView.php                       # DTO read-only проекции (не PluginAnimeData, не сущность хоста)
 │   ├── DownloadSource.php                  # VO источника закачки (именованные конструкторы)
@@ -62,6 +61,7 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskQueueInterface.php    # сервис ядра: постановка отложенной задачи плагина
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
+│   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
 │   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта

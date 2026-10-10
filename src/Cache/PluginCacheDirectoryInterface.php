@@ -44,8 +44,10 @@ namespace AnimeDb\PluginContracts\Cache;
  * original source or recomputed (a downloaded dump, an index built from it). What does not: durable plugin
  * state that cannot be restored by a request (attempt timestamps, "banned
  * until" marks, the time of the last download). Such state goes to
- * `SettingsStoreInterface`: the host deletes this directory when the plugin
- * is uninstalled, while plugin settings survive that.
+ * `SettingsStoreInterface`, because an empty cache directory is a normal state
+ * (first run, reinstall, manual cleanup), while the host does not clear plugin
+ * settings as long as the plugin is installed. What happens to settings when the
+ * plugin is uninstalled is not defined by this interface.
  *
  * Lifetime: the host does not clean the directory while the plugin is
  * installed, and it survives plugin updates. The host deletes it when the
