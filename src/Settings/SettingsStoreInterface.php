@@ -29,7 +29,15 @@ namespace AnimeDb\PluginContracts\Settings;
 
 /**
  * Core-provided read/write access to a plugin's own settings — configuration
- * values as well as tokens/secrets a plugin's OAuth flow has obtained.
+ * values as well as tokens/secrets a plugin's OAuth flow has obtained, and
+ * durable plugin state that cannot be restored by a request (attempt
+ * timestamps, "banned until" marks, the time of the last download).
+ *
+ * Settings survive uninstalling the plugin: the host must not delete them
+ * when the plugin is uninstalled, so a reinstalled plugin finds its stored
+ * state intact. (Contrast with
+ * {@see \AnimeDb\PluginContracts\Cache\PluginCacheDirectoryInterface}, whose
+ * directory is deleted on uninstall.)
  *
  * The host application provides this service; a plugin only ever consumes
  * it via constructor injection, type-hinting this interface, the same way it

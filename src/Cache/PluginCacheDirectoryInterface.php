@@ -40,8 +40,8 @@ namespace AnimeDb\PluginContracts\Cache;
  * knows it, the same way as for `PluginDataStoreInterface` and
  * `SettingsStoreInterface`. Every plugin has its own directory.
  *
- * What belongs here: derived data that can be restored from the network
- * (a downloaded dump, an index built from it). What does not: durable plugin
+ * What belongs here: derived data that can be restored from the plugin's
+ * original source or recomputed (a downloaded dump, an index built from it). What does not: durable plugin
  * state that cannot be restored by a request (attempt timestamps, "banned
  * until" marks, the time of the last download). Such state goes to
  * `SettingsStoreInterface`: the host deletes this directory when the plugin
@@ -51,7 +51,8 @@ namespace AnimeDb\PluginContracts\Cache;
  * installed, and it survives plugin updates. The host deletes it when the
  * plugin is uninstalled. Even so, an empty directory is a normal state (first
  * run, reinstall of the plugin): the plugin must cope with it by restoring
- * the content from the network, not by failing.
+ * the content from the original source (for a network plugin — from the
+ * network) or by recomputing it, not by failing.
  *
  * The directory is not part of a backup, a catalog export or a settings
  * export.
@@ -67,6 +68,16 @@ interface PluginCacheDirectoryInterface
      *
      * The directory exists and is writable. Creating it is the host's
      * responsibility, not the plugin's.
+     *
+     * The path has no trailing directory separator, so a plugin may append
+     * `'/' . $name` directly. Every call returns the same value, in every
+     * process (a web request and a `BackgroundTaskHandlerInterface` handler
+     * alike): a lock file taken with `flock` only works if all processes
+     * resolve the same path.
+     *
+     * The directory is accessible to several processes of the same plugin at
+     * once; synchronizing access (e.g. with `flock`) is the plugin's job, not
+     * the host's.
      */
     public function path(): string;
 }

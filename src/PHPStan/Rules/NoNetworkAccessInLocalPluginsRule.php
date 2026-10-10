@@ -103,6 +103,8 @@ use Psr\Http\Message\RequestFactoryInterface;
  * - {@see \AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface} and
  *   {@see \AnimeDb\PluginContracts\Settings\SettingsStoreInterface} — local read/write
  *   stores keyed by plugin id, no external source involved.
+ * - {@see \AnimeDb\PluginContracts\Cache\PluginCacheDirectoryInterface} — `path()` returns
+ *   a directory on the local filesystem; no external source involved.
  * - {@see \AnimeDb\PluginContracts\Media\MediaLibraryInterface} and
  *   {@see \AnimeDb\PluginContracts\Media\MediaProbeInterface} — list and read the
  *   technical characteristics of files already present in a record's local storage
