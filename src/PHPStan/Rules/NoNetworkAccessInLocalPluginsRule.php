@@ -34,6 +34,7 @@ use AnimeDb\PluginContracts\Manifest\InvalidManifestException;
 use AnimeDb\PluginContracts\Manifest\InvalidManifestJsonException;
 use AnimeDb\PluginContracts\Manifest\ManifestParser;
 use AnimeDb\PluginContracts\Manifest\PluginType;
+use AnimeDb\PluginContracts\Network\DatagramChannelFactoryInterface;
 use AnimeDb\PluginContracts\Search\SearchByPluginInterface;
 use AnimeDb\PluginContracts\Sync\SyncInterface;
 use PhpParser\Node;
@@ -82,6 +83,9 @@ use Psr\Http\Message\RequestFactoryInterface;
  * - {@see DownloadServiceInterface} — `enqueue()` starts a download from an external
  *   network source (a magnet link or torrent file); this is the package author's own
  *   canonical "definitely network" example.
+ * - {@see DatagramChannelFactoryInterface} — `open()` opens a UDP channel to a remote host;
+ *   sending a datagram through it *is* a network call, just over a transport other than
+ *   PSR-18.
  *
  * ## Contract types deliberately NOT treated as network
  *
@@ -188,6 +192,7 @@ final class NoNetworkAccessInLocalPluginsRule implements Rule
         SyncInterface::class,
         CandidateSearchInterface::class,
         DownloadServiceInterface::class,
+        DatagramChannelFactoryInterface::class,
     ];
 
     private ManifestParser $manifestParser;

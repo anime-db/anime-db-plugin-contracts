@@ -34,6 +34,7 @@ composer require anime-db/plugin-contracts
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
   - [`SettingsStoreInterface`](#settingsstoreinterface)
   - [`PluginCacheDirectoryInterface`](#plugincachedirectoryinterface)
+  - [`Network\DatagramChannelFactoryInterface`](#networkdatagramchannelfactoryinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [`BackgroundTaskQueueInterface`](#backgroundtaskqueueinterface)
   - [`AnimeFilesChangedEvent` и `FilesChangeReason`](#animefileschangedevent-и-fileschangereason)
@@ -858,6 +859,44 @@ class MySourceIndex
 - Не PSR-16-кэш и не заменяет будущий per-plugin TTL-кэш: PSR-16 — для
   значений «ключ → данные с TTL», каталог — для файлов с реальным путём.
 
+### `Network\DatagramChannelFactoryInterface`
+
+Необязательный сервис ядра: датаграммный (UDP) канал к удалённому хосту. Это
+единственный путь плагина к UDP — сокеты в коде плагина по-прежнему запрещены
+(`NoDangerousPrimitivesRule`). Плагин, который его использует, требует
+`^0.26.2`.
+
+```php
+use AnimeDb\PluginContracts\Network\DatagramChannelFactoryInterface;
+use AnimeDb\PluginContracts\Network\DatagramUnavailableException;
+
+$channel = $factory->open('example.org', 9000);
+try {
+    $channel->send($request);
+    $reply = $channel->receive(5.0); // null — таймаут
+} finally {
+    $channel->close();
+}
+```
+
+- `open(string $host, int $port): DatagramChannelInterface` — открывает канал;
+  экземпляр фабрики плагин получает через DI, реализует его хост.
+- `DatagramChannelInterface`: `send(string $payload): void`,
+  `receive(float $timeoutSeconds): ?string` (одна датаграмма, `null` — таймаут),
+  `close(): void`.
+- Канал живёт ровно один `open()…close()` и держит **один** локальный сокет
+  (локальный порт) на всё это время: все `send()` уходят с одного адреса и
+  порта. Протоколы с сессией привязывают сессию к адресу и порту клиента, пакет
+  с другого порта не будет с ней связан. Держать порт дольше одного
+  `open()…close()` не требуется.
+- При настроенном в хосте прокси `open()` бросает
+  `DatagramUnavailableException`: UDP не проходит через HTTP-прокси и через
+  SOCKS5 без `UDP ASSOCIATE`, а отправлять датаграммы мимо прокси
+  пользователя хост не вправе. Сообщение исключения — понятное пользователю
+  объяснение; плагин может показать его как есть.
+- Это сетевой тип: плагину `type: local` его объявлять нельзя
+  (`NoNetworkAccessInLocalPluginsRule`).
+
 ### `DownloadServiceInterface`
 
 Сервис ядра для постановки задачи на скачивание. Плагин не работает с
@@ -1569,7 +1608,10 @@ includes:
   поиск по внешнему источнику, что и `find()` у `SearchByPluginInterface`;
 - `DownloadServiceInterface` — `enqueue()` запускает скачивание с внешнего
   сетевого источника (magnet-ссылка или torrent-файл) — собственный пример
-  автора задачи «заведомо сетевого» интерфейса.
+  автора задачи «заведомо сетевого» интерфейса;
+- `Network\DatagramChannelFactoryInterface` — `open()` открывает UDP-канал к
+  удалённому хосту; отправка датаграммы через него и есть сетевой вызов, только
+  не по PSR-18.
 
 Интерфейсы контракта, для которых явно принято обратное решение — «не
 сетевой»:

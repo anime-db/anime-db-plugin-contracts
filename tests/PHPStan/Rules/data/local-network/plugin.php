@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork;
 
 use AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface;
+use AnimeDb\PluginContracts\Network\DatagramChannelFactoryInterface;
 use AnimeDb\PluginContracts\Settings\SettingsStoreInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -18,6 +19,7 @@ final class NetworkInjectingPlugin
         ?CandidateSearchInterface $candidateSearch,
         private readonly SettingsStoreInterface $settings,
         RequestFactoryInterface $requestFactory,
+        DatagramChannelFactoryInterface $datagrams,
     ) {
         $this->requestFactory = $requestFactory;
     }

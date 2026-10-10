@@ -62,6 +62,7 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
 │   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
+│   ├── Network/                            # DatagramChannelFactoryInterface/DatagramChannelInterface/DatagramUnavailableException — сервис ядра: UDP-канал хоста (необязательный, 0.26.2)
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
 │   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта

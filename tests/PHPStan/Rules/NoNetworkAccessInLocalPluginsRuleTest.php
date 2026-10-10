@@ -46,19 +46,23 @@ class NoNetworkAccessInLocalPluginsRuleTest extends RuleTestCase
         $this->analyse([__DIR__.'/data/local-network/plugin.php'], [
             [
                 'Constructor parameter $client of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (Psr\Http\Client\ClientInterface), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
-                17,
-            ],
-            [
-                'Constructor parameter $candidateSearch of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface|null), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
                 18,
             ],
             [
+                'Constructor parameter $candidateSearch of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (AnimeDb\PluginContracts\CandidateSearch\CandidateSearchInterface|null), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
+                19,
+            ],
+            [
                 'Constructor parameter $requestFactory of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (Psr\Http\Message\RequestFactoryInterface), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
-                20,
+                21,
             ],
             [
                 'Property $requestFactory of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (Psr\Http\Message\RequestFactoryInterface), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
-                14,
+                15,
+            ],
+            [
+                'Constructor parameter $datagrams of AnimeDb\PluginContracts\Tests\PHPStan\Rules\Data\LocalNetwork\NetworkInjectingPlugin declares a network-capable type (AnimeDb\PluginContracts\Network\DatagramChannelFactoryInterface), but the plugin\'s manifest.json declares it as type "local", which must not access the network even through a host-provided abstraction.',
+                22,
             ],
         ]);
     }

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.26.2
+
+- Added `Network\DatagramChannelFactoryInterface`, `Network\DatagramChannelInterface` and
+  `Network\DatagramUnavailableException`: an optional host-provided UDP channel. A channel
+  holds one local socket for the whole `open()` … `close()`; `open()` throws
+  `DatagramUnavailableException` while a proxy is configured in the host. Additive optional
+  extension, released as a patch; plugins that use it require `^0.26.2`.
+- Classified `DatagramChannelFactoryInterface` as a network type in
+  `NoNetworkAccessInLocalPluginsRule`, documented the channel in the README.
+
 ## 0.26.1
 
 - Added `Cache\PluginCacheDirectoryInterface` with a single method `path(): string`: an
