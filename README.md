@@ -33,6 +33,7 @@ composer require anime-db/plugin-contracts
   - [`LlmServiceInterface`](#llmserviceinterface)
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
   - [`SettingsStoreInterface`](#settingsstoreinterface)
+  - [`PluginCacheDirectoryInterface`](#plugincachedirectoryinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [`BackgroundTaskQueueInterface`](#backgroundtaskqueueinterface)
   - [`AnimeFilesChangedEvent` и `FilesChangeReason`](#animefileschangedevent-и-fileschangereason)
@@ -815,6 +816,48 @@ security-граница: плагин — доверенный код после
 хранилище защищены на уровне реализации хост-приложения (шифрование на
 диске и т.п.), а не на уровне этого контракта.
 
+### `PluginCacheDirectoryInterface`
+
+Необязательный сервис ядра: собственный каталог плагина на диске для файлов,
+которым нужен реальный путь (файл SQLite, lock-файл для `flock`). Плагин,
+который его использует, требует `^0.26.1`.
+
+```php
+use AnimeDb\PluginContracts\Cache\PluginCacheDirectoryInterface;
+
+class MySourceIndex
+{
+    public function __construct(
+        private readonly PluginCacheDirectoryInterface $cacheDir,
+    ) {
+    }
+
+    public function lockFile(): string
+    {
+        return $this->cacheDir->path() . '/index.lock';
+    }
+}
+```
+
+- `path()` — абсолютный путь без завершающего разделителя к существующему
+  каталогу, доступному на запись; создаёт его хост. Значение одинаково на
+  каждом вызове и во всех процессах (веб-запрос, фоновый обработчик).
+- Каталог доступен нескольким процессам плагина одновременно — синхронизация
+  (`flock`) забота плагина.
+- Экземпляр скоупнут на плагин (id не в сигнатуре); у каждого плагина свой
+  каталог.
+- Для производных данных, которые можно восстановить из исходного источника
+  (для сетевых плагинов — из сети) или пересчитать. Пустой каталог — штатное
+  состояние: плагин восстанавливает содержимое, а не падает. Долговечное
+  состояние — в `SettingsStoreInterface`: пустой каталог кэша — штатное
+  состояние (первый запуск, переустановка, ручная очистка), а настройки
+  плагина хост не очищает, пока плагин установлен. Что происходит с
+  настройками при удалении плагина, этот интерфейс не определяет.
+- Хост не чистит каталог, пока плагин установлен; он переживает обновление
+  плагина. В бэкап, экспорт каталога и экспорт настроек каталог не входит.
+- Не PSR-16-кэш и не заменяет будущий per-plugin TTL-кэш: PSR-16 — для
+  значений «ключ → данные с TTL», каталог — для файлов с реальным путём.
+
 ### `DownloadServiceInterface`
 
 Сервис ядра для постановки задачи на скачивание. Плагин не работает с
@@ -1548,6 +1591,8 @@ includes:
 - `PluginDataStoreInterface`/`SettingsStoreInterface` — локальные
   хранилища чтения/записи, скоупнутые на id плагина, внешний источник не
   участвует;
+- `PluginCacheDirectoryInterface` — `path()` возвращает каталог на локальной
+  ФС, внешний источник не участвует;
 - `LlmServiceInterface` — доступ к **локальной** LLM хоста. Его реализация
   действительно обращается к модели по HTTP через PSR-18-клиент, но этот
   клиент обращается к локальной модели самого хоста, а не в интернет: смысл
