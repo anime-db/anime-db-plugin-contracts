@@ -862,9 +862,10 @@ class MySourceIndex
 ### `Network\DatagramChannelFactoryInterface`
 
 Необязательный сервис ядра: датаграммный (UDP) канал к удалённому хосту. Это
-единственный путь плагина к UDP — сокеты в коде плагина по-прежнему запрещены
-(`NoDangerousPrimitivesRule`). Плагин, который его использует, требует
-`^0.26.2`.
+штатный путь плагина к UDP, учитывающий настройки хоста (прокси). Машинной
+защиты от прямых `socket_*` правила пакета не дают: `NoDangerousPrimitivesRule`
+запрещает только `fsockopen`/`pfsockopen`/`stream_socket_*` и `curl_*`.
+Плагин, который его использует, требует `^0.26.2`.
 
 ```php
 use AnimeDb\PluginContracts\Network\DatagramChannelFactoryInterface;
@@ -884,6 +885,15 @@ try {
 - `DatagramChannelInterface`: `send(string $payload): void`,
   `receive(float $timeoutSeconds): ?string` (одна датаграмма, `null` — таймаут),
   `close(): void`.
+- `host` не пуст, `port` в диапазоне 1..65535, иначе `open()` бросает
+  `DatagramUnavailableException`. Ошибка резолва имени — тоже она.
+- `receive()` возвращает только датаграммы от `host:port` из `open()` (сокет
+  «подключён» к пиру); пакеты от других отправителей отбрасываются.
+  Датаграмма возвращается целиком, без усечения, до 65507 байт; `send()` с
+  большим payload бросает `DatagramUnavailableException`. `$timeoutSeconds`:
+  `0` — неблокирующий опрос, отрицательное значение трактуется как `0`.
+- Сбой `send()`/`receive()` (в том числе ICMP port unreachable) и вызов после
+  `close()` — `DatagramUnavailableException`.
 - Канал живёт ровно один `open()…close()` и держит **один** локальный сокет
   (локальный порт) на всё это время: все `send()` уходят с одного адреса и
   порта. Протоколы с сессией привязывают сессию к адресу и порту клиента, пакет

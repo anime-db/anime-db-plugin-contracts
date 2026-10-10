@@ -45,14 +45,25 @@ namespace AnimeDb\PluginContracts\Network;
 interface DatagramChannelInterface
 {
     /**
-     * Sends one datagram with the given payload.
+     * Sends one datagram with the given payload (at most 65507 bytes).
+     *
+     * @throws DatagramUnavailableException when the payload is too large, the
+     *                                      send fails, or the channel is closed
      */
     public function send(string $payload): void;
 
     /**
      * Waits up to `$timeoutSeconds` for one datagram and returns its payload.
      *
+     * Only datagrams from the `host:port` given to `open()` are returned
+     * (the socket is connected to that peer); others are discarded. A datagram
+     * is returned whole, up to 65507 bytes, never silently truncated. `0`
+     * polls without blocking; a negative value is treated as `0`.
+     *
      * Returns `null` on timeout.
+     *
+     * @throws DatagramUnavailableException when the receive fails (for example
+     *                                      ICMP port unreachable) or the channel is closed
      */
     public function receive(float $timeoutSeconds): ?string;
 

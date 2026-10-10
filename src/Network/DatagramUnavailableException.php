@@ -28,7 +28,8 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Network;
 
 /**
- * Thrown by {@see DatagramChannelFactoryInterface::open()} when a datagram
+ * Thrown by {@see DatagramChannelFactoryInterface::open()} (and by a channel
+ * on a send/receive failure or use after close) when a datagram
  * channel cannot be provided — in particular when a proxy is configured in the
  * host, because UDP does not pass through an HTTP proxy or through SOCKS5
  * without `UDP ASSOCIATE`, and the host does not send datagrams around the

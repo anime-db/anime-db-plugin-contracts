@@ -34,9 +34,10 @@ namespace AnimeDb\PluginContracts\Network;
  * any existing signature. A plugin that uses it requires `^0.26.2`.
  *
  * A plugin obtains this service via constructor injection, type-hinting this
- * interface; the host implements it. This is the only way for a plugin to
- * send a UDP datagram: raw sockets in plugin code stay forbidden (see
- * `NoDangerousPrimitivesRule`) and are not relaxed by this interface.
+ * interface; the host implements it. This is the supported way for a plugin to
+ * send a UDP datagram that honours the host settings (such as the proxy).
+ * `NoDangerousPrimitivesRule` still forbids `fsockopen`/`stream_socket_*` and
+ * is not relaxed by this interface; it does not cover the `socket_*` family.
  *
  * It is a network capability: a plugin with manifest `type: local` must not
  * declare it (checked by `NoNetworkAccessInLocalPluginsRule`).
@@ -55,9 +56,13 @@ interface DatagramChannelFactoryInterface
      * local socket (one local address and port) for that whole time; see
      * {@see DatagramChannelInterface}.
      *
+     * `$host` must be non-empty and `$port` within 1..65535; name resolution
+     * happens here.
+     *
      * @throws DatagramUnavailableException when a datagram channel cannot be
-     *                                      provided, in particular when a proxy is configured in the host; the
-     *                                      message explains to the user why UDP is unavailable
+     *                                      provided: a proxy is configured in the host, `$host` is empty or does
+     *                                      not resolve, or `$port` is out of range; the message explains to the
+     *                                      user why UDP is unavailable
      */
     public function open(string $host, int $port): DatagramChannelInterface;
 }
