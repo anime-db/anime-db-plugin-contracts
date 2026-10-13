@@ -57,6 +57,7 @@ class PluginAnimeDataTest extends TestCase
         self::assertNull($data->countries);
         self::assertNull($data->cover);
         self::assertNull($data->images);
+        self::assertNull($data->externalUrls);
     }
 
     public function testPropertiesReturnConstructorValues(): void
@@ -102,5 +103,39 @@ class PluginAnimeDataTest extends TestCase
         self::assertSame(['JP'], $data->countries);
         self::assertSame('https://example.com/cover.jpg', $data->cover);
         self::assertSame(['https://example.com/1.jpg', 'https://example.com/2.jpg'], $data->images);
+    }
+
+    public function testExternalUrlsReturnConstructorValue(): void
+    {
+        $urls = ['https://example.com/anime/1', 'https://example.org/wiki/Cowboy_Bebop'];
+
+        $data = new PluginAnimeData('Cowboy Bebop', externalUrls: $urls);
+
+        self::assertSame($urls, $data->externalUrls);
+    }
+
+    public function testExternalUrlsIsLastPositionalArgument(): void
+    {
+        $data = new PluginAnimeData(
+            'Cowboy Bebop',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            'cover.jpg',
+            ['1.jpg'],
+        );
+
+        self::assertSame('cover.jpg', $data->cover);
+        self::assertSame(['1.jpg'], $data->images);
+        self::assertNull($data->externalUrls);
     }
 }

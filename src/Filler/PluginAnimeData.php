@@ -58,6 +58,10 @@ class PluginAnimeData
      * @param string[]|null              $studios
      * @param string[]|null              $countries
      * @param string[]|null              $images
+     * @param string[]|null              $externalUrls     absolute http(s) urls of pages describing this same title
+     *                                                     (encyclopedias, catalogs, wikis, the official site),
+     *                                                     including the source's own page; not streaming, stores,
+     *                                                     social networks or related titles (sequels, prequels)
      */
     public function __construct(
         public readonly string $title,
@@ -75,6 +79,7 @@ class PluginAnimeData
         public readonly ?array $countries = null,
         public readonly ?string $cover = null,
         public readonly ?array $images = null,
+        public readonly ?array $externalUrls = null,
     ) {
     }
 }
