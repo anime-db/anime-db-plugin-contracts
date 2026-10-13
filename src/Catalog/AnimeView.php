@@ -74,7 +74,8 @@ final class AnimeView
         public readonly array $sources,
         /**
          * This plugin's own external id on `sources`, pre-resolved by the host, or
-         * null if the record is not linked to this plugin's source.
+         * null if the host could not resolve it (see
+         * {@see ExternalIdResolutionInterface::resolveExternalId()}).
          */
         public readonly ?string $externalId,
     ) {

@@ -8,6 +8,10 @@
   social networks or related titles. Its name in `FillerInterface::getFillableFields()` is
   `externalUrls`. Additive optional extension, released as a patch; plugins that fill the field
   require `^0.26.2`.
+- `ExternalIdResolutionInterface::resolveExternalId()` now **permits** a plugin to recognize its id
+  from the URL of a source sharing the same id space, when no URL matches the plugin's own pattern;
+  an own-pattern URL always takes precedence. Existing implementations remain conforming; the host
+  is unaffected. No signature changes.
 
 ## 0.26.1
 
