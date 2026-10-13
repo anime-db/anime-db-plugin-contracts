@@ -56,8 +56,11 @@ interface ExternalIdResolutionInterface
      * Resolve this plugin's external id from a list of catalog record URLs.
      *
      * The plugin receives all external source URLs already attached to a
-     * catalog record, parses them against its own vendor URL pattern, and
-     * returns the id it recognizes, or null if none of the URLs belong to it.
+     * catalog record and returns the id it recognizes, or null if none of the
+     * URLs yield one. The plugin recognizes the id by its own URL pattern; if
+     * there is no such URL among them, by the URL of another source that shares
+     * the same id space (e.g. an id of one catalog that equals the id in another).
+     * The result must not depend on the order of `$urls`.
      *
      * @param string[] $urls list of external source URLs already attached to the catalog record
      *

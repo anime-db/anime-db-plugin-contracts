@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.26.2
+
+- `Filler\PluginAnimeData`: added optional last constructor argument `?array $externalUrls = null`
+  (`string[]|null`): absolute `http(s)` urls of pages describing the same title (encyclopedias,
+  catalogs, wikis, the official site), including the source's own page; not streaming, stores,
+  social networks or related titles. Its name in `FillerInterface::getFillableFields()` is
+  `externalUrls`. Additive optional extension, released as a patch; plugins that fill the field
+  require `^0.26.2`.
+- `ExternalIdResolutionInterface::resolveExternalId()` docblock: a plugin recognizes its id by its
+  own url pattern, otherwise by the url of a source sharing the same id space; the result must not
+  depend on the order of `$urls`. No signature changes.
+
 ## 0.26.1
 
 - Added `Cache\PluginCacheDirectoryInterface` with a single method `path(): string`: an

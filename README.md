@@ -206,7 +206,10 @@ class MySourcePlugin implements FillerInterface
 
 `getFillableFields()` — список полей `PluginAnimeData`, которые плагин
 реально умеет заполнять; хост использует его, чтобы показать кнопки
-«заполнить из источника» только для поддерживаемых полей.
+«заполнить из источника» только для поддерживаемых полей. Поле
+`externalUrls` (ссылки на этот же тайтл в других базах, включая
+собственную страницу источника) указывается здесь как и остальные, но
+кнопки заполнения у него нет — хост лишь добавляет адреса к источникам записи.
 
 #### `PluginAnimeData`
 
@@ -225,7 +228,16 @@ class MySourcePlugin implements FillerInterface
 
 Поля: `title`, `alternativeNames`, `descriptions`, `genres`, `themes`,
 `demographic`, `studios`, `type`, `datePremiere`, `dateEnd`,
-`durationMinutes`, `episodesCount`, `countries`, `cover`, `images`.
+`durationMinutes`, `episodesCount`, `countries`, `cover`, `images`,
+`externalUrls`.
+
+`externalUrls` (`string[]|null`) — абсолютные `http(s)`-адреса страниц,
+описывающих **этот же тайтл** (энциклопедии, каталоги, вики, официальный
+сайт), включая собственную страницу источника. Не стриминг, не магазины, не
+соцсети, не связанные тайтлы (сиквелы и приквелы). Хост только добавляет эти
+адреса к источникам записи; отдельной кнопки заполнения у поля нет. Имя
+поля в `getFillableFields()` — `externalUrls`. Появилось в 0.26.2; плагины,
+которые заполняют поле, требуют `^0.26.2`.
 
 ### `SyncInterface`
 
