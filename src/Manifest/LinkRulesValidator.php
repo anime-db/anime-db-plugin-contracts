@@ -196,8 +196,12 @@ final class LinkRulesValidator
         $authoritySubstitutions = [];
         preg_match_all(self::SUBSTITUTION, $authority, $authoritySubstitutions, \PREG_SET_ORDER);
         $literalAuthority = preg_replace(self::SUBSTITUTION, '', $authority) ?? $authority;
-        if ($authority === '' || preg_match('/[@:{}]/', $literalAuthority) === 1) {
-            $errors[] = new ManifestValidationError($field, 'Host of "canonical" must be a non-empty host name without user info, port or malformed substitutions.');
+        if ($authority === '' || preg_match('/[^a-z0-9.-]/', $literalAuthority) === 1) {
+            $errors[] = new ManifestValidationError($field, 'Host of "canonical" must be a non-empty lowercase host name (a-z, 0-9, "." and "-"; punycode for non-ASCII) without user info, port or malformed substitutions.');
+        }
+
+        if (preg_match('/[\\\\\s\x00-\x1f\x7f]/', $canonical) === 1) {
+            $errors[] = new ManifestValidationError($field, 'Field "canonical" must not contain backslashes, whitespace or control characters.');
         }
 
         $hasPathOrQuery = false;

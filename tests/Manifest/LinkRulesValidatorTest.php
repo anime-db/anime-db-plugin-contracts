@@ -118,6 +118,20 @@ class LinkRulesValidatorTest extends TestCase
         self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'http://example.org/a/{path.1}'])));
     }
 
+    public function testCanonicalHostMustBeStrictHostName(): void
+    {
+        $host = '(?:.+\.)?example\.org';
+        foreach (['https://evil.com\\.example.org/a/{path.1}', 'https://Example.org/a/{path.1}', 'https://exa mple.org/a/{path.1}', 'https://example.org%2f.example.org/a/{path.1}'] as $canonical) {
+            self::assertContains('rules.0.canonical', $this->fields($this->withRule(['host' => $host, 'canonical' => $canonical])), $canonical);
+        }
+    }
+
+    public function testCanonicalMustNotContainBackslashOrWhitespace(): void
+    {
+        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a\\b/{path.1}'])));
+        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a b/{path.1}'])));
+    }
+
     public function testLiteralCanonicalHostMustMatchHost(): void
     {
         self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://other.org/a/{path.1}'])));
