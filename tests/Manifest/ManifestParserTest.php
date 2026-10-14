@@ -229,4 +229,20 @@ class ManifestParserTest extends TestCase
             self::assertContains('require', $fields);
         }
     }
+
+    public function testLinkRulesIsReadFromManifest(): void
+    {
+        $json = '{"id":"vendor-rules","name":"Rules","version":"1.0.0","type":"local","link_rules":true,'
+            .'"require":{"core":">=2.0.0","php":">=8.2"}}';
+
+        self::assertTrue((new ManifestParser())->parse($json)->linkRules);
+    }
+
+    public function testLinkRulesDefaultsToFalse(): void
+    {
+        $json = '{"id":"vendor-rules","name":"Rules","version":"1.0.0","type":"local",'
+            .'"require":{"core":">=2.0.0","php":">=8.2"}}';
+
+        self::assertFalse((new ManifestParser())->parse($json)->linkRules);
+    }
 }

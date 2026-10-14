@@ -79,6 +79,7 @@ final class ManifestValidator
         if ($type !== null) {
             $errors = [...$errors, ...$this->validateFeaturesOrLocales($data, $type)];
             $errors = [...$errors, ...$this->validateUi($data, $type)];
+            $errors = [...$errors, ...$this->validateLinkRules($data, $type)];
         }
 
         $errors = [...$errors, ...$this->validateRequire($data)];
@@ -393,6 +394,32 @@ final class ManifestValidator
         }
 
         return $errors;
+    }
+
+    /**
+     * `link_rules: true` declares a `link-rules.json` at the package root (checked by
+     * {@see LinkRulesValidator}, not here: this validator never touches the file system).
+     * Not allowed for {@see PluginType::Translation}.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return ManifestValidationError[]
+     */
+    private function validateLinkRules(array $data, PluginType $type): array
+    {
+        if (!array_key_exists('link_rules', $data)) {
+            return [];
+        }
+
+        if ($type === PluginType::Translation) {
+            return [new ManifestValidationError('link_rules', \sprintf('Field "link_rules" is not allowed for type "%s".', $type->value))];
+        }
+
+        if (!\is_bool($data['link_rules'])) {
+            return [new ManifestValidationError('link_rules', 'Field "link_rules" must be a boolean.')];
+        }
+
+        return [];
     }
 
     /**
