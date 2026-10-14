@@ -33,49 +33,7 @@ use PHPUnit\Framework\TestCase;
 class LinkRulesValidatorTest extends TestCase
 {
     /**
-     * @return array<string, mixed>
-     */
-    private function exampleFile(): array
-    {
-        return json_decode(<<<'JSON'
-            {
-                "version": 1,
-                "rules": [
-                    {
-                        "host": "allcinema\\.net",
-                        "path": "^/prog/show_c\\.php$",
-                        "query": {"num_c": "^(\\d+)$"},
-                        "canonical": "https://allcinema.net/cinema/{query.num_c.1}"
-                    },
-                    {
-                        "host": "allcinema\\.net",
-                        "path": "^/cinema/(\\d+)(?:/.*)?$",
-                        "canonical": "https://allcinema.net/cinema/{path.1}"
-                    },
-                    {
-                        "host": "(?<lang>[a-z-]+)\\.(?:m\\.)?wikipedia\\.org",
-                        "path": "^/wiki/(.+)$",
-                        "canonical": "https://{host.lang}.wikipedia.org/wiki/{path.1}"
-                    }
-                ]
-            }
-            JSON, true, flags: \JSON_THROW_ON_ERROR);
-    }
-
-    /**
-     * @param array<string, mixed> $override
-     *
-     * @return array<string, mixed>
-     */
-    private function withRule(array $override): array
-    {
-        $rule = ['host' => 'example\.org', 'path' => '^/a/(\d+)$', 'canonical' => 'https://example.org/a/{path.1}'];
-
-        return ['version' => 1, 'rules' => [array_replace($rule, $override)]];
-    }
-
-    /**
-     * @param array<string, mixed> $data
+     * @param array<array-key, mixed> $data
      *
      * @return list<string>
      */
@@ -84,100 +42,138 @@ class LinkRulesValidatorTest extends TestCase
         return array_map(static fn ($error) => $error->field, (new LinkRulesValidator())->validate($data));
     }
 
+    /**
+     * @return list<string>
+     */
+    private function ruleFields(string $expression, mixed $replacement): array
+    {
+        return $this->fields(['version' => 1, 'rules' => [$expression => $replacement]]);
+    }
+
     public function testExampleFileHasNoErrors(): void
     {
-        self::assertSame([], (new LinkRulesValidator())->validate($this->exampleFile()));
+        $data = [
+            'version' => 1,
+            'rules' => [
+                'https://([a-z-]+)\.(?:m\.)?wikipedia\.org/wiki/([^?]+)' => 'https://$1.wikipedia.org/wiki/$2',
+                'https://allcinema\.net/prog/show_c\.php\?num_c=(\d+)' => 'https://allcinema.net/cinema/$1',
+            ],
+        ];
+
+        self::assertSame([], (new LinkRulesValidator())->validate($data));
+    }
+
+    public function testBracedSubstitutionIsAccepted(): void
+    {
+        self::assertSame([], $this->ruleFields('https://example\.org/(\d+)', 'https://example.org/a/${1}0'));
+    }
+
+    public function testEmptyRulesAreValid(): void
+    {
+        self::assertSame([], $this->fields(['version' => 1, 'rules' => []]));
+    }
+
+    public function testNoLimitOnRuleCount(): void
+    {
+        $rules = [];
+        for ($i = 0; $i < 501; ++$i) {
+            $rules['https://example\.org/'.$i.'/(\d+)'] = 'https://example.org/a/$1';
+        }
+
+        self::assertSame([], $this->fields(['version' => 1, 'rules' => $rules]));
     }
 
     public function testVersionMustBeOne(): void
     {
-        $data = $this->exampleFile();
-        $data['version'] = 2;
-
-        self::assertSame(['version'], $this->fields($data));
+        self::assertSame(['version'], $this->fields(['version' => 2, 'rules' => []]));
+        self::assertSame(['version'], $this->fields(['rules' => []]));
     }
 
-    public function testRulesMustBeAList(): void
+    public function testRulesMustBeMap(): void
     {
-        self::assertSame(['rules'], $this->fields(['version' => 1, 'rules' => ['a' => []]]));
+        self::assertSame(['rules'], $this->fields(['version' => 1, 'rules' => 'x']));
+        self::assertSame(['rules'], $this->fields(['version' => 1]));
     }
 
-    public function testQueryMustBeStringToStringObject(): void
+    public function testNonStringKeyIsRejected(): void
     {
-        self::assertSame(['rules.0.query.p'], $this->fields($this->withRule(['query' => ['p' => 5]])));
-        self::assertSame(['rules.0.query'], $this->fields($this->withRule(['query' => ['x']])));
+        self::assertSame(['rules'], $this->fields(['version' => 1, 'rules' => [123 => 'https://example.org/$1']]));
+    }
+
+    public function testNonStringReplacementIsRejected(): void
+    {
+        self::assertSame(['rules.a(b)'], $this->ruleFields('a(b)', ['x']));
     }
 
     public function testUncompilableExpressionIsRejected(): void
     {
-        self::assertSame(['rules.0.path'], $this->fields($this->withRule(['path' => '^/a/(\d+$'])));
+        self::assertCount(1, $this->ruleFields('https://example\.org/(\d+', 'https://example.org/$1'));
     }
 
-    public function testCanonicalMustBeHttps(): void
+    public function testExpressionBreakingOutOfWrapperIsRejected(): void
     {
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'http://example.org/a/{path.1}'])));
+        // Compiles inside \A(?:…)\z, but on its own it is unbalanced and would match any link.
+        self::assertCount(1, $this->ruleFields('x)|(?:.*', 'https://example.org/$1'));
+        self::assertCount(1, $this->ruleFields('x)|(.*', 'https://example.org/$1'));
     }
 
-    public function testCanonicalHostMustBeStrictHostName(): void
+    public function testControlCharacterInExpressionIsRejected(): void
     {
-        $host = '(?:.+\.)?example\.org';
-        foreach (['https://evil.com\\.example.org/a/{path.1}', 'https://Example.org/a/{path.1}', 'https://exa mple.org/a/{path.1}', 'https://example.org%2f.example.org/a/{path.1}'] as $canonical) {
-            self::assertContains('rules.0.canonical', $this->fields($this->withRule(['host' => $host, 'canonical' => $canonical])), $canonical);
-        }
+        self::assertCount(1, $this->ruleFields("https://example\\.org/(\\d+)\n", 'https://example.org/$1'));
     }
 
-    public function testCanonicalMustNotContainBackslashOrWhitespace(): void
+    public function testExpressionLengthLimit(): void
     {
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a\\b/{path.1}'])));
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a b/{path.1}'])));
+        $ok = '('.str_repeat('a', 254).')';
+        $long = '('.str_repeat('a', 255).')';
+
+        self::assertSame([], $this->ruleFields($ok, 'https://example.org/$1'));
+        self::assertCount(1, $this->ruleFields($long, 'https://example.org/$1'));
     }
 
-    public function testLiteralCanonicalHostMustMatchHost(): void
+    public function testReplacementMustStartWithHttps(): void
     {
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://other.org/a/{path.1}'])));
+        self::assertCount(1, $this->ruleFields('(\d+)', 'http://example.org/$1'));
     }
 
-    public function testSubstitutionMustReferToExistingGroup(): void
+    public function testReplacementWithoutSubstitutionIsRejected(): void
     {
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a/{path.2}'])));
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/a/{query.p.1}'])));
-        self::assertSame(
-            ['rules.0.canonical'],
-            $this->fields($this->withRule(['host' => '(?<lang>[a-z]+)\.example\.org', 'canonical' => 'https://{host.zz}.example.org/a/{path.1}'])),
-        );
+        self::assertCount(1, $this->ruleFields('https://example\.org/.*', 'https://example.org/'));
     }
 
-    public function testCanonicalWithoutPathOrQuerySubstitutionIsRejected(): void
+    public function testSubstitutionBeyondGroupCountIsRejected(): void
     {
-        self::assertSame(['rules.0.canonical'], $this->fields($this->withRule(['canonical' => 'https://example.org/'])));
+        self::assertCount(1, $this->ruleFields('(\d+)', 'https://example.org/$2'));
+        self::assertCount(1, $this->ruleFields('(\d+)', 'https://example.org/${2}'));
     }
 
-    public function testCanonicalWithOnlyHostSubstitutionIsRejected(): void
+    public function testZeroSubstitutionIsRejected(): void
     {
-        $data = $this->withRule(['host' => '(?<lang>[a-z]+)\.example\.org', 'canonical' => 'https://{host.lang}.example.org/']);
-
-        self::assertSame(['rules.0.canonical'], $this->fields($data));
+        self::assertCount(2, $this->ruleFields('(\d+)', 'https://example.org/$0/${0}')); // both, no valid one left
     }
 
-    public function testAtMost500RulesAreAllowed(): void
+    public function testReplacementWithWhitespaceIsRejected(): void
     {
-        $rule = $this->withRule([])['rules'][0];
-
-        self::assertSame([], (new LinkRulesValidator())->validate(['version' => 1, 'rules' => array_fill(0, 500, $rule)]));
-        self::assertSame(['rules'], $this->fields(['version' => 1, 'rules' => array_fill(0, 501, $rule)]));
+        self::assertCount(1, $this->ruleFields('(\d+)', 'https://example.org/a b/$1'));
     }
 
-    public function testExpressionLengthIsLimitedTo256Characters(): void
+    public function testReplacementWithBackslashIsRejected(): void
     {
-        self::assertSame([], (new LinkRulesValidator())->validate($this->withRule(['path' => '('.str_repeat('a', 254).')'])));
-        self::assertSame(['rules.0.path'], $this->fields($this->withRule(['path' => '('.str_repeat('a', 255).')'])));
+        self::assertCount(1, $this->ruleFields('(\d+)', 'https://example.org\\a/$1'));
+    }
+
+    public function testReplacementWithControlCharacterIsRejected(): void
+    {
+        self::assertCount(1, $this->ruleFields('(\d+)', "https://example.org/\x01/\$1"));
     }
 
     public function testAllErrorsAreReported(): void
     {
-        $data = $this->withRule(['path' => '(', 'canonical' => 'http://example.org/']);
-        $data['version'] = 3;
+        $data = ['version' => 1, 'rules' => [
+            '(\d+)' => 'http://example.org/$1',
+            'https://example\.org/(' => 'https://example.org/$1',
+        ]];
 
-        self::assertSame(['version', 'rules.0.path', 'rules.0.canonical'], $this->fields($data));
+        self::assertCount(2, $this->fields($data));
     }
 }

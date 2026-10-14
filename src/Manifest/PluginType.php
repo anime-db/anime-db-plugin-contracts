@@ -40,7 +40,7 @@ namespace AnimeDb\PluginContracts\Manifest;
  * possible use, not the type's defining trait. `locales` — the languages of the
  * translation catalogs a plugin ships — is required for `Translation` and optional for
  * `Integration` and `Local`. A `Local` plugin may ship no code at all if it declares
- * `link_rules` (a `link-rules.json` of declarative link normalization rules, see
+ * `link_rules` (a `link-rules.yaml` of declarative link normalization rules, see
  * {@see LinkRulesValidator}); without `link_rules` it is a code plugin as described above.
  * This relaxes the existing type, it is not a separate type.
  */
