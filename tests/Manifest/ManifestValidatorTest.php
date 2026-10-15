@@ -620,4 +620,37 @@ class ManifestValidatorTest extends TestCase
         self::assertSame('id', $idError->field);
         self::assertNotSame('', $idError->message);
     }
+
+    public function testLinkRulesIsAllowedForLocalAndIntegrationTypes(): void
+    {
+        $local = $this->validLocalManifest();
+        $local['link_rules'] = true;
+        $integration = $this->validIntegrationManifest();
+        $integration['link_rules'] = true;
+
+        self::assertSame([], (new ManifestValidator())->validate($local));
+        self::assertSame([], (new ManifestValidator())->validate($integration));
+    }
+
+    public function testLinkRulesIsNotAllowedForTranslationType(): void
+    {
+        $data = $this->validTranslationManifest();
+        $data['link_rules'] = true;
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertCount(1, $errors);
+        self::assertSame('link_rules', $errors[0]->field);
+    }
+
+    public function testLinkRulesMustBeBoolean(): void
+    {
+        $data = $this->validLocalManifest();
+        $data['link_rules'] = 'yes';
+
+        $errors = (new ManifestValidator())->validate($data);
+
+        self::assertCount(1, $errors);
+        self::assertSame('link_rules', $errors[0]->field);
+    }
 }

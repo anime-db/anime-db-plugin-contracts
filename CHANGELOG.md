@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.26.3
+
+- Manifest: added optional boolean field `link_rules` (`Manifest::$linkRules`, default `false`).
+  `true` means the package root carries `link-rules.yaml`. Allowed for `local` and `integration`,
+  rejected by `ManifestValidator` for `translation`.
+- Added `Manifest\LinkRulesValidator` for the declarative `link-rules.yaml` format (`version: 1`,
+  `rules` is a map of expression to replacement with `$N`/`${N}`; no limit on the number of rules).
+  Takes an already parsed array (the contract has no YAML dependency) and returns the full list of
+  errors. An expression must compile both on its own and wrapped in `\A(?:…)\z` with the `u` flag.
+  Rules are data, not plugin code.
+- `local` may ship without `src/` if it declares `link_rules` (relaxes the existing type, no new
+  `PluginType` case). The contract does not check `src/` or the file's presence.
+- Additive optional extension, released as a patch; plugins that declare `link_rules` require
+  `^0.26.3`.
+
 ## 0.26.2
 
 - `Filler\PluginAnimeData`: added optional last constructor argument `?array $externalUrls = null`

@@ -115,6 +115,7 @@ final class ManifestParser
                 css: $data['ui']['css'] ?? [],
                 js: $data['ui']['js'] ?? [],
             ) : null,
+            linkRules: $data['link_rules'] ?? false,
         );
     }
 }

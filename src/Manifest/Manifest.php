@@ -52,9 +52,11 @@ final class Manifest implements OwnManifestInterface
      * class instead, resolved by the host in the plugin's `translations/` catalog (settings labels,
      * widget {@see \AnimeDb\PluginContracts\Widget\WidgetMetadata} `titleKey`/`descriptionKey`).
      *
-     * @param array<string, bool>|null $features flat set of feature flags, only for {@see PluginType::Integration}
-     * @param string[]|null            $locales  languages of the translation catalogs the plugin ships;
-     *                                           required for {@see PluginType::Translation}, optional otherwise
+     * @param array<string, bool>|null $features  flat set of feature flags, only for {@see PluginType::Integration}
+     * @param string[]|null            $locales   languages of the translation catalogs the plugin ships;
+     *                                            required for {@see PluginType::Translation}, optional otherwise
+     * @param bool                     $linkRules whether the package root carries `link-rules.yaml` (see
+     *                                            {@see LinkRulesValidator}); not allowed for {@see PluginType::Translation}
      */
     public function __construct(
         public readonly string $id,
@@ -68,6 +70,7 @@ final class Manifest implements OwnManifestInterface
         public readonly ?array $locales = null,
         public readonly ?string $updateUrl = null,
         public readonly ?PluginUi $ui = null,
+        public readonly bool $linkRules = false,
     ) {
     }
 
