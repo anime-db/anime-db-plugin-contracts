@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.26.4
+
+- Added `Manifest\LinkRulesApplier::apply()`: the single implementation of how `link-rules.yaml`
+  rules are applied to an already normalized link (first matching rule, `\A(?:…)\z` with the `u`
+  flag, result must be an absolute `https` link with a host, a rule that fails to run is skipped and
+  reported through the optional `$onRuleError` callback; `pcre.backtrack_limit` is set for the call
+  and restored afterwards). No change to the `link-rules.yaml` format or to `LinkRulesValidator`.
+- Added `Manifest\LinkRulesExamplesChecker::check()` for the `link-rules.examples.yaml` file
+  (`version: 1`, `examples` maps a link to the expected result or `null`). Every example is run
+  through `LinkRulesApplier`, every rule must win on at least one example. Takes parsed arrays and
+  returns the full list of `ManifestValidationError`.
+- Additive optional extension, released as a patch; no new dependencies.
+
 ## 0.26.3
 
 - Manifest: added optional boolean field `link_rules` (`Manifest::$linkRules`, default `false`).

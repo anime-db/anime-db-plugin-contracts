@@ -1458,6 +1458,51 @@ $errors = (new LinkRulesValidator())->validate(Yaml::parseFile($path));
 плагинов на один хост допускаются, побеждает порядок по id — как у переводов,
 где на общем ключе побеждает больший id плагина.
 
+**Применение правил — `Manifest\LinkRulesApplier`.** Семантика применения
+реализована в контракте, а не отдельно в каждом потребителе: приложение и гейт
+публикации плагина используют один и тот же класс. Он принимает уже
+упорядоченный плоский список `выражение => замена` (набор правил нескольких
+плагинов собирает вызывающий) и ссылку **после общей нормализации
+приложения**; сама нормализация в контракт не входит.
+
+```php
+use AnimeDb\PluginContracts\Manifest\LinkRulesApplier;
+
+$result = (new LinkRulesApplier())->apply($rules, $url, static function (string $expression, string $error): void {
+    // правило не выполнилось (ошибка PCRE, в т. ч. исчерпан pcre.backtrack_limit) и пропущено
+});
+```
+
+Результат — ссылка по первому подошедшему правилу или `null`. Правило,
+которое не удалось выполнить, пропускается; о причине сообщает необязательный
+`$onRuleError` (логирования в контракте нет). На время вызова выставляется
+`pcre.backtrack_limit` (`LinkRulesApplier::BACKTRACK_LIMIT`), после вызова
+прежнее значение восстанавливается.
+
+#### `link-rules.examples.yaml` — примеры к правилам
+
+Рядом с `link-rules.yaml` лежит файл примеров:
+
+```yaml
+version: 1
+examples:
+  'https://en.wikipedia.org/wiki/Naruto': 'https://en.wikipedia.org/wiki/Naruto'
+  'https://en.m.wikipedia.org/wiki/Naruto': 'https://en.wikipedia.org/wiki/Naruto'
+  'https://example.org/other': null
+```
+
+`examples` — отображение «ссылка → ожидаемый результат»; результат — строка
+или `null` («ни одно правило не должно сработать»). Ключи — ссылки, начинающиеся
+с `https://`, уже **в нормализованном виде** (так, как их получает правило от
+приложения). `Manifest\LinkRulesExamplesChecker::check($rules, $examples)`
+принимает разобранные массивы, прогоняет каждый пример через
+`LinkRulesApplier` и возвращает полный список `ManifestValidationError`:
+некорректная форма файла (`version`, не отображение, ключ не `https://`,
+значение не строка/`null`), расхождение результата
+(`examples.<ссылка>: expected "<X>", got "<Y>"`) и правило, не победившее ни на
+одном примере (`rules.<выражение>: no example matches this rule`). Каждое
+правило обязано быть покрыто хотя бы одним примером.
+
 ### Незнакомые поля манифеста
 
 `ManifestValidator::validate()` **намеренно** не отвергает поля манифеста,
