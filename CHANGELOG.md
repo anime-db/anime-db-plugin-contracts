@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.26.4
+
+- Link rules moved to their own namespace `AnimeDb\PluginContracts\LinkRules\`:
+  `LinkRules\LinkRulesValidator`, `LinkRules\LinkRulesApplier`, `LinkRules\LinkRulesExamplesChecker`
+  (`ManifestValidationError` stays in `Manifest\` and is reused).
+- Deprecated: `Manifest\LinkRulesValidator` (released in 0.26.3) is now a thin `@deprecated`
+  subclass of `LinkRules\LinkRulesValidator`; it keeps working and will be removed in the next
+  minor version. Switch to the new name.
+- Added `LinkRules\LinkRulesApplier::apply()`: the single implementation of how `link-rules.yaml`
+  rules are applied to an already normalized link (first matching rule, `\A(?:…)\z` with the `u`
+  flag, result must be an absolute `https` link with a host, a rule that fails to run is skipped and
+  reported through the optional `$onRuleError` callback; `pcre.backtrack_limit` is set for the call
+  and restored afterwards). No change to the `link-rules.yaml` format or to `LinkRulesValidator`.
+- Added `LinkRules\LinkRulesExamplesChecker::check()` for the `link-rules.examples.yaml` file
+  (`version: 1`, `examples` maps a link to the expected result or `null`). Every example is run
+  through `LinkRulesApplier`, every rule must win on at least one example. Takes parsed arrays and
+  returns the full list of `ManifestValidationError`.
+- Additive optional extension, released as a patch; no new dependencies.
+
 ## 0.26.3
 
 - Manifest: added optional boolean field `link_rules` (`Manifest::$linkRules`, default `false`).

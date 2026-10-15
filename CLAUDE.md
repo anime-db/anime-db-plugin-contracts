@@ -62,6 +62,7 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
 │   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
+│   ├── LinkRules/                          # LinkRulesValidator/LinkRulesApplier/LinkRulesExamplesChecker для link-rules.yaml (Manifest\LinkRulesValidator — @deprecated алиас)
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
 │   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта
