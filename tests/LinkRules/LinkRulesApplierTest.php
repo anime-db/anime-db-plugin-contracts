@@ -25,9 +25,9 @@
 
 declare(strict_types=1);
 
-namespace AnimeDb\PluginContracts\Tests\Manifest;
+namespace AnimeDb\PluginContracts\Tests\LinkRules;
 
-use AnimeDb\PluginContracts\Manifest\LinkRulesApplier;
+use AnimeDb\PluginContracts\LinkRules\LinkRulesApplier;
 use PHPUnit\Framework\TestCase;
 
 class LinkRulesApplierTest extends TestCase

@@ -41,7 +41,7 @@ namespace AnimeDb\PluginContracts\Manifest;
  * translation catalogs a plugin ships — is required for `Translation` and optional for
  * `Integration` and `Local`. A `Local` plugin may ship no code at all if it declares
  * `link_rules` (a `link-rules.yaml` of declarative link normalization rules, see
- * {@see LinkRulesValidator}); without `link_rules` it is a code plugin as described above.
+ * {@see \AnimeDb\PluginContracts\LinkRules\LinkRulesValidator}); without `link_rules` it is a code plugin as described above.
  * This relaxes the existing type, it is not a separate type.
  */
 enum PluginType: string

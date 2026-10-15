@@ -56,7 +56,7 @@ final class Manifest implements OwnManifestInterface
      * @param string[]|null            $locales   languages of the translation catalogs the plugin ships;
      *                                            required for {@see PluginType::Translation}, optional otherwise
      * @param bool                     $linkRules whether the package root carries `link-rules.yaml` (see
-     *                                            {@see LinkRulesValidator}); not allowed for {@see PluginType::Translation}
+     *                                            {@see \AnimeDb\PluginContracts\LinkRules\LinkRulesValidator}); not allowed for {@see PluginType::Translation}
      */
     public function __construct(
         public readonly string $id,

@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace AnimeDb\PluginContracts\Manifest;
+namespace AnimeDb\PluginContracts\LinkRules;
 
 /**
  * Applies an ordered list of `link-rules.yaml` rules to a link.

@@ -25,7 +25,9 @@
 
 declare(strict_types=1);
 
-namespace AnimeDb\PluginContracts\Manifest;
+namespace AnimeDb\PluginContracts\LinkRules;
+
+use AnimeDb\PluginContracts\Manifest\ManifestValidationError;
 
 /**
  * Checks parsed `link-rules.examples.yaml` (format version 1) against a set of link rules and

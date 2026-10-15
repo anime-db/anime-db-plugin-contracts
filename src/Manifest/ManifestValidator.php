@@ -398,7 +398,7 @@ final class ManifestValidator
 
     /**
      * `link_rules: true` declares a `link-rules.yaml` at the package root (checked by
-     * {@see LinkRulesValidator}, not here: this validator never touches the file system).
+     * {@see \AnimeDb\PluginContracts\LinkRules\LinkRulesValidator}, not here: this validator never touches the file system).
      * Not allowed for {@see PluginType::Translation}.
      *
      * @param array<string, mixed> $data
