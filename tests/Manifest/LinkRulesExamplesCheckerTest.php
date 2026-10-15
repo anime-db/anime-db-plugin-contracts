@@ -155,4 +155,30 @@ class LinkRulesExamplesCheckerTest extends TestCase
 
         self::assertCount(4, $messages);
     }
+
+    public function testRuleFailingOnExampleIsReported(): void
+    {
+        $rules = [
+            'https://(?:a+)+(?:b|\.example/x)(\d*)' => 'https://bad.example/$1',
+            'https://(\w+)\.example/' => 'https://good.example/$1',
+        ];
+        $long = str_repeat('a', 40);
+
+        $messages = $this->messages(['version' => 1, 'examples' => [
+            'https://ab' => 'https://bad.example/',
+            'https://'.$long.'.example/' => 'https://good.example/'.$long,
+        ]], $rules);
+
+        $this->assertCount(1, $messages);
+        $this->assertStringStartsWith('rules.https://(?:a+)+(?:b|\.example/x)(\d*): rule failed on example "https://'.$long, $messages[0]);
+    }
+
+    public function testNonCompilingRuleIsReportedWithRealCause(): void
+    {
+        $messages = $this->messages(['version' => 1, 'examples' => ['https://x.example/' => null]], ['https://(' => 'https://a.example/']);
+
+        $this->assertCount(1, $messages);
+        $this->assertStringContainsString('rule failed on example', $messages[0]);
+        $this->assertStringNotContainsString('no example matches', $messages[0]);
+    }
 }

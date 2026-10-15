@@ -33,7 +33,11 @@ namespace AnimeDb\PluginContracts\Manifest;
  *
  * Every example is run through {@see LinkRulesApplier}, so the check uses the very same
  * semantics as the host application. Besides matching the expected results, every rule must be
- * the winning rule for at least one example.
+ * the winning rule for at least one example. A rule that fails to run (PCRE error, backtrack limit)
+ * is reported with the failure text instead of being skipped silently.
+ *
+ * Precondition: `$rules` must have already passed {@see LinkRulesValidator::validate()} without
+ * errors; an unbalanced expression can escape the `\A(?:…)\z` wrapper and match any link.
  */
 final class LinkRulesExamplesChecker
 {
@@ -61,6 +65,7 @@ final class LinkRulesExamplesChecker
 
         $applier = new LinkRulesApplier();
         $covered = [];
+        $ruleErrors = [];
 
         foreach ($examples['examples'] as $url => $expected) {
             if (!\is_string($url) || !str_starts_with($url, 'https://')) {
@@ -78,7 +83,9 @@ final class LinkRulesExamplesChecker
 
             $actual = null;
             foreach ($rules as $expression => $replacement) {
-                $actual = $applier->apply([$expression => $replacement], $url);
+                $actual = $applier->apply([$expression => $replacement], $url, static function (string $failed, string $message) use (&$ruleErrors, $url): void {
+                    $ruleErrors[$failed] ??= \sprintf('rule failed on example "%s": %s', $url, $message);
+                });
                 if ($actual !== null) {
                     $covered[$expression] = true;
 
@@ -91,8 +98,12 @@ final class LinkRulesExamplesChecker
             }
         }
 
+        foreach ($ruleErrors as $expression => $message) {
+            $errors[] = new ManifestValidationError('rules.'.$expression, $message);
+        }
+
         foreach ($rules as $expression => $replacement) {
-            if (!isset($covered[$expression])) {
+            if (!isset($covered[$expression]) && !isset($ruleErrors[$expression])) {
                 $errors[] = new ManifestValidationError('rules.'.$expression, 'no example matches this rule');
             }
         }

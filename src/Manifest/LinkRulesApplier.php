@@ -34,6 +34,10 @@ namespace AnimeDb\PluginContracts\Manifest;
  * the plugin publication gate, so both interpret the rules identically. The link must already
  * be normalized by the application (scheme, host, percent-encoding, query order): this class
  * does not normalize anything itself.
+ *
+ * Precondition: `$rules` must have already passed {@see LinkRulesValidator::validate()} without
+ * errors; an unbalanced expression (e.g. `x)|(?:.*`) escapes the `\A(?:…)\z` wrapper and
+ * matches any link.
  */
 final class LinkRulesApplier
 {
