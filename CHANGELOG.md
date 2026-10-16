@@ -3,6 +3,15 @@
 ## 0.27.0
 
 - BC: removed `Manifest\LinkRulesValidator`, use `LinkRules\LinkRulesValidator`. `LinkRules\LinkRulesValidator` is `final` again.
+- Added namespace `AnimeDb\PluginContracts\Folder\`: `RecordFolderWriterInterface` (`write()`,
+  `writeCover()`, `inspect()`) for writing files into a record's own folder by bare file name and
+  bytes (no paths in either direction), enum `RecordFolderFileState` (`Absent`, `Written`,
+  `Modified`), and exceptions `RecordHasNoFolderException`, `StorageNotWritableException`,
+  `ForeignFileException`. Unavailable storage is reported with the existing
+  `Media\StorageUnavailableException`. Available to `local` plugins only, per-plugin scoped.
+- `AnimeView`: added trailing optional constructor parameters `description`, `datePremiere`,
+  `dateEnd`, `durationMinutes`, `studios`, `countries` (defaults `null`/`[]`).
+- Plugins that use `Folder\RecordFolderWriterInterface` or the new `AnimeView` fields require `^0.27`.
 
 ## 0.26.4
 

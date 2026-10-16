@@ -34,6 +34,7 @@ composer require anime-db/plugin-contracts
   - [`PluginDataStoreInterface`](#plugindatastoreinterface)
   - [`SettingsStoreInterface`](#settingsstoreinterface)
   - [`PluginCacheDirectoryInterface`](#plugincachedirectoryinterface)
+  - [`Folder\RecordFolderWriterInterface`](#folderrecordfolderwriterinterface)
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [`BackgroundTaskQueueInterface`](#backgroundtaskqueueinterface)
   - [`AnimeFilesChangedEvent` и `FilesChangeReason`](#animefileschangedevent-и-fileschangereason)
@@ -870,6 +871,68 @@ class MySourceIndex
   плагина. В бэкап, экспорт каталога и экспорт настроек каталог не входит.
 - Не PSR-16-кэш и не заменяет будущий per-plugin TTL-кэш: PSR-16 — для
   значений «ключ → данные с TTL», каталог — для файлов с реальным путём.
+
+### `Folder\RecordFolderWriterInterface`
+
+Необязательный сервис ядра: запись файлов (HTML-страница, обложка) в папку
+записи каталога. Плагин передаёт имя файла и байты, а не путь — папку записи
+находит хост; абсолютных путей нет ни в параметрах, ни в результатах. Плагин,
+который его использует, требует `^0.27`.
+
+**Доступ — только плагинам с манифестным `type: local`.** Плагин любого другого
+типа, запросивший сервис, не загружается. Экземпляр скоупнут на плагин (id не
+в сигнатуре).
+
+```php
+use AnimeDb\PluginContracts\Folder\RecordFolderWriterInterface;
+use AnimeDb\PluginContracts\Model\AnimeId;
+
+class CardExporter
+{
+    public function __construct(
+        private readonly RecordFolderWriterInterface $folder,
+    ) {
+    }
+
+    public function export(AnimeId $anime, string $html): void
+    {
+        $this->folder->write($anime, 'card.html', $html);
+        $this->folder->writeCover($anime, 'cover');
+    }
+}
+```
+
+- `write($anime, $fileName, $contents, $overwrite = false)` и
+  `inspect($anime, $fileName)` — имя файла: без разделителей пути и `..`,
+  шаблон `[a-z0-9][a-z0-9._-]*` без точки в конце, зарезервированные имена
+  Windows (`con`, `prn`, `aux`, `nul`, `com1`–`com9`, `lpt1`–`lpt9`) отвергаются
+  с любым расширением, расширение — `html`, `jpg`, `jpeg`, `png` или `webp`,
+  размер файла — не более 5 МБ.
+- `writeCover($anime, $baseName, $overwrite = false)` — копирует текущую
+  обложку записи в папку записи. `$baseName` — без точки и расширения
+  (`[a-z0-9][a-z0-9_-]*`, те же зарезервированные имена); расширение
+  дописывает хост (`jpg`, `png` или `webp` по реальному формату, JPEG всегда
+  `jpg`; конвертации нет). `writeCover($id, 'cover.jpg')` — ошибка. Возвращает
+  итоговое имя файла или `null`, если у записи нет обложки, она в другом
+  формате или больше 5 МБ.
+- Чужие файлы не перезаписываются. Хост помнит `(плагин, запись, имя) → sha256`
+  записанного содержимого: файла нет — пишет; sha256 существующего файла
+  равен запомненному или sha256 новых байтов (усыновление) — пишет; иначе
+  `ForeignFileException`, файл не тронут. `$overwrite = true` — явное решение
+  пользователя, файл перезаписывается. Запись об учёте удаляется вместе с
+  плагином или записью каталога, файлы на диске остаются.
+- `inspect()` ничего не пишет и возвращает `RecordFolderFileState`: `Absent` —
+  файла нет; `Written` — файл есть и его sha256 равен запомненному;
+  `Modified` — файл есть, но sha256 отличается или учёта нет.
+- Запись атомарна: временный файл в той же папке и переименование.
+- Хост проверяет, что хранилище доступно на запись, маркер хранилища строго
+  равен его id, а путь после `realpath` лежит внутри корня хранилища.
+- Исключения: `\InvalidArgumentException` — имя нарушает правила или
+  содержимое больше 5 МБ; `ForeignFileException` — чужой файл при
+  `$overwrite = false` (`write()`/`writeCover()`);
+  `StorageNotWritableException` — отказ писать в это место;
+  `RecordHasNoFolderException` — у записи нет собственной папки (путь — один
+  файл); `Media\StorageUnavailableException` — хранилище недоступно.
 
 ### `DownloadServiceInterface`
 
@@ -1732,6 +1795,8 @@ includes:
   участвует;
 - `PluginCacheDirectoryInterface` — `path()` возвращает каталог на локальной
   ФС, внешний источник не участвует;
+- `Folder\RecordFolderWriterInterface` — пишет файлы на локальный диск через
+  хост, сетевой поверхности нет;
 - `LlmServiceInterface` — доступ к **локальной** LLM хоста. Его реализация
   действительно обращается к модели по HTTP через PSR-18-клиент, но этот
   клиент обращается к локальной модели самого хоста, а не в интернет: смысл

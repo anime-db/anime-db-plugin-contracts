@@ -63,6 +63,8 @@ final class AnimeView
      * @param GenreCode[] $genres
      * @param ThemeCode[] $themes
      * @param string[]    $sources          external source URLs already attached to the record
+     * @param string[]    $studios          studio names as in the catalog, order is not part of the contract
+     * @param string[]    $countries        ISO 3166-1 alpha-2 codes in upper case (`JP`, `US`), order is not part of the contract
      */
     public function __construct(
         public readonly string $title,
@@ -78,6 +80,28 @@ final class AnimeView
          * {@see ExternalIdResolutionInterface::resolveExternalId()}).
          */
         public readonly ?string $externalId,
+        /**
+         * Description in the locale of the current request; if there is none in that
+         * locale, the `en` one; if there is none either, any available one. Null if the
+         * record has no description in any language. Without an HTTP request (a
+         * background process) the `en` locale is used.
+         */
+        public readonly ?string $description = null,
+        /** Premiere date; only the date is meaningful, the time carries no meaning. Null if unknown. */
+        public readonly ?\DateTimeImmutable $datePremiere = null,
+        /**
+         * End date; only the date is meaningful, the time carries no meaning. Null if
+         * unknown. Null with a known `datePremiere` means "end date unknown or still
+         * airing"; the contract does not distinguish these cases.
+         */
+        public readonly ?\DateTimeImmutable $dateEnd = null,
+        /**
+         * Duration of one viewing unit: episode length for a series, full running time
+         * for a movie. Null if unknown.
+         */
+        public readonly ?int $durationMinutes = null,
+        public readonly array $studios = [],
+        public readonly array $countries = [],
     ) {
     }
 }
