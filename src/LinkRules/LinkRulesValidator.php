@@ -38,7 +38,7 @@ use AnimeDb\PluginContracts\Manifest\ManifestValidationError;
  * every consumer: the plugin publication gate and the host application (on plugin install
  * and when loading the rule set), so the file is interpreted identically on both sides.
  */
-class LinkRulesValidator
+final class LinkRulesValidator
 {
     public const SUPPORTED_VERSION = 1;
 
