@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.27.0
 
 - BC: removed `Manifest\LinkRulesValidator`, use `LinkRules\LinkRulesValidator`. `LinkRules\LinkRulesValidator` is `final` again.
 
