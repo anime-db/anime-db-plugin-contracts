@@ -47,13 +47,16 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  *    marker is not forgiven;
  *  - the path after `realpath` must lie inside the storage root.
  *
- * File name rules (`$fileName` in write()/inspect(), `$baseName` in writeCover()):
+ * File name rules for `$fileName` in write()/inspect():
  *  - no path separators and no `..`;
  *  - matches `[a-z0-9][a-z0-9._-]*`, no trailing dot;
  *  - Windows reserved names `con`, `prn`, `aux`, `nul`, `com1`-`com9`,
  *    `lpt1`-`lpt9` are rejected with any extension;
  *  - the extension is one of `html`, `jpg`, `jpeg`, `png`, `webp`;
  *  - a file is at most 5 MB.
+ * Rules for `$baseName` in writeCover(): matches `[a-z0-9][a-z0-9_-]*`
+ * (no dot, no extension — the host appends it), and the same Windows reserved
+ * names are rejected. `writeCover($id, 'cover.jpg')` is therefore invalid.
  * A name that breaks a rule is rejected with {@see \InvalidArgumentException}.
  *
  * Atomicity: the host writes to a temporary file and renames it in the same folder.
@@ -89,9 +92,12 @@ interface RecordFolderWriterInterface
 
     /**
      * Copy the record's current cover into the record folder as
-     * `<baseName>.<ext>` and return the resulting file name, or null if the
-     * record has no cover (nothing is written). The path of the image is not
-     * disclosed. The same foreign-file rule as in write() applies.
+     * `<baseName>.<ext>` and return the resulting file name. `<ext>` is chosen
+     * by the host from `jpg`, `png`, `webp` by the actual image format (JPEG is
+     * always `jpg`, never `jpeg`); the host does not convert. Returns null and
+     * writes nothing if the record has no cover, the cover is in another format,
+     * or it is larger than 5 MB. The path of the image is not disclosed. The
+     * same foreign-file rule as in write() applies.
      *
      * @throws ForeignFileException        a different file with that name exists and `$overwrite` is false
      * @throws RecordHasNoFolderException
