@@ -79,11 +79,11 @@ interface RecordFolderWriterInterface
     /**
      * Write `$contents` as `$fileName` into the record folder.
      *
-     * @throws ForeignFileException         a different file with that name exists and `$overwrite` is false
+     * @throws ForeignFileException        a different file with that name exists and `$overwrite` is false
      * @throws RecordHasNoFolderException
      * @throws StorageNotWritableException
      * @throws StorageUnavailableException
-     * @throws \InvalidArgumentException    the name breaks the rules or the contents exceed 5 MB
+     * @throws \InvalidArgumentException   the name breaks the rules or the contents exceed 5 MB
      */
     public function write(AnimeId $anime, string $fileName, string $contents, bool $overwrite = false): void;
 
@@ -93,11 +93,11 @@ interface RecordFolderWriterInterface
      * record has no cover (nothing is written). The path of the image is not
      * disclosed. The same foreign-file rule as in write() applies.
      *
-     * @throws ForeignFileException         a different file with that name exists and `$overwrite` is false
+     * @throws ForeignFileException        a different file with that name exists and `$overwrite` is false
      * @throws RecordHasNoFolderException
      * @throws StorageNotWritableException
      * @throws StorageUnavailableException
-     * @throws \InvalidArgumentException    `$baseName` breaks the rules
+     * @throws \InvalidArgumentException   `$baseName` breaks the rules
      */
     public function writeCover(AnimeId $anime, string $baseName, bool $overwrite = false): ?string;
 
@@ -109,7 +109,7 @@ interface RecordFolderWriterInterface
      * @throws RecordHasNoFolderException
      * @throws StorageNotWritableException
      * @throws StorageUnavailableException
-     * @throws \InvalidArgumentException    the name breaks the rules
+     * @throws \InvalidArgumentException   the name breaks the rules
      */
     public function inspect(AnimeId $anime, string $fileName): RecordFolderFileState;
 }
