@@ -83,4 +83,31 @@ class AnimeViewTest extends TestCase
         self::assertSame([], $view->sources);
         self::assertNull($view->externalId);
     }
+
+    public function testNewOptionalFieldsDefaultToNullAndEmpty(): void
+    {
+        $view = new AnimeView('A', [], null, [], [], null, [], null);
+
+        self::assertNull($view->description);
+        self::assertNull($view->datePremiere);
+        self::assertNull($view->dateEnd);
+        self::assertNull($view->durationMinutes);
+        self::assertSame([], $view->studios);
+        self::assertSame([], $view->countries);
+    }
+
+    public function testNewOptionalFieldsReturnConstructorValues(): void
+    {
+        $premiere = new \DateTimeImmutable('1998-04-03');
+        $end = new \DateTimeImmutable('1999-04-24');
+
+        $view = new AnimeView('A', [], null, [], [], null, [], null, 'Desc', $premiere, $end, 24, ['Sunrise'], ['JP']);
+
+        self::assertSame('Desc', $view->description);
+        self::assertSame($premiere, $view->datePremiere);
+        self::assertSame($end, $view->dateEnd);
+        self::assertSame(24, $view->durationMinutes);
+        self::assertSame(['Sunrise'], $view->studios);
+        self::assertSame(['JP'], $view->countries);
+    }
 }

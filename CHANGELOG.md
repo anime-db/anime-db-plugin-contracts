@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.0
+
+- Added namespace `AnimeDb\PluginContracts\Folder\`: `RecordFolderWriterInterface` (`write()`,
+  `writeCover()`, `inspect()`) for writing files into a record's own folder by bare file name and
+  bytes (no paths in either direction), enum `RecordFolderFileState` (`Absent`, `Written`,
+  `Modified`), and exceptions `RecordHasNoFolderException`, `StorageNotWritableException`,
+  `ForeignFileException`. Unavailable storage is reported with the existing
+  `Media\StorageUnavailableException`. Available to `local` plugins only, per-plugin scoped.
+- `AnimeView`: added trailing optional constructor parameters `description`, `datePremiere`,
+  `dateEnd`, `durationMinutes`, `studios`, `countries` (defaults `null`/`[]`).
+
 ## 0.26.4
 
 - Link rules moved to their own namespace `AnimeDb\PluginContracts\LinkRules\`:

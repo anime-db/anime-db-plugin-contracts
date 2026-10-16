@@ -63,6 +63,8 @@ final class AnimeView
      * @param GenreCode[] $genres
      * @param ThemeCode[] $themes
      * @param string[]    $sources          external source URLs already attached to the record
+     * @param string[]    $studios          studio names
+     * @param string[]    $countries        ISO 3166-1 alpha-2 codes
      */
     public function __construct(
         public readonly string $title,
@@ -78,6 +80,13 @@ final class AnimeView
          * {@see ExternalIdResolutionInterface::resolveExternalId()}).
          */
         public readonly ?string $externalId,
+        /** Description in the request locale, or null if unknown. */
+        public readonly ?string $description = null,
+        public readonly ?\DateTimeImmutable $datePremiere = null,
+        public readonly ?\DateTimeImmutable $dateEnd = null,
+        public readonly ?int $durationMinutes = null,
+        public readonly array $studios = [],
+        public readonly array $countries = [],
     ) {
     }
 }
