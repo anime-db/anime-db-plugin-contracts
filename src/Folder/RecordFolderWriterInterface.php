@@ -39,7 +39,7 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  * files — the host does it and guarantees the following.
  *
  * Access: the service is per-plugin scoped and issued only to plugins of
- * manifest type `local`. An `integration` plugin that requests it is not loaded.
+ * manifest type `local`. A plugin of any type other than `local` that requests it is not loaded.
  *
  * Host checks (stricter than reading via {@see \AnimeDb\PluginContracts\Media\MediaLibraryInterface}):
  *  - the storage must be writable (not an external read-only or video storage);
