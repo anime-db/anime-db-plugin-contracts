@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- BC: removed `Manifest\LinkRulesValidator`, use `LinkRules\LinkRulesValidator`. `LinkRules\LinkRulesValidator` is `final` again.
+
 ## 0.26.4
 
 - Link rules moved to their own namespace `AnimeDb\PluginContracts\LinkRules\`:
