@@ -61,9 +61,9 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskQueueInterface.php    # сервис ядра: постановка отложенной задачи плагина
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
-│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.26.5)
+│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.27.1)
 │   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
-│   ├── LinkRules/                          # LinkRulesValidator/LinkRulesApplier/LinkRulesExamplesChecker для link-rules.yaml (Manifest\LinkRulesValidator — @deprecated алиас)
+│   ├── LinkRules/                          # LinkRulesValidator/LinkRulesApplier/LinkRulesExamplesChecker для link-rules.yaml
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
 │   └── Media/                              # список файлов записи (MediaLibraryInterface) и их технические характеристики (MediaProbeInterface)
 ├── phpstan/                                # правила статического анализа контракта
