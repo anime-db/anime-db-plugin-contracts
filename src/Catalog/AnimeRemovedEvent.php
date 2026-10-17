@@ -40,6 +40,11 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  * given in the table of {@see AnimeField}.
  *
  * The entry no longer exists, so nothing may be written by the `AnimeId` from this event.
+ * The plugin's own data for the removed entry ({@see \AnimeDb\PluginContracts\PluginData\PluginDataStoreInterface})
+ * is deleted by the host together with the entry, so there is nothing to clean up. If the
+ * subscriber needs background work (for example on the side of an external source), it
+ * submits a task, copying what it needs from `$lastValues` into JSON-serializable scalars
+ * itself: value objects are not put into the task payload.
  *
  * The subscriber is called synchronously. It may write through the contract's own stores,
  * but the recommended pattern is to do nothing beyond calling

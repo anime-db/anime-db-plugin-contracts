@@ -50,7 +50,13 @@ interface RecordFolderIndexInterface
      * start), at most `$limit` of them. The cursor is an id, not an offset, so removing a
      * record between two calls does not shift it.
      *
+     * `$after` is the id of the last record of the previous page. `$limit` must be at
+     * least 1, otherwise \InvalidArgumentException is thrown. The end of the walk is a
+     * page with fewer than `$limit` records (including an empty list).
+     *
      * @return list<AnimeId>
+     *
+     * @throws \InvalidArgumentException if `$limit` is less than 1
      */
     public function recordsWithFolder(?AnimeId $after, int $limit): array;
 }

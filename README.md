@@ -1104,7 +1104,7 @@ class MyFillerFilesSubscriber implements EventSubscriberInterface
 Плагин узнаёт о записях каталога через три события — классы контракта (на
 внутренние события хоста подписаться нельзя): `AnimeAddedEvent(AnimeId)`,
 `AnimeChangedEvent(AnimeId, $changes)` и `AnimeRemovedEvent(AnimeId, $lastValues)`.
-Плагины, которые их используют, требуют `^0.28.0`.
+Плагины, которые их используют, требуют `^0.27.1`.
 
 - Выдача — **после** коммита, подписчик вызывается синхронно. Подписчик может
   писать через хранилища контракта, но рекомендуемый паттерн — только
@@ -1132,7 +1132,7 @@ class MyFillerFilesSubscriber implements EventSubscriberInterface
 возрастанию id, строго после `$after`, не больше `$limit`; курсор — `AnimeId`, а не
 смещение. Индекс работает только с БД и **не** фильтрует недоступные хранилища:
 доступность проверяет writer на каждой записи и сообщает
-`StorageUnavailableException`. Плагин, который его использует, требует `^0.28.0`.
+`StorageUnavailableException`. Плагин, который его использует, требует `^0.27.1`.
 
 ### PSR-18 HTTP-клиент
 

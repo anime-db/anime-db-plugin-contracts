@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.28.0
+## 0.27.1
 
 - Added enum `Catalog\AnimeField` (15 cases: the fields of a record visible to plugins) with the
   value shapes, list sort keys and the rule that a new case is a data-disclosure decision.
@@ -12,13 +12,13 @@
   moment of the event. A `match` over `FilesChangeReason` and `AnimeField` must have a `default`.
 - Added `Folder\RecordFolderIndexInterface::recordsWithFolder()` (`local` plugins only); it does
   not filter by storage availability.
-- `AnimeView::$description`: outside an HTTP request the same interface locale as in HTTP is used
-  (not `en`).
+- Behaviour change of the existing field `AnimeView::$description`: in an HTTP request the request
+  locale is used; outside a request (previously `en`) the stored interface locale of the application
+  is used, reconciled with the available locales the same way as in HTTP; if it is unavailable, the
+  first available one.
 - `RecordFolderWriterInterface`: if the sha256 of the file on disk equals the sha256 of the new
   bytes, the host does not touch the file and only updates its own record.
-- Minor on 0.x on purpose: `FilesChangeReason::Unlinked` is delivered to every `AnimeFilesChangedEvent`
-  subscriber, so plugins must re-subscribe (`^0.28`). Plugins that use the new events, `AnimeField`, `FilesChangeReason::Unlinked` or
-  `RecordFolderIndexInterface` require `^0.28.0`.
+- Plugins that use the new events, `AnimeField`, `FilesChangeReason::Unlinked` or `RecordFolderIndexInterface` require `^0.27.1`.
 
 ## 0.27.0
 
