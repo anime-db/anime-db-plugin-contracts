@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.27.1
+## 0.28.0
 
 - Added enum `Catalog\AnimeField` (15 cases: the fields of a record visible to plugins) with the
   value shapes, list sort keys and the rule that a new case is a data-disclosure decision.
@@ -16,8 +16,9 @@
   (not `en`).
 - `RecordFolderWriterInterface`: if the sha256 of the file on disk equals the sha256 of the new
   bytes, the host does not touch the file and only updates its own record.
-- Plugins that use the new events, `AnimeField`, `FilesChangeReason::Unlinked` or
-  `RecordFolderIndexInterface` require `^0.27.1`.
+- Minor on 0.x on purpose: `FilesChangeReason::Unlinked` is delivered to every `AnimeFilesChangedEvent`
+  subscriber, so plugins must re-subscribe (`^0.28`). Plugins that use the new events, `AnimeField`, `FilesChangeReason::Unlinked` or
+  `RecordFolderIndexInterface` require `^0.28.0`.
 
 ## 0.27.0
 

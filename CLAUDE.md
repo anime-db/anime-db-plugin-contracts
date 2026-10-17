@@ -58,7 +58,7 @@ anime-db-plugin-contracts/
 │   ├── SyncRemovalInterface.php            # необязательная возможность: удаление элемента списка на источнике
 │   ├── AnimeFilesChangedEvent.php          # событие изменения состава/расположения файлов записи
 │   ├── FilesChangeReason.php               # словарь причин AnimeFilesChangedEvent (растёт, match — с default)
-│   ├── AnimeField.php                      # словарь полей записи, видимых плагинам (15 кейсов, 0.27.1)
+│   ├── AnimeField.php                      # словарь полей записи, видимых плагинам (15 кейсов, 0.28.0)
 │   ├── FieldChange.php                     # значение поля до/после
 │   ├── AnimeAddedEvent.php                 # событие: запись добавлена
 │   ├── AnimeChangedEvent.php               # событие: поля записи изменились
@@ -66,7 +66,7 @@ anime-db-plugin-contracts/
 │   ├── BackgroundTaskQueueInterface.php    # сервис ядра: постановка отложенной задачи плагина
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
-│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.27.0) и RecordFolderIndexInterface — перечень записей с папкой (0.27.1)
+│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.27.0) и RecordFolderIndexInterface — перечень записей с папкой (0.28.0)
 │   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
 │   ├── LinkRules/                          # LinkRulesValidator/LinkRulesApplier/LinkRulesExamplesChecker для link-rules.yaml
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
@@ -200,12 +200,12 @@ anime-db-plugin-contracts/
   папку отвязали от записи: на момент события папки у записи нет. `match` по
   `FilesChangeReason` обязан иметь ветку `default`.
 - **`Catalog\AnimeAddedEvent`/`AnimeChangedEvent`/`AnimeRemovedEvent` +
-  `AnimeField`/`FieldChange` (0.27.1).** События каталога — классы контракта (а не
+  `AnimeField`/`FieldChange` (0.28.0).** События каталога — классы контракта (а не
   внутренние события хоста): подписаться плагин может только на них. Значения полей —
   VO контракта по таблице в докблоке `AnimeField`. `$changes` — только изменившиеся
   поля, `$lastValues` — всегда все ключи словаря. Выдача после коммита; исключение
   подписчика хост изолирует. По `AnimeId` из `AnimeRemovedEvent` писать нельзя.
-- **`Folder\RecordFolderIndexInterface` (0.27.1).** Курсорный (по `AnimeId`) список
+- **`Folder\RecordFolderIndexInterface` (0.28.0).** Курсорный (по `AnimeId`) список
   записей с папкой для `local`-плагинов; работает только с БД, доступность хранилища
   не фильтрует — её проверяет `RecordFolderWriterInterface`.
 - **Направление зависимости — только в одну сторону.** И хост-приложение,
