@@ -28,11 +28,17 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Catalog;
 
 /**
- * Why {@see AnimeFilesChangedEvent} was dispatched. Four distinct ways of arriving at
+ * Why {@see AnimeFilesChangedEvent} was dispatched. Five distinct ways of arriving at
  * the same fact — the set or location of an entry's files on disk changed — for which
  * a subscriber does the same thing regardless of which one applies; a new reason is
  * added as a new case here, not as a new event a plugin would have to subscribe to
  * separately.
+ *
+ * With `Unlinked` the folder was detached from the entry: the entry has no folder at the
+ * moment of the event (by the time a background task runs, the entry may have been linked
+ * to a folder again).
+ *
+ * The enum grows, so a `match` over it must have a `default` branch.
  */
 enum FilesChangeReason: string
 {
@@ -40,4 +46,5 @@ enum FilesChangeReason: string
     case FilesAdded = 'files_added';
     case PathChanged = 'path_changed';
     case DownloadFinished = 'download_finished';
+    case Unlinked = 'unlinked';
 }

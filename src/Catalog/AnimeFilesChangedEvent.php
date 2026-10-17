@@ -46,6 +46,10 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  * {@see BackgroundTaskHandlerInterface::handle()}. Nothing enforces this: a subscriber
  * that does heavy work inline still runs, synchronously, inside whatever request
  * or process triggered the change.
+ *
+ * With {@see FilesChangeReason::Unlinked} the entry has no folder at the moment of the
+ * event: by the time a background task submitted by the subscriber runs, the entry may
+ * have been linked to a folder again.
  */
 final class AnimeFilesChangedEvent
 {

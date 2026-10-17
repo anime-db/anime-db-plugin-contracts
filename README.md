@@ -38,6 +38,8 @@ composer require anime-db/plugin-contracts
   - [`DownloadServiceInterface`](#downloadserviceinterface)
   - [`BackgroundTaskQueueInterface`](#backgroundtaskqueueinterface)
   - [`AnimeFilesChangedEvent` и `FilesChangeReason`](#animefileschangedevent-и-fileschangereason)
+  - [`AnimeField` и события каталога](#animefield-и-события-каталога)
+  - [`Folder\RecordFolderIndexInterface`](#folderrecordfolderindexinterface)
   - [PSR-18 HTTP-клиент](#psr-18-http-клиент)
   - [`OAuth\AbstractOAuthClient`](#oauthabstractoauthclient)
 - [Общие примитивы](#общие-примитивы)
@@ -1073,8 +1075,8 @@ class MyFillerFilesSubscriber implements EventSubscriberInterface
 Событие ядра: состав или расположение файлов записи на диске изменилось.
 Диспатчится **после** того, как изменение уже закоммичено, и подписчик
 вызывается **синхронно** — как и `DownloadCompletedEvent`. Одно событие
-на четыре причины (`FilesChangeReason`), а не четыре события: во всех
-четырёх случаях подписчику нужно сделать одно и то же, а пятая причина
+на пять причин (`FilesChangeReason`), а не пять событий: во всех
+пяти случаях подписчику нужно сделать одно и то же, а шестая причина
 добавляется новым значением enum без правки уже написанных плагинов.
 
 - `FilesChangeReason::Created` — запись создана вместе с первыми файлами.
@@ -1082,6 +1084,10 @@ class MyFillerFilesSubscriber implements EventSubscriberInterface
 - `FilesChangeReason::PathChanged` — файлы записи перемещены/переименованы.
 - `FilesChangeReason::DownloadFinished` — файлы появились в результате
   завершённой закачки.
+- `FilesChangeReason::Unlinked` — папку отвязали от записи; на момент события
+  папки у записи нет (к выполнению фоновой задачи запись могли перепривязать).
+
+Перечисление растёт, поэтому `match` по нему обязан иметь ветку `default`.
 
 Событие не несёт список файлов — он не пережил бы передачу в
 `BackgroundTaskQueueInterface::submit()` для отложенной обработки, и
@@ -1092,6 +1098,41 @@ class MyFillerFilesSubscriber implements EventSubscriberInterface
 это не проверяет — подписчик, который всё же делает тяжёлую работу
 инлайн, отработает синхронно внутри того же запроса или процесса, что
 породил событие.
+
+### `AnimeField` и события каталога
+
+Плагин узнаёт о записях каталога через три события — классы контракта (на
+внутренние события хоста подписаться нельзя): `AnimeAddedEvent(AnimeId)`,
+`AnimeChangedEvent(AnimeId, $changes)` и `AnimeRemovedEvent(AnimeId, $lastValues)`.
+Плагины, которые их используют, требуют `^0.27.1`.
+
+- Выдача — **после** коммита, подписчик вызывается синхронно. Подписчик может
+  писать через хранилища контракта, но рекомендуемый паттерн — только
+  `BackgroundTaskQueueInterface::submit()`, работа — в `handle()`. Исключение
+  подписчика хост изолирует: оно логируется, остальные подписчики вызываются.
+- `AnimeChangedEvent::$changes` — `array<value-of<AnimeField>, FieldChange>`,
+  только поля, у которых значения до и после различаются; нет различий — нет
+  события. `FieldChange` несёт `before` и `after`.
+- `AnimeRemovedEvent::$lastValues` — последние значения **всех** полей словаря.
+  Записи уже нет, по её `AnimeId` писать нельзя.
+- `AnimeField` — словарь из 15 полей (`title`, `alternative_names`, `type`,
+  `demographic`, `genres`, `themes`, `episodes_count`, `sources`, `description`,
+  `date_premiere`, `date_end`, `duration_minutes`, `studios`, `countries`,
+  `cover`). Форма значения каждого поля, порядок сортировки списков и прочие
+  уточнения — в докблоке enum. Статус просмотра, серии, оценка, заметки, метки,
+  хранилище и путь, внешние id и галерея в словарь не входят. Новый кейс —
+  решение о раскрытии данных плагинам; `match` по enum обязан иметь `default`.
+
+### `Folder\RecordFolderIndexInterface`
+
+Необязательный сервис ядра для плагинов `type: local` (по тому же правилу, что и
+`RecordFolderWriterInterface`): `recordsWithFolder(?AnimeId $after, int $limit)`
+возвращает `list<AnimeId>` записей, у которых задано хранилище и непустой путь, а
+тип хранилища допускает запись (CD/DVD и видео не обходятся). Порядок — по
+возрастанию id, строго после `$after`, не больше `$limit`; курсор — `AnimeId`, а не
+смещение. Индекс работает только с БД и **не** фильтрует недоступные хранилища:
+доступность проверяет writer на каждой записи и сообщает
+`StorageUnavailableException`. Плагин, который его использует, требует `^0.27.1`.
 
 ### PSR-18 HTTP-клиент
 
@@ -1795,6 +1836,8 @@ includes:
   участвует;
 - `PluginCacheDirectoryInterface` — `path()` возвращает каталог на локальной
   ФС, внешний источник не участвует;
+- `Folder\RecordFolderIndexInterface` — перечисляет записи с папкой по данным
+  хоста, сетевой поверхности нет;
 - `Folder\RecordFolderWriterInterface` — пишет файлы на локальный диск через
   хост, сетевой поверхности нет;
 - `LlmServiceInterface` — доступ к **локальной** LLM хоста. Его реализация

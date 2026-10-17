@@ -107,6 +107,8 @@ use Psr\Http\Message\RequestFactoryInterface;
  *   a directory on the local filesystem; no external source involved.
  * - {@see \AnimeDb\PluginContracts\Folder\RecordFolderWriterInterface} — writes files into a
  *   record's folder on the local disk through the host; no network surface.
+ * - {@see \AnimeDb\PluginContracts\Folder\RecordFolderIndexInterface} — lists records that have
+ *   a folder, from the host's database only; no network surface.
  * - {@see \AnimeDb\PluginContracts\Media\MediaLibraryInterface} and
  *   {@see \AnimeDb\PluginContracts\Media\MediaProbeInterface} — list and read the
  *   technical characteristics of files already present in a record's local storage

@@ -64,10 +64,12 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  * Foreign files are never overwritten. The host keeps a record
  * `(plugin, anime, filename) → sha256` of the content it wrote:
  *  - the file is absent → written;
- *  - the file exists and its sha256 equals the recorded one, or the sha256 of
- *    the new bytes (adoption) → written;
- *  - otherwise → {@see ForeignFileException}, the file is untouched;
- *  - with `$overwrite = true` (an explicit user decision) the file is overwritten.
+ *  - the file exists and its sha256 equals the sha256 of the new bytes (adoption) → the
+ *    file is not touched, only the host's record is updated (also with `$overwrite = true`);
+ *  - the file exists and its sha256 equals the recorded one → written;
+ *  - otherwise, with `$overwrite = true` (an explicit user decision) → overwritten;
+ *  - otherwise → {@see ForeignFileException}, the file is untouched.
+ * The rules are checked in this order; the first matching one applies.
  * The record is removed when the plugin or the catalog record is removed;
  * files on disk stay.
  *
