@@ -57,11 +57,16 @@ anime-db-plugin-contracts/
 │   ├── SyncItem.php                        # DTO элемента списка синхронизации
 │   ├── SyncRemovalInterface.php            # необязательная возможность: удаление элемента списка на источнике
 │   ├── AnimeFilesChangedEvent.php          # событие изменения состава/расположения файлов записи
-│   ├── FilesChangeReason.php               # закрытый словарь причин AnimeFilesChangedEvent
+│   ├── FilesChangeReason.php               # словарь причин AnimeFilesChangedEvent (растёт, match — с default)
+│   ├── AnimeField.php                      # словарь полей записи, видимых плагинам (15 кейсов, 0.27.1)
+│   ├── FieldChange.php                     # значение поля до/после
+│   ├── AnimeAddedEvent.php                 # событие: запись добавлена
+│   ├── AnimeChangedEvent.php               # событие: поля записи изменились
+│   ├── AnimeRemovedEvent.php               # событие: запись удалена
 │   ├── BackgroundTaskQueueInterface.php    # сервис ядра: постановка отложенной задачи плагина
 │   ├── BackgroundTaskHandlerInterface.php  # роль плагина: обработчик отложенной задачи
 │   ├── BackgroundTask.php                  # DTO отложенной задачи (name/anime/payload)
-│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.27.0)
+│   ├── Folder/                             # RecordFolderWriterInterface — сервис ядра: запись файлов в папку записи (только local, 0.27.0) и RecordFolderIndexInterface — перечень записей с папкой (0.27.1)
 │   ├── Cache/                              # PluginCacheDirectoryInterface — сервис ядра: собственный каталог плагина на диске (необязательный, 0.26.1)
 │   ├── LinkRules/                          # LinkRulesValidator/LinkRulesApplier/LinkRulesExamplesChecker для link-rules.yaml
 │   ├── Manifest/                           # парсинг и валидация manifest.json плагина
@@ -181,9 +186,9 @@ anime-db-plugin-contracts/
   Расписаний, приоритетов, прогресса и отмены в контракте нет — слово
   «планировщик»/scheduler не используется нигде в пакете.
 - **`Catalog\AnimeFilesChangedEvent`/`FilesChangeReason`.** Одно событие на
-  четыре причины изменения состава/расположения файлов записи
-  (`Created`/`FilesAdded`/`PathChanged`/`DownloadFinished`), а не четыре
-  события: потребителю во всех случаях делать одно и то же, а пятая причина
+  пять причин изменения состава/расположения файлов записи
+  (`Created`/`FilesAdded`/`PathChanged`/`DownloadFinished`/`Unlinked`), а не пять
+  событий: потребителю во всех случаях делать одно и то же, а шестая причина
   добавляется значением enum без правки всех плагинов. Диспатчится **после**
   того, как изменение уже закоммичено; подписчик вызывается синхронно.
   Рекомендуемый паттерн — подписчик не делает ничего, кроме
@@ -191,7 +196,18 @@ anime-db-plugin-contracts/
   машинной защиты от нарушения этого паттерна нет.
   `Download\DownloadCompletedEvent` не удаляется и не заменяется этим
   событием — разные факты: «задача загрузки завершилась» (привязана к
-  `DownloadTaskId`) против «состав файлов записи изменился».
+  `DownloadTaskId`) против «состав файлов записи изменился». `Unlinked` —
+  папку отвязали от записи: на момент события папки у записи нет. `match` по
+  `FilesChangeReason` обязан иметь ветку `default`.
+- **`Catalog\AnimeAddedEvent`/`AnimeChangedEvent`/`AnimeRemovedEvent` +
+  `AnimeField`/`FieldChange` (0.27.1).** События каталога — классы контракта (а не
+  внутренние события хоста): подписаться плагин может только на них. Значения полей —
+  VO контракта по таблице в докблоке `AnimeField`. `$changes` — только изменившиеся
+  поля, `$lastValues` — всегда все ключи словаря. Выдача после коммита; исключение
+  подписчика хост изолирует. По `AnimeId` из `AnimeRemovedEvent` писать нельзя.
+- **`Folder\RecordFolderIndexInterface` (0.27.1).** Курсорный (по `AnimeId`) список
+  записей с папкой для `local`-плагинов; работает только с БД, доступность хранилища
+  не фильтрует — её проверяет `RecordFolderWriterInterface`.
 - **Направление зависимости — только в одну сторону.** И хост-приложение,
   и любой плагин зависят от этого пакета. Этот пакет не зависит ни от
   хост-приложения, ни от какого-либо конкретного плагина.
@@ -228,6 +244,8 @@ anime-db-plugin-contracts/
   v0.19 (`PluginUi`), v0.20 (`Background/*`), v0.21 (`AnimeName`) выходили
   минорами — это не образец для таких случаев. Пример: `Sync\SyncRemovalInterface`
   (v0.25.1); плагины, реализующие его, требуют `^0.25.1`
+- Новый кейс `Catalog\AnimeField` — решение о раскрытии данных плагинам, а не
+  аддитивная правка; проходит ревью раскрытия
 - Любой новый DTO/интерфейс — плоский, без внешних рантайм-зависимостей
   (Symfony/Doctrine и т.п.)
 

@@ -67,6 +67,8 @@ use AnimeDb\PluginContracts\Model\AnimeId;
  *  - the file exists and its sha256 equals the recorded one, or the sha256 of
  *    the new bytes (adoption) → written;
  *  - otherwise → {@see ForeignFileException}, the file is untouched;
+ *  - if the sha256 of the file on disk equals the sha256 of the new bytes, the host does not
+ *    touch the file and only updates its own record;
  *  - with `$overwrite = true` (an explicit user decision) the file is overwritten.
  * The record is removed when the plugin or the catalog record is removed;
  * files on disk stay.

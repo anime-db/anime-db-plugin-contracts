@@ -32,10 +32,10 @@ use PHPUnit\Framework\TestCase;
 
 class FilesChangeReasonTest extends TestCase
 {
-    public function testHasExactlyTheFourDocumentedCases(): void
+    public function testHasExactlyTheFiveDocumentedCases(): void
     {
         self::assertSame(
-            ['Created', 'FilesAdded', 'PathChanged', 'DownloadFinished'],
+            ['Created', 'FilesAdded', 'PathChanged', 'DownloadFinished', 'Unlinked'],
             array_map(static fn (FilesChangeReason $case): string => $case->name, FilesChangeReason::cases()),
         );
     }
@@ -46,5 +46,6 @@ class FilesChangeReasonTest extends TestCase
         self::assertSame('files_added', FilesChangeReason::FilesAdded->value);
         self::assertSame('path_changed', FilesChangeReason::PathChanged->value);
         self::assertSame('download_finished', FilesChangeReason::DownloadFinished->value);
+        self::assertSame('unlinked', FilesChangeReason::Unlinked->value);
     }
 }

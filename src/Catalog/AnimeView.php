@@ -84,7 +84,8 @@ final class AnimeView
          * Description in the locale of the current request; if there is none in that
          * locale, the `en` one; if there is none either, any available one. Null if the
          * record has no description in any language. Without an HTTP request (a
-         * background process) the `en` locale is used.
+         * background process) the same interface locale of the application is used as
+         * in an HTTP request.
          */
         public readonly ?string $description = null,
         /** Premiere date; only the date is meaningful, the time carries no meaning. Null if unknown. */

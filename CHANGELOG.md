@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.27.1
+
+- Added enum `Catalog\AnimeField` (15 cases: the fields of a record visible to plugins) with the
+  value shapes, list sort keys and the rule that a new case is a data-disclosure decision.
+- Added `Catalog\FieldChange` (`before`, `after`).
+- Added events `Catalog\AnimeAddedEvent`, `Catalog\AnimeChangedEvent` (only changed fields) and
+  `Catalog\AnimeRemovedEvent` (all fields' last values). Dispatched after commit; a subscriber
+  exception is isolated by the host; no writes by the `AnimeId` of a removed record.
+- Added `FilesChangeReason::Unlinked`: the folder was detached, the record has no folder at the
+  moment of the event. A `match` over `FilesChangeReason` and `AnimeField` must have a `default`.
+- Added `Folder\RecordFolderIndexInterface::recordsWithFolder()` (`local` plugins only); it does
+  not filter by storage availability.
+- `AnimeView::$description`: outside an HTTP request the same interface locale as in HTTP is used
+  (not `en`).
+- `RecordFolderWriterInterface`: if the sha256 of the file on disk equals the sha256 of the new
+  bytes, the host does not touch the file and only updates its own record.
+- Plugins that use the new events, `AnimeField`, `FilesChangeReason::Unlinked` or
+  `RecordFolderIndexInterface` require `^0.27.1`.
+
 ## 0.27.0
 
 - BC: removed `Manifest\LinkRulesValidator`, use `LinkRules\LinkRulesValidator`. `LinkRules\LinkRulesValidator` is `final` again.
