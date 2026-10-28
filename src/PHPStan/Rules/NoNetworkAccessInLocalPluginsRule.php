@@ -113,11 +113,12 @@ use Psr\Http\Message\RequestFactoryInterface;
  *   {@see \AnimeDb\PluginContracts\Media\MediaProbeInterface} — list and read the
  *   technical characteristics of files already present in a record's local storage
  *   folder; neither touches an external source.
- * - {@see \AnimeDb\PluginContracts\Llm\LlmServiceInterface} — gives access to the host's
- *   *local* LLM. Its implementation happens to go over a PSR-18 client (documented in
- *   README.md), but that client talks to the local model the host runs, not to the
- *   internet; the interface's whole point is to be usable without connectivity, which is
- *   exactly what `type: "local"` promises to its own caller. Declaring `ClientInterface`
+ * - {@see \AnimeDb\PluginContracts\Llm\LlmServiceInterface} — hands the prompt to the core
+ *   and gets structured data back. Whatever the core does behind that interface — run a
+ *   model on the same machine or call a provider over the network — is the core's own
+ *   responsibility, not network surface of the plugin: the plugin never names a provider,
+ *   never holds a credential and never shapes a request. A plugin would only become
+ *   `integration` if it talked to such a provider itself. Declaring `ClientInterface`
  *   directly is still forbidden — only this specific, narrower abstraction is exempt.
  * - {@see \AnimeDb\PluginContracts\Background\BackgroundTaskQueueInterface} — `submit()`
  *   places a task on a local queue for the plugin's own handler to pick up later; nothing

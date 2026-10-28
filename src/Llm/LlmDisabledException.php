@@ -28,7 +28,7 @@ declare(strict_types=1);
 namespace AnimeDb\PluginContracts\Llm;
 
 /**
- * Thrown by a {@see LlmServiceInterface::parse()} implementation when the local LLM is
+ * Thrown by a {@see LlmServiceInterface::parse()} implementation when the LLM is
  * disabled in the host application's settings.
  *
  * Deliberately not a transport failure: a plugin catches this separately from
