@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+- Behaviour change of the existing `Llm\LlmServiceInterface`: the contract no longer promises
+  that the model runs on the same machine. Where the core sends the prompt — a local model or a
+  provider over the network — is the core's own decision, invisible to the plugin. The method
+  signature, the exceptions and the rule's list of network types are unchanged.
+- `type: "local"` is stated more precisely: the plugin's code does not reach an external source
+  *of its own choosing*, neither directly nor through a host abstraction that would let it name
+  one. A core service whose destination is decided by the core alone is not such an abstraction,
+  so a plugin calling `LlmServiceInterface` stays `local`. A plugin becomes `integration` only by
+  talking to a provider itself.
+- Documented consequence: a prompt a `local` plugin hands to the core may reach a third-party
+  provider if the host is configured that way. The plugin neither controls nor observes this; the
+  user sees it in the application's settings and privacy policy.
+
 ## 0.27.1
 
 - Added enum `Catalog\AnimeField` (15 cases: the fields of a record visible to plugins) with the

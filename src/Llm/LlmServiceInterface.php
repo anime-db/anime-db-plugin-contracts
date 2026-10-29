@@ -30,31 +30,34 @@ namespace AnimeDb\PluginContracts\Llm;
 use Psr\Http\Client\ClientExceptionInterface;
 
 /**
- * Core-provided access to a local LLM, for plugins that need to parse free-form
+ * Core-provided access to an LLM, for plugins that need to parse free-form
  * human text (e.g. a loosely-formatted textual description coming from a source) into
  * structured data.
  *
  * The model itself is a core concern, not something every plugin should bundle or
  * call out to independently: a plugin builds a prompt (including an explicit
  * instruction to return JSON) and gets back a decoded associative array. The core
- * implementation is free to reinforce JSON-mode with its own system prompt and to
- * pick/host whichever local model it runs — none of that is visible to the plugin.
+ * implementation is free to reinforce JSON-mode with its own system prompt, and to run
+ * the model on the same machine or reach a provider over the network — none of that is
+ * visible to the plugin, and none of it changes the plugin's own type: it still talks
+ * only to the core.
  *
  * A plugin obtains this service the same way it obtains a PSR-18 HTTP client: via
  * constructor injection, type-hinting this interface. The plugin depends only on
  * this contracts package; the implementation lives in the host application.
  *
- * The host implementation reaches the model over HTTP through a PSR-18 client, so
- * transport failures surface to the plugin as {@see ClientExceptionInterface}.
+ * The host implementation reaches the model over HTTP through a PSR-18 client — whether
+ * that endpoint is on this machine or at a provider — so transport failures surface to
+ * the plugin as {@see ClientExceptionInterface}.
  */
 interface LlmServiceInterface
 {
     /**
-     * Run the local LLM on the given prompt and decode its JSON response.
+     * Run the LLM on the given prompt and decode its JSON response.
      *
      * @return array<string, mixed> JSON decoded from the model's response
      *
-     * @throws LlmDisabledException     if the local LLM is disabled in the host application's settings
+     * @throws LlmDisabledException     if the LLM is disabled in the host application's settings
      * @throws ClientExceptionInterface if the underlying PSR-18 HTTP transport fails (network
      *                                  error, timeout, non-2xx response from the backend); covers its subtypes
      *                                  {@see \Psr\Http\Client\NetworkExceptionInterface} and

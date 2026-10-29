@@ -54,9 +54,11 @@ use Psr\Http\Message\RequestFactoryInterface;
  * from declaring a constructor parameter or a property typed as a PSR-18 HTTP client, a
  * PSR-17 request factory, or one of this package's own contract interfaces whose
  * implementation talks to an external source by definition. `type: "local"` means the
- * plugin's code never talks to an external source — neither directly (covered by
- * {@see NoDangerousPrimitivesRule}, which does not know about plugin types) nor through a
- * host-provided abstraction, which is what this rule checks instead.
+ * plugin's code never talks to an external source *of its own choosing* — neither directly
+ * (covered by {@see NoDangerousPrimitivesRule}, which does not know about plugin types) nor
+ * through a host-provided abstraction that would let it name one, which is what this rule
+ * checks instead. A core service whose destination is the core's decision alone is not such
+ * an abstraction.
  *
  * ## Network types checked
  *
@@ -113,12 +115,15 @@ use Psr\Http\Message\RequestFactoryInterface;
  *   {@see \AnimeDb\PluginContracts\Media\MediaProbeInterface} — list and read the
  *   technical characteristics of files already present in a record's local storage
  *   folder; neither touches an external source.
- * - {@see \AnimeDb\PluginContracts\Llm\LlmServiceInterface} — gives access to the host's
- *   *local* LLM. Its implementation happens to go over a PSR-18 client (documented in
- *   README.md), but that client talks to the local model the host runs, not to the
- *   internet; the interface's whole point is to be usable without connectivity, which is
- *   exactly what `type: "local"` promises to its own caller. Declaring `ClientInterface`
- *   directly is still forbidden — only this specific, narrower abstraction is exempt.
+ * - {@see \AnimeDb\PluginContracts\Llm\LlmServiceInterface} — hands the prompt to the core
+ *   and gets structured data back. The line this rule draws is about *who picks the
+ *   destination*: taking a `ClientInterface` and calling an arbitrary host is the plugin's
+ *   choice and stays forbidden, while handing over a prompt is not a choice at all — where
+ *   the request goes is decided by the core alone, and the plugin names no provider, holds
+ *   no credential and shapes no request. Whatever the core does behind the interface — run
+ *   a model on this machine or reach a provider over the network — is the core's own
+ *   responsibility. A plugin would become `integration` only by talking to such a provider
+ *   itself. Only this specific, narrower abstraction is exempt.
  * - {@see \AnimeDb\PluginContracts\Background\BackgroundTaskQueueInterface} — `submit()`
  *   places a task on a local queue for the plugin's own handler to pick up later; nothing
  *   about queuing a task talks to an external source.
@@ -168,7 +173,8 @@ use Psr\Http\Message\RequestFactoryInterface;
  * ## Why this rule is enabled by default
  *
  * `type: "local"` in a manifest is the plugin author's own claim that the plugin's code
- * never talks to the network, directly or through a host-provided abstraction. Checking
+ * never talks to the network of its own choosing, directly or through a host-provided
+ * abstraction that would let it pick a destination. Checking
  * that claim by hand does not scale as a plugin's codebase grows. Enabling this rule by
  * default turns the claim into something verified automatically, from constructor and
  * property type declarations, by whatever PHPStan run a consumer points at the plugin's

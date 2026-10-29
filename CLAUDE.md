@@ -42,7 +42,7 @@ anime-db-plugin-contracts/
 │   ├── AnimeSearchResult.php               # DTO результата CandidateSearchInterface::search()
 │   ├── AnimeSearchResultItem.php           # DTO элемента результата поиска
 │   ├── AnimeSearchResultAction.php         # DTO действия над элементом результата поиска
-│   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к локальной LLM
+│   ├── LlmServiceInterface.php             # сервис ядра: доступ плагина к LLM (где крутится модель — дело ядра)
 │   ├── LlmDisabledException.php            # LLM выключен в настройках хоста — плагин деградирует без падения
 │   ├── DownloadServiceInterface.php        # сервис ядра: постановка задачи на скачивание
 │   ├── PluginDataStoreInterface.php        # сервис ядра: read/write собственного payload плагина по AnimeId (без flush)
@@ -103,7 +103,7 @@ anime-db-plugin-contracts/
   кодового маркера-категории нет. Перечисление установленных плагинов —
   из манифестов, не из маркер-интерфейса.
 - **Сервисы, которые ядро даёт плагинам, тоже часть контракта.**
-  `LlmServiceInterface` (доступ к локальной LLM),
+  `LlmServiceInterface` (доступ к LLM; где крутится модель — дело ядра),
   `DownloadServiceInterface` (постановка задачи на скачивание, вместе с
   VO `DownloadSource`/`AnimeId`/`DownloadTaskId` и событием
   `DownloadCompletedEvent`), `PluginDataStoreInterface`
